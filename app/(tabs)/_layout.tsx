@@ -63,6 +63,19 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="game"
+        options={{
+          title: "Kuis",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "trophy" : "trophy-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
