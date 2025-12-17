@@ -1,50 +1,243 @@
-# Welcome to your Expo app 👋
+# 🚓 Police Assistant Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+AI-powered police assistant untuk pengemudi di Indonesia. Built with React Native + Expo.
 
-## Get started
+## Features ✨
 
-1. Install dependencies
+- 🗺️ **Real-time GPS Tracking** - Track lokasi dan kecepatan
+- 🚦 **Traffic Information** - Info kondisi lalu lintas real-time
+- 💬 **AI Chat Assistant** - Chat dengan AI tentang berkendara
+- 🎤 **Voice Output** - Text-to-speech untuk respons AI
+- 🛣️ **Route Planning** - Cari rute alternatif dengan traffic info
+- 📍 **OpenStreetMap** - Maps gratis tanpa API key
 
-   ```bash
-   npm install
-   ```
+## Tech Stack 🛠️
 
-2. Start the app
+- **React Native** + **Expo** - Framework mobile
+- **TypeScript** - Type safety
+- **Zustand** - State management
+- **Axios** - HTTP client
+- **React Navigation** - Navigation
+- **expo-location** - GPS tracking
+- **expo-speech** - Text-to-speech
+- **react-native-maps** - Maps dengan OSM tiles
 
-   ```bash
-   npx expo start
-   ```
+## Prerequisites 📋
 
-In the output, you'll find options to open the app in a
+- Node.js 18+
+- npm atau yarn
+- Expo Go app di smartphone (untuk testing)
+- Backend API running (lihat backend README)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Installation 🚀
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install Dependencies
 
 ```bash
-npm run reset-project
+cd police-assistant-app
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Configure Backend URL
 
-## Learn more
+Edit `src/utils/constants.ts`:
 
-To learn more about developing your project with Expo, look at the following resources:
+```typescript
+const DEV_API_URL = "http://YOUR_LOCAL_IP:8080/api/v1";
+// Ganti YOUR_LOCAL_IP dengan IP komputer Anda
+// Jangan pakai localhost! Harus IP (misal: 192.168.1.100)
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Cara cek IP:**
 
-## Join the community
+```bash
+# macOS/Linux
+ifconfig | grep inet
 
-Join our community of developers creating universal apps.
+# Windows
+ipconfig
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### 3. Run Development Server
+
+```bash
+# Start Expo
+npx expo start
+```
+
+### 4. Test di Smartphone
+
+1. Install **Expo Go** dari Play Store/App Store
+2. Scan QR code dari terminal
+3. App akan terbuka di Expo Go
+
+## Project Structure 📁
+
+```
+police-assistant-app/
+├── App.tsx                    # Main app with navigation
+├── app.json                   # Expo config
+├── src/
+│   ├── screens/
+│   │   ├── HomeScreen.tsx     # Map + Speed meter
+│   │   ├── ChatScreen.tsx     # AI chat
+│   │   └── RoutesScreen.tsx   # Route planning
+│   ├── components/
+│   │   ├── MapView.tsx        # OSM map
+│   │   ├── SpeedMeter.tsx     # Speed display
+│   │   ├── ChatMessage.tsx    # Chat bubble
+│   │   └── VoiceButton.tsx    # Voice input button
+│   ├── services/
+│   │   ├── api.ts             # API calls
+│   │   ├── location.ts        # GPS service
+│   │   └── voice.ts           # TTS service
+│   ├── store/
+│   │   └── useStore.ts        # Global state
+│   ├── types/
+│   │   └── index.ts           # TypeScript types
+│   └── utils/
+│       └── constants.ts       # Config & constants
+```
+
+## Usage 💡
+
+### Home Screen
+
+- Menampilkan peta dengan posisi real-time
+- Speed meter menampilkan kecepatan saat ini
+- Traffic indicator menunjukkan kondisi lalu lintas
+- Auto-tracking GPS saat app dibuka
+
+### Chat Screen
+
+- Tanya apa saja tentang berkendara
+- AI akan menjawab dengan context lokasi & kecepatan
+- Respons otomatis dibacakan (TTS)
+- Contoh: "Bagaimana kondisi lalu lintas saya?"
+
+### Routes Screen
+
+- Cari rute dari lokasi saat ini ke tujuan
+- Tampilkan beberapa alternatif rute
+- Informasi traffic untuk setiap rute
+- Turn-by-turn directions
+
+## Configuration ⚙️
+
+### Change Map Tiles
+
+Edit `src/components/MapView.tsx`:
+
+```typescript
+import { MAP_TILES } from '../utils/constants';
+
+// Light theme (default)
+<MapComponent tileUrl={MAP_TILES.CARTO_LIGHT} />
+
+// Dark theme
+<MapComponent tileUrl={MAP_TILES.CARTO_DARK} />
+
+// Topographic
+<MapComponent tileUrl={MAP_TILES.TOPO} />
+```
+
+### Disable Auto-Speak
+
+Edit `src/utils/constants.ts`:
+
+```typescript
+export const AUTO_SPEAK_RESPONSES = false;
+```
+
+## Troubleshooting 🔧
+
+### Maps tidak muncul
+
+- Pastikan permissions lokasi sudah granted
+- Cek koneksi internet (OSM tiles butuh internet)
+- Restart app
+
+### Location tidak update
+
+- Pastikan GPS aktif di smartphone
+- Buka Settings → Privacy → Location → Expo Go → Allow
+- Coba di outdoor (GPS lebih akurat)
+
+### API Error / Network Failed
+
+- Pastikan backend running
+- Cek `API_BASE_URL` di constants.ts
+- Pastikan smartphone dan komputer di network yang sama
+- Jangan pakai `localhost`, pakai IP address!
+
+### Slow Performance
+
+- Jangan run di debug mode untuk production
+- Build dengan `expo build`
+- Gunakan production mode
+
+## Building for Production 📦
+
+### Android APK
+
+```bash
+# Install EAS CLI
+npm install -g eas-cli
+
+# Login
+eas login
+
+# Build
+eas build --platform android --profile preview
+```
+
+### iOS
+
+```bash
+eas build --platform ios --profile preview
+```
+
+## API Endpoints 🌐
+
+App menggunakan endpoint berikut:
+
+- `POST /api/v1/chat` - AI conversation
+- `GET /api/v1/traffic` - Traffic info
+- `POST /api/v1/routes` - Route search
+- `POST /api/v1/routes/coords` - Route by coordinates
+
+## Environment Variables 🔐
+
+Tidak ada API key yang diperlukan!
+
+- ✅ OpenStreetMap tiles - FREE
+- ✅ Backend API - Local/self-hosted
+
+## Performance Tips 🚀
+
+1. **Location Updates**: Default 2 detik, bisa dikurangi jika butuh real-time
+2. **Traffic Updates**: Default 30 detik, sesuaikan sesuai kebutuhan
+3. **Map Tiles**: Cache otomatis oleh react-native-maps
+4. **Chat History**: Max 50 messages (configurable)
+
+## Future Improvements 🎯
+
+- [ ] Voice input (Speech-to-Text)
+- [ ] Offline maps
+- [ ] Speed limit alerts
+- [ ] Dark mode
+- [ ] Multi-language support
+- [ ] Weather integration
+- [ ] Emergency contacts quick dial
+
+## License 📄
+
+MIT License
+
+## Support 💬
+
+Untuk pertanyaan atau issues, buka issue di GitHub atau hubungi developer.
+
+---
+
+Built with ❤️ for Indonesian drivers

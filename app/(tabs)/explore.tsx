@@ -1,112 +1,582 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import ChatMessage from "@/src/components/ChatMessage";
+import VoiceButton from "@/src/components/VoiceButton";
+import { sendChatMessage, testConnection } from "@/src/services/api";
+import { isSpeaking, speak, stopSpeaking } from "@/src/services/voice";
+import { useStore } from "@/src/store/useStore";
+import type { ChatMessage as ChatMessageType } from "@/src/types";
+import { COLORS } from "@/src/utils/constants";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Collapsible } from '@/components/ui/collapsible';
-import { ExternalLink } from '@/components/external-link';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+export default function ChatScreen() {
+  const {
+    location,
+    address,
+    speed,
+    traffic,
+    messages,
+    chatLoading,
+    addMessage,
+    clearMessages,
+    setChatLoading,
+  } = useStore();
 
-export default function TabTwoScreen() {
+  const [inputText, setInputText] = useState("");
+  const [backendConnected, setBackendConnected] = useState<boolean | null>(
+    null
+  );
+  const [autoSpeak, setAutoSpeak] = useState(true);
+  const flatListRef = useRef<FlatList>(null);
+
+  // Speech recognition event listeners (disabled for Expo Go)
+  // Uncomment when using Development Build
+  /*
+  useSpeechRecognitionEvent('start', () => {
+    console.log('🎤 Started');
+    setIsListening(true);
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    console.log('🛑 Ended');
+    setIsListening(false);
+  });
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript;
+    if (transcript) {
+      setInputText(transcript);
+    }
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.error('❌ Error:', event.error);
+    setIsListening(false);
+    Alert.alert('Voice Error', event.error);
+  });
+  */
+
+  // Test backend connection on mount
+  useEffect(() => {
+    checkBackendConnection();
+  }, []);
+
+  // Auto-scroll to bottom when new message arrives
+  useEffect(() => {
+    if (messages.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [messages.length]);
+
+  const checkBackendConnection = async () => {
+    try {
+      const connected = await testConnection();
+      setBackendConnected(connected);
+
+      if (!connected) {
+        Alert.alert(
+          "Backend Offline",
+          "Cannot connect to backend API. Please check if backend is running.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch (error) {
+      setBackendConnected(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!inputText.trim() || chatLoading) return;
+
+    // Check backend first
+    if (backendConnected === false) {
+      Alert.alert("Backend Offline", "Please start the backend server first.", [
+        { text: "Retry", onPress: checkBackendConnection },
+        { text: "Cancel" },
+      ]);
+      return;
+    }
+
+    const userMessage: ChatMessageType = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputText.trim(),
+      timestamp: Date.now(),
+    };
+
+    addMessage(userMessage);
+    setInputText("");
+    setChatLoading(true);
+
+    try {
+      // Prepare context
+      const context = {
+        location: address || "Unknown",
+        speed: speed || 0,
+        traffic: traffic?.condition || "unknown",
+        latitude: location?.latitude || 0,
+        longitude: location?.longitude || 0,
+      };
+
+      console.log("📤 Sending to backend:", {
+        message: userMessage.content,
+        context,
+      });
+
+      // Get AI response from backend
+      const response = await sendChatMessage(userMessage.content, context);
+
+      console.log("📥 Received from backend:", response);
+
+      const assistantMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response,
+        timestamp: Date.now(),
+      };
+
+      addMessage(assistantMessage);
+
+      // Auto-speak response if enabled
+      if (autoSpeak) {
+        speak(response);
+      }
+    } catch (error: any) {
+      console.error("❌ Chat error:", error);
+
+      const errorMessage: ChatMessageType = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `❌ Error: ${
+          error.message || "Failed to get response from AI"
+        }. Please check backend connection.`,
+        timestamp: Date.now(),
+      };
+      addMessage(errorMessage);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleVoicePress = async () => {
+    // Check if currently speaking
+    const speaking = await isSpeaking();
+
+    if (speaking) {
+      // Stop current speech
+      await stopSpeaking();
+      return;
+    }
+
+    // For Expo Go: Show info about voice input
+    Alert.alert(
+      "🎤 Voice Input",
+      "Voice input (Speech-to-Text) memerlukan Development Build.\n\nUntuk MVP, gunakan:\n• Quick questions di bawah\n• Ketik pertanyaan manual\n• Voice output (TTS) sudah aktif! 🔊",
+      [
+        {
+          text: "Try Quick Question",
+          onPress: () =>
+            handleQuickQuestion("Bagaimana kondisi lalu lintas saya?"),
+        },
+        { text: "OK" },
+      ]
+    );
+
+    // Uncomment ini kalau sudah pakai Development Build:
+    /*
+    try {
+      const available = await isSpeechRecognitionAvailable();
+      if (!available) {
+        Alert.alert('Voice Input', 'Speech recognition not available');
+        return;
+      }
+
+      await startListening(
+        (transcript) => {
+          setInputText(transcript);
+          setIsListening(false);
+        },
+        (error) => {
+          setIsListening(false);
+          Alert.alert('Voice Error', error);
+        }
+      );
+    } catch (error: any) {
+      Alert.alert('Voice Input Error', error.message);
+    }
+    */
+  };
+
+  const handleQuickQuestion = (question: string) => {
+    setInputText(question);
+  };
+
+  const toggleAutoSpeak = () => {
+    setAutoSpeak(!autoSpeak);
+    const message: ChatMessageType = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: `🔊 Auto-speak ${!autoSpeak ? "enabled" : "disabled"}`,
+      timestamp: Date.now(),
+    };
+    addMessage(message);
+  };
+
+  const handleClearChat = () => {
+    Alert.alert("Clear Chat", "Are you sure you want to clear all messages?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Clear",
+        style: "destructive",
+        onPress: () => {
+          clearMessages();
+          stopSpeaking();
+        },
+      },
+    ]);
+  };
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <Ionicons
+        name="chatbubbles-outline"
+        size={64}
+        color={COLORS.TEXT_SECONDARY}
+      />
+      <Text style={styles.emptyTitle}>Halo! 👋</Text>
+      <Text style={styles.emptyText}>
+        Saya asisten polisi lalu lintas AI.{"\n"}
+        Tanya apa saja tentang berkendara!
+      </Text>
+
+      {/* Backend Status */}
+      <View
+        style={[
+          styles.statusBadge,
+          { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
+        ]}
+      >
+        <View
+          style={[
+            styles.statusDot,
+            { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
+          ]}
+        />
+        <Text style={styles.statusText}>
+          Backend:{" "}
+          {backendConnected === null
+            ? "Checking..."
+            : backendConnected
+            ? "Connected"
+            : "Offline"}
+        </Text>
+        {!backendConnected && (
+          <TouchableOpacity onPress={checkBackendConnection}>
+            <Ionicons name="refresh" size={16} color="#FF3B30" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Quick Questions */}
+      <View style={styles.suggestionsContainer}>
+        <Text style={styles.suggestionsTitle}>💡 Contoh pertanyaan:</Text>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() =>
+            handleQuickQuestion("Bagaimana kondisi lalu lintas saya sekarang?")
+          }
+        >
+          <Ionicons name="car" size={16} color="#007AFF" />
+          <Text style={styles.suggestionText}>
+            Bagaimana kondisi lalu lintas saya?
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() =>
+            handleQuickQuestion("Berapa batas kecepatan di jalan tol?")
+          }
+        >
+          <Ionicons name="speedometer" size={16} color="#007AFF" />
+          <Text style={styles.suggestionText}>
+            Berapa batas kecepatan di jalan tol?
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() => handleQuickQuestion("Apakah kecepatan saya aman?")}
+        >
+          <Ionicons name="shield-checkmark" size={16} color="#007AFF" />
+          <Text style={styles.suggestionText}>Apakah kecepatan saya aman?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.suggestionButton}
+          onPress={() =>
+            handleQuickQuestion("Ada rute alternatif yang lebih cepat?")
+          }
+        >
+          <Ionicons name="map" size={16} color="#007AFF" />
+          <Text style={styles.suggestionText}>
+            Ada rute alternatif yang lebih cepat?
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderHeader = () => (
+    <View style={styles.headerActions}>
+      <TouchableOpacity style={styles.headerButton} onPress={toggleAutoSpeak}>
+        <Ionicons
+          name={autoSpeak ? "volume-high" : "volume-mute"}
+          size={20}
+          color={autoSpeak ? "#007AFF" : "#8E8E93"}
+        />
+        <Text
+          style={[
+            styles.headerButtonText,
+            !autoSpeak && styles.headerButtonTextMuted,
+          ]}
+        >
+          Auto-speak {autoSpeak ? "ON" : "OFF"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.headerButton}
+        onPress={handleClearChat}
+        disabled={messages.length === 0}
+      >
+        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+        <Text style={[styles.headerButtonText, { color: "#FF3B30" }]}>
+          Clear
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.keyboardView}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+      >
+        {/* Messages List */}
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <ChatMessage message={item} />}
+          contentContainerStyle={[
+            styles.messagesList,
+            messages.length === 0 && styles.messagesListEmpty,
+          ]}
+          ListEmptyComponent={renderEmpty}
+          ListHeaderComponent={messages.length > 0 ? renderHeader : null}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToEnd({ animated: true })
+          }
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText
-          type="title"
-          style={{
-            fontFamily: Fonts.rounded,
-          }}>
-          Explore
-        </ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image
-          source={require('@/assets/images/react-logo.png')}
-          style={{ width: 100, height: 100, alignSelf: 'center' }}
-        />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful{' '}
-          <ThemedText type="defaultSemiBold" style={{ fontFamily: Fonts.mono }}>
-            react-native-reanimated
-          </ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+
+        {/* Loading Indicator */}
+        {chatLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.PRIMARY} />
+            <Text style={styles.loadingText}>AI sedang mengetik...</Text>
+          </View>
+        )}
+
+        {/* Input Area */}
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Tanya sesuatu..."
+            placeholderTextColor={COLORS.TEXT_SECONDARY}
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+            maxLength={500}
+            editable={!chatLoading}
+            onSubmitEditing={handleSend}
+            returnKeyType="send"
+          />
+
+          <VoiceButton onPress={handleVoicePress} disabled={chatLoading} />
+
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              (!inputText.trim() || chatLoading) && styles.sendButtonDisabled,
+            ]}
+            onPress={handleSend}
+            disabled={!inputText.trim() || chatLoading}
+          >
+            <Ionicons name="send" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.BACKGROUND,
   },
-  titleContainer: {
-    flexDirection: 'row',
+  keyboardView: {
+    flex: 1,
+  },
+  messagesList: {
+    paddingVertical: 16,
+  },
+  messagesListEmpty: {
+    flexGrow: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.TEXT_PRIMARY,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.TEXT_SECONDARY,
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 24,
     gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  suggestionsContainer: {
+    width: "100%",
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: 12,
+    fontWeight: "600",
+  },
+  suggestionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.CARD,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    gap: 8,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.PRIMARY,
+  },
+  headerActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  headerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  headerButtonText: {
+    fontSize: 14,
+    color: "#007AFF",
+    fontWeight: "600",
+  },
+  headerButtonTextMuted: {
+    color: "#8E8E93",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    fontStyle: "italic",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    padding: 12,
+    backgroundColor: COLORS.CARD,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5EA",
+    gap: 8,
+  },
+  input: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    backgroundColor: COLORS.BACKGROUND,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: COLORS.TEXT_PRIMARY,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.PRIMARY,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
   },
 });
