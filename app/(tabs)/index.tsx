@@ -180,7 +180,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>🚓 Police Assistant</Text>
+          <Text style={styles.title}>💬 Chat Assistant</Text>
           <TouchableOpacity
             onPress={refreshLocation}
             style={styles.refreshButton}

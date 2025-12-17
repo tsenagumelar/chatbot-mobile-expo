@@ -1,6 +1,6 @@
 export default {
   expo: {
-    name: "Police Assistant",
+    name: "Chat Assistant",
     slug: "police-assistant-app",
     version: "1.0.0",
     orientation: "portrait",

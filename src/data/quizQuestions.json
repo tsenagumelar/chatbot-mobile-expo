@@ -91,7 +91,7 @@
     "id": 9,
     "question": "Apa fungsi utama sabuk pengaman (seat belt)?",
     "options": [
-      { "key": "A", "text": "Agar tidak didenda polisi" },
+      { "key": "A", "text": "Agar tidak melanggar aturan" },
       { "key": "B", "text": "Mencegah terlontar saat kecelakaan" },
       { "key": "C", "text": "Membuat nyaman saat berkendara" }
     ],

@@ -1,17 +1,16 @@
+import quizData from "@/src/data/quizQuestions.json";
 import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  Animated,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Animated,
-  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import quizData from "@/src/data/quizQuestions.json";
 
 interface QuizQuestion {
   id: number;
@@ -144,7 +143,7 @@ export default function GameScreen() {
   const renderStartScreen = () => (
     <View style={styles.centerContainer}>
       <Ionicons name="trophy" size={80} color={COLORS.PRIMARY} />
-      <Text style={styles.title}>Kuis Korlantas</Text>
+      <Text style={styles.title}>Kuis AI</Text>
       <Text style={styles.subtitle}>
         Uji pengetahuan Anda tentang lalu lintas!
       </Text>
@@ -174,7 +173,8 @@ export default function GameScreen() {
   // Render question
   const renderQuestion = () => {
     const question = selectedQuestions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
+    const progress =
+      ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
 
     return (
       <View style={styles.questionContainer}>
@@ -195,10 +195,7 @@ export default function GameScreen() {
             color={timeLeft <= 3 ? "#FF3B30" : COLORS.PRIMARY}
           />
           <Text
-            style={[
-              styles.timerText,
-              timeLeft <= 3 && styles.timerTextDanger,
-            ]}
+            style={[styles.timerText, timeLeft <= 3 && styles.timerTextDanger]}
           >
             {timeLeft}s
           </Text>

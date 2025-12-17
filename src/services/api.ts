@@ -217,7 +217,7 @@ export async function searchLocation(
           countrycodes: "id", // Limit to Indonesia
         },
         headers: {
-          "User-Agent": "PoliceAssistantApp/1.0",
+          "User-Agent": "ChatAssistantApp/1.0",
         },
       }
     );

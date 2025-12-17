@@ -190,8 +190,8 @@ export default function ChatScreen() {
       />
       <Text style={styles.emptyTitle}>Halo! 👋</Text>
       <Text style={styles.emptyText}>
-        Saya asisten polisi lalu lintas AI Anda.{"\n"}
-        Tanya apa saja tentang berkendara!
+        Saya asisten chat AI Anda.{"\n"}
+        Silahkan tanya apa saja!
       </Text>
     </View>
   );
