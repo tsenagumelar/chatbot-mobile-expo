@@ -199,4 +199,38 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
+/**
+ * Search for location suggestions (geocoding)
+ */
+export async function searchLocation(
+  query: string
+): Promise<Array<{ name: string; lat: number; lon: number }>> {
+  try {
+    // Use Nominatim OpenStreetMap API for geocoding
+    const response = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          q: query,
+          format: "json",
+          limit: 5,
+          countrycodes: "id", // Limit to Indonesia
+        },
+        headers: {
+          "User-Agent": "PoliceAssistantApp/1.0",
+        },
+      }
+    );
+
+    return response.data.map((item: any) => ({
+      name: item.display_name,
+      lat: parseFloat(item.lat),
+      lon: parseFloat(item.lon),
+    }));
+  } catch (error) {
+    console.error("❌ Location search error:", error);
+    return [];
+  }
+}
+
 export default api;

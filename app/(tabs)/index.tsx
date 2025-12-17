@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 
 export default function HomeScreen() {
   const {
@@ -279,13 +280,42 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Info Note */}
-        <View style={styles.infoNote}>
-          <Ionicons name="information-circle" size={20} color="#007AFF" />
-          <Text style={styles.infoText}>
-            Map view coming soon! Development build required.
-          </Text>
-        </View>
+        {/* Map View */}
+        {location && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="map" size={20} color="#007AFF" />
+              <Text style={styles.cardTitle}>Map View</Text>
+            </View>
+            <View style={styles.mapContainer}>
+              <MapView
+                style={styles.map}
+                provider={PROVIDER_DEFAULT}
+                region={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                mapType="standard"
+                showsUserLocation={true}
+                showsMyLocationButton={true}
+                showsCompass={true}
+                showsScale={true}
+              >
+                <Marker
+                  coordinate={{
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }}
+                  title="Your Location"
+                  description={address}
+                  pinColor="#007AFF"
+                />
+              </MapView>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -429,5 +459,14 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 14,
     color: "#007AFF",
+  },
+  mapContainer: {
+    height: 300,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  map: {
+    width: "100%",
+    height: "100%",
   },
 });
