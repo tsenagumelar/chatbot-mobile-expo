@@ -52,11 +52,18 @@ export async function sendChatMessage(
   sessionId: string | null = null
 ): Promise<{ response: string; sessionId: string }> {
   try {
-    const payload = {
+    // Only include session_id if it exists and is not empty
+    const payload: any = {
       message,
       context,
-      session_id: sessionId || "",
     };
+
+    if (sessionId && sessionId.trim() !== "") {
+      payload.session_id = sessionId;
+      console.log("🔄 Using existing session:", sessionId);
+    } else {
+      console.log("🆕 Starting new session");
+    }
 
     console.log("🚀 API Request Payload:", JSON.stringify(payload, null, 2));
 

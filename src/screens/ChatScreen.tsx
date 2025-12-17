@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChatMessage from "../components/ChatMessage";
 import VoiceButton from "../components/VoiceButton";
-import { sendChatMessage } from "../services/api";
+import { sendChatMessage, testConnection } from "../services/api";
 import { speak } from "../services/voice";
 import { useStore } from "../store/useStore";
 import type { ChatMessage as ChatMessageType } from "../types";
@@ -36,7 +36,15 @@ export default function ChatScreen() {
   } = useStore();
 
   const [inputText, setInputText] = useState("");
+  const [backendConnected, setBackendConnected] = useState<boolean | null>(
+    null
+  );
   const flatListRef = useRef<FlatList>(null);
+
+  // Test backend connection on mount
+  useEffect(() => {
+    checkBackendConnection();
+  }, []);
 
   // Clear old messages on mount to prevent data corruption issues
   useEffect(() => {
@@ -49,6 +57,21 @@ export default function ChatScreen() {
       clearMessages();
     }
   }, []);
+
+  const checkBackendConnection = async () => {
+    try {
+      const connected = await testConnection();
+      setBackendConnected(connected);
+      if (connected) {
+        console.log("✅ Backend connected");
+      } else {
+        console.log("⚠️ Backend offline");
+      }
+    } catch (error) {
+      setBackendConnected(false);
+      console.error("❌ Backend connection failed:", error);
+    }
+  };
 
   // Auto-scroll to bottom when new message arrives
   useEffect(() => {
@@ -83,10 +106,11 @@ export default function ChatScreen() {
         longitude: location?.longitude || 0,
       };
 
-      // Debug logging
+      // Debug logging - show current session state
       console.log("📤 Sending to backend:");
       console.log("Message:", userMessage.content);
-      console.log("Session ID:", sessionId || "(new session)");
+      console.log("Current Session ID from store:", sessionId);
+      console.log("Session ID being sent:", sessionId || null);
 
       // Get AI response with session (backend manages history)
       const { response, sessionId: newSessionId } = await sendChatMessage(
@@ -98,12 +122,19 @@ export default function ChatScreen() {
       console.log("📥 Received from backend:");
       console.log("Response type:", typeof response);
       console.log("Response:", response);
-      console.log("Session ID:", newSessionId);
+      console.log("New Session ID from backend:", newSessionId);
 
-      // Save session ID from first response
-      if (!sessionId && newSessionId) {
-        console.log("✅ Session created:", newSessionId);
+      // Save/update session ID from backend
+      if (newSessionId && newSessionId !== sessionId) {
+        console.log("💾 Updating session ID:", {
+          old: sessionId,
+          new: newSessionId,
+        });
         setSessionId(newSessionId);
+      } else if (newSessionId) {
+        console.log("✅ Session ID unchanged:", newSessionId);
+      } else {
+        console.warn("⚠️ No session ID received from backend");
       }
 
       const assistantMessage: ChatMessageType = {
@@ -162,48 +193,62 @@ export default function ChatScreen() {
         Saya asisten polisi lalu lintas AI Anda.{"\n"}
         Tanya apa saja tentang berkendara!
       </Text>
-      <View style={styles.suggestionsContainer}>
-        <Text style={styles.suggestionsTitle}>Contoh pertanyaan:</Text>
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() => setInputText("Bagaimana kondisi lalu lintas saya?")}
-        >
-          <Text style={styles.suggestionText}>
-            Bagaimana kondisi lalu lintas saya?
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() => setInputText("Berapa batas kecepatan di jalan tol?")}
-        >
-          <Text style={styles.suggestionText}>
-            Berapa batas kecepatan di jalan tol?
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Debug Header with Clear Button */}
-      {messages.length > 0 && (
-        <View style={styles.debugHeader}>
-          <Text style={styles.debugText}>
-            Session: {sessionId ? "Active" : "None"}
+      {/* Status Header - Always visible */}
+      <View style={styles.statusHeader}>
+        {/* Left: Session ID */}
+        <View style={styles.sessionInfo}>
+          <Text style={styles.sessionLabel}>Session:</Text>
+          <Text style={styles.sessionValue}>
+            {sessionId ? sessionId.substring(0, 8) + "..." : "None"}
           </Text>
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => {
-              clearMessages();
-              console.log("🧹 Chat cleared");
-            }}
-          >
-            <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-            <Text style={styles.clearText}>Clear</Text>
-          </TouchableOpacity>
         </View>
-      )}
+
+        {/* Right: Backend Status & Clear Button */}
+        <View style={styles.rightActions}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
+            ]}
+          >
+            <View
+              style={[
+                styles.statusDot,
+                { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
+              ]}
+            />
+            <Text style={styles.statusText}>
+              {backendConnected === null
+                ? "Checking..."
+                : backendConnected
+                ? "Connected"
+                : "Offline"}
+            </Text>
+            {!backendConnected && backendConnected !== null && (
+              <TouchableOpacity onPress={checkBackendConnection}>
+                <Ionicons name="refresh" size={14} color="#FF3B30" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {messages.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() => {
+                clearMessages();
+                console.log("🧹 Chat cleared, session reset");
+              }}
+            >
+              <Ionicons name="trash-outline" size={16} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -271,7 +316,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
   },
-  debugHeader: {
+  statusHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -281,23 +326,53 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E5E5EA",
   },
-  debugText: {
+  sessionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  sessionLabel: {
     fontSize: 12,
     color: COLORS.TEXT_SECONDARY,
+    fontWeight: "600",
+  },
+  sessionValue: {
+    fontSize: 12,
+    color: COLORS.PRIMARY,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  rightActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.TEXT_PRIMARY,
   },
   clearButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    justifyContent: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "#FFE5E5",
-  },
-  clearText: {
-    fontSize: 12,
-    color: "#FF3B30",
-    marginLeft: 4,
-    fontWeight: "600",
   },
   keyboardView: {
     flex: 1,
@@ -326,28 +401,6 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     textAlign: "center",
     lineHeight: 24,
-  },
-  suggestionsContainer: {
-    marginTop: 24,
-    width: "100%",
-  },
-  suggestionsTitle: {
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 12,
-    fontWeight: "600",
-  },
-  suggestionButton: {
-    backgroundColor: COLORS.CARD,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-  },
-  suggestionText: {
-    fontSize: 14,
-    color: COLORS.PRIMARY,
   },
   loadingContainer: {
     flexDirection: "row",

@@ -29,9 +29,11 @@ export default function ChatScreen() {
     traffic,
     messages,
     chatLoading,
+    sessionId,
     addMessage,
     clearMessages,
     setChatLoading,
+    setSessionId,
   } = useStore();
 
   const [inputText, setInputText] = useState("");
@@ -135,17 +137,35 @@ export default function ChatScreen() {
       console.log("📤 Sending to backend:", {
         message: userMessage.content,
         context,
+        sessionId: sessionId || "(new session)",
       });
 
-      // Get AI response from backend
-      const response = await sendChatMessage(userMessage.content, context);
+      // Get AI response from backend with session management
+      const response = await sendChatMessage(
+        userMessage.content,
+        context,
+        sessionId
+      );
 
       console.log("📥 Received from backend:", response);
+
+      // Save/update session ID from backend
+      if (response.sessionId && response.sessionId !== sessionId) {
+        console.log("💾 Updating session ID:", {
+          old: sessionId,
+          new: response.sessionId,
+        });
+        setSessionId(response.sessionId);
+      } else if (response.sessionId) {
+        console.log("✅ Session ID unchanged:", response.sessionId);
+      } else {
+        console.warn("⚠️ No session ID received from backend");
+      }
 
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: response,
+        content: response.response,
         timestamp: Date.now(),
       };
 
@@ -153,7 +173,7 @@ export default function ChatScreen() {
 
       // Auto-speak response if enabled
       if (autoSpeak) {
-        speak(response);
+        speak(response.response);
       }
     } catch (error: any) {
       console.error("❌ Chat error:", error);
@@ -257,88 +277,10 @@ export default function ChatScreen() {
         size={64}
         color={COLORS.TEXT_SECONDARY}
       />
-      <Text style={styles.emptyTitle}>Halo! 👋</Text>
+      <Text style={styles.emptyTitle}>Belum ada chat</Text>
       <Text style={styles.emptyText}>
-        Saya asisten polisi lalu lintas AI.{"\n"}
-        Tanya apa saja tentang berkendara!
+        Mulai percakapan dengan asisten AI Anda
       </Text>
-
-      {/* Backend Status */}
-      <View
-        style={[
-          styles.statusBadge,
-          { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
-        ]}
-      >
-        <View
-          style={[
-            styles.statusDot,
-            { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
-          ]}
-        />
-        <Text style={styles.statusText}>
-          Backend:{" "}
-          {backendConnected === null
-            ? "Checking..."
-            : backendConnected
-            ? "Connected"
-            : "Offline"}
-        </Text>
-        {!backendConnected && (
-          <TouchableOpacity onPress={checkBackendConnection}>
-            <Ionicons name="refresh" size={16} color="#FF3B30" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Quick Questions */}
-      <View style={styles.suggestionsContainer}>
-        <Text style={styles.suggestionsTitle}>💡 Contoh pertanyaan:</Text>
-
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() =>
-            handleQuickQuestion("Bagaimana kondisi lalu lintas saya sekarang?")
-          }
-        >
-          <Ionicons name="car" size={16} color="#007AFF" />
-          <Text style={styles.suggestionText}>
-            Bagaimana kondisi lalu lintas saya?
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() =>
-            handleQuickQuestion("Berapa batas kecepatan di jalan tol?")
-          }
-        >
-          <Ionicons name="speedometer" size={16} color="#007AFF" />
-          <Text style={styles.suggestionText}>
-            Berapa batas kecepatan di jalan tol?
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() => handleQuickQuestion("Apakah kecepatan saya aman?")}
-        >
-          <Ionicons name="shield-checkmark" size={16} color="#007AFF" />
-          <Text style={styles.suggestionText}>Apakah kecepatan saya aman?</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.suggestionButton}
-          onPress={() =>
-            handleQuickQuestion("Ada rute alternatif yang lebih cepat?")
-          }
-        >
-          <Ionicons name="map" size={16} color="#007AFF" />
-          <Text style={styles.suggestionText}>
-            Ada rute alternatif yang lebih cepat?
-          </Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 
@@ -375,6 +317,44 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Status Header - Always visible */}
+      <View style={styles.topHeader}>
+        {/* Left: Session ID */}
+        <View style={styles.sessionInfo}>
+          <Text style={styles.sessionLabel}>Session:</Text>
+          <Text style={styles.sessionValue}>
+            {sessionId ? sessionId.substring(0, 8) + "..." : "None"}
+          </Text>
+        </View>
+
+        {/* Right: Backend Status */}
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
+            ]}
+          />
+          <Text style={styles.statusText}>
+            {backendConnected === null
+              ? "Checking..."
+              : backendConnected
+              ? "Connected"
+              : "Offline"}
+          </Text>
+          {!backendConnected && backendConnected !== null && (
+            <TouchableOpacity onPress={checkBackendConnection}>
+              <Ionicons name="refresh" size={14} color="#FF3B30" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
@@ -443,6 +423,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.BACKGROUND,
   },
+  topHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: COLORS.CARD,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E5EA",
+  },
+  sessionInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  sessionLabel: {
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
+    fontWeight: "600",
+  },
+  sessionValue: {
+    fontSize: 12,
+    color: COLORS.PRIMARY,
+    fontWeight: "700",
+    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
   keyboardView: {
     flex: 1,
   },
@@ -470,7 +476,6 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_SECONDARY,
     textAlign: "center",
     lineHeight: 24,
-    marginBottom: 24,
   },
   statusBadge: {
     flexDirection: "row",
@@ -478,7 +483,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
-    marginBottom: 24,
     gap: 8,
   },
   statusDot: {
