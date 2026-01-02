@@ -26,9 +26,6 @@ export default {
         NSSpeechRecognitionUsageDescription:
           "Aplikasi membutuhkan akses speech recognition untuk voice input.",
       },
-      config: {
-        googleMapsApiKey: "AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw",
-      },
     },
     android: {
       adaptiveIcon: {
@@ -41,12 +38,6 @@ export default {
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO",
       ],
-      usesCleartextTraffic: true,
-      config: {
-        googleMaps: {
-          apiKey: "AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw",
-        },
-      },
     },
     web: {
       favicon: "./assets/favicon.png",

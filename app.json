@@ -33,7 +33,13 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO"
-      ]
+      ],
+      "usesCleartextTraffic": true,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -40,7 +40,7 @@ export default function ChatScreen() {
   const [backendConnected, setBackendConnected] = useState<boolean | null>(
     null
   );
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Speech recognition event listeners (disabled for Expo Go)
@@ -316,7 +316,7 @@ export default function ChatScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       {/* Status Header - Always visible */}
       <View style={styles.topHeader}>
         {/* Left: Session ID */}
@@ -560,6 +560,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#E5E5EA",
     gap: 8,
+    marginBottom: 30,
   },
   input: {
     flex: 1,

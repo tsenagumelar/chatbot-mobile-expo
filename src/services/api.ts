@@ -97,9 +97,14 @@ export async function sendChatMessage(
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.error || error.message || "Network error"
-      );
+      const errorMsg = [
+        `Backend URL: ${API_BASE_URL}`,
+        `Endpoint: /chat`,
+        `Error: ${error.response?.data?.error || error.message}`,
+        error.code ? `Code: ${error.code}` : null,
+        !error.response ? "⚠️ Backend Offline/Tidak dapat dijangkau" : `HTTP Status: ${error.response?.status}`,
+      ].filter(Boolean).join("\n");
+      throw new Error(errorMsg);
     }
     throw error;
   }
@@ -124,9 +129,14 @@ export async function getTrafficInfo(
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.error || error.message || "Network error"
-      );
+      const errorMsg = [
+        `Backend URL: ${API_BASE_URL}`,
+        `Endpoint: /traffic`,
+        `Error: ${error.response?.data?.error || error.message}`,
+        error.code ? `Code: ${error.code}` : null,
+        !error.response ? "⚠️ Backend Offline/Tidak dapat dijangkau" : `HTTP Status: ${error.response?.status}`,
+      ].filter(Boolean).join("\n");
+      throw new Error(errorMsg);
     }
     throw error;
   }
@@ -152,9 +162,14 @@ export async function getRoutesByAddress(
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.error || error.message || "Network error"
-      );
+      const errorMsg = [
+        `Backend URL: ${API_BASE_URL}`,
+        `Endpoint: /routes`,
+        `Error: ${error.response?.data?.error || error.message}`,
+        error.code ? `Code: ${error.code}` : null,
+        !error.response ? "⚠️ Backend Offline/Tidak dapat dijangkau" : `HTTP Status: ${error.response?.status}`,
+      ].filter(Boolean).join("\n");
+      throw new Error(errorMsg);
     }
     throw error;
   }
@@ -176,9 +191,14 @@ export async function getRoutesByCoords(
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.error || error.message || "Network error"
-      );
+      const errorMsg = [
+        `Backend URL: ${API_BASE_URL}`,
+        `Endpoint: /routes/coords`,
+        `Error: ${error.response?.data?.error || error.message}`,
+        error.code ? `Code: ${error.code}` : null,
+        !error.response ? "⚠️ Backend Offline/Tidak dapat dijangkau" : `HTTP Status: ${error.response?.status}`,
+      ].filter(Boolean).join("\n");
+      throw new Error(errorMsg);
     }
     throw error;
   }

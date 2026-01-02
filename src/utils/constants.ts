@@ -1,9 +1,5 @@
-// API Configuration
-const DEV_API_URL = "http://10.74.26.102:8080/api/v1";
-const PROD_API_URL = "https://your-production-url.com/api/v1";
-
 // Auto-detect development mode
-export const API_BASE_URL = __DEV__ ? DEV_API_URL : PROD_API_URL;
+export const API_BASE_URL = "http://72.61.213.6:8080/api/v1";
 
 // OpenStreetMap Tile Servers (FREE!)
 export const MAP_TILES = {

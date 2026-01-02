@@ -328,7 +328,7 @@ export default function GameScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       {!gameStarted
         ? renderStartScreen()
         : showResult

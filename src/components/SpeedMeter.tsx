@@ -17,7 +17,9 @@ export default function SpeedMeter({
   return (
     <View style={styles.container}>
       <View style={[styles.meter, isOverLimit && styles.meterDanger]}>
-        <Text style={styles.speedText}>{Math.round(speed)}</Text>
+        <Text style={styles.speedText}>
+          {Math.round(speed < 0 ? 0 : speed)}
+        </Text>
         <Text style={styles.unitText}>km/h</Text>
       </View>
 

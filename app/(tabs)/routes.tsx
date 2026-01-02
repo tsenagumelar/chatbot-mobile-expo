@@ -222,7 +222,7 @@ export default function RoutesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.searchContainer}>
           <Text style={styles.title}>Cari Rute 🗺️</Text>
