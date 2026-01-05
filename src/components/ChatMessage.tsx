@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { ChatMessage as ChatMessageType } from "../types";
 import { COLORS } from "../utils/constants";
 
@@ -17,16 +18,17 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       : JSON.stringify(message.content);
 
   return (
-    <View
-      style={[
-        styles.container,
-        isUser ? styles.userContainer : styles.assistantContainer,
-      ]}
-    >
+    <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
+      {!isUser && (
+        <View style={styles.avatar}>
+          <Ionicons name="shield-checkmark" size={16} color="#fff" />
+        </View>
+      )}
       <View
         style={[
           styles.bubble,
           isUser ? styles.userBubble : styles.assistantBubble,
+          !isUser && styles.shadow,
         ]}
       >
         <Text
@@ -34,70 +36,61 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         >
           {content}
         </Text>
-        <Text
-          style={[
-            styles.timestamp,
-            isUser ? styles.userTimestamp : styles.assistantTimestamp,
-          ]}
-        >
-          {new Date(message.timestamp).toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginVertical: 4,
+  row: {
+    flex: 1,
+    flexDirection: "row",
     paddingHorizontal: 16,
+    marginVertical: 6,
+    gap: 10,
   },
-  userContainer: {
-    alignItems: "flex-end",
+  rowUser: {
+    justifyContent: "flex-end",
   },
-  assistantContainer: {
-    alignItems: "flex-start",
+  rowAssistant: {
+    justifyContent: "flex-start",
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#1239C2",
+    alignItems: "center",
+    justifyContent: "center",
   },
   bubble: {
-    maxWidth: "80%",
-    padding: 12,
-    borderRadius: 16,
+    maxWidth: "82%",
+    padding: 14,
+    borderRadius: 14,
   },
   userBubble: {
-    backgroundColor: COLORS.PRIMARY,
-    borderBottomRightRadius: 4,
+    backgroundColor: "#F0F0F5",
+    borderBottomRightRadius: 6,
   },
   assistantBubble: {
-    backgroundColor: COLORS.CARD,
-    borderBottomLeftRadius: 4,
+    backgroundColor: "#FFFFFF",
+    borderBottomLeftRadius: 6,
+  },
+  shadow: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   text: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 22,
   },
   userText: {
-    color: "white",
+    color: COLORS.TEXT_PRIMARY,
   },
   assistantText: {
     color: COLORS.TEXT_PRIMARY,
-  },
-  timestamp: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  userTimestamp: {
-    color: "rgba(255, 255, 255, 0.7)",
-    textAlign: "right",
-  },
-  assistantTimestamp: {
-    color: COLORS.TEXT_SECONDARY,
   },
 });

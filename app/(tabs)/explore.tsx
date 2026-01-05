@@ -1,18 +1,17 @@
 import ChatMessage from "@/src/components/ChatMessage";
-import VoiceButton from "@/src/components/VoiceButton";
 import { sendChatMessage, testConnection } from "@/src/services/api";
-import { isSpeaking, speak, stopSpeaking } from "@/src/services/voice";
+import { stopSpeaking } from "@/src/services/voice";
 import { useStore } from "@/src/store/useStore";
 import type { ChatMessage as ChatMessageType } from "@/src/types";
 import { COLORS } from "@/src/utils/constants";
-import AppHeader from "@/src/components/AppHeader";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -22,6 +21,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
 export default function ChatScreen() {
   const {
@@ -36,15 +37,19 @@ export default function ChatScreen() {
     clearMessages,
     setChatLoading,
     setSessionId,
-    logout,
   } = useStore();
 
   const [inputText, setInputText] = useState("");
   const [backendConnected, setBackendConnected] = useState<boolean | null>(
     null
   );
-  const [autoSpeak, setAutoSpeak] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const statusColor =
+    backendConnected === null
+      ? "#D1D5DB"
+      : backendConnected
+      ? "#34C759"
+      : "#FF3B30";
 
   // Speech recognition event listeners (disabled for Expo Go)
   // Uncomment when using Development Build
@@ -174,10 +179,6 @@ export default function ChatScreen() {
 
       addMessage(assistantMessage);
 
-      // Auto-speak response if enabled
-      if (autoSpeak) {
-        speak(response.response);
-      }
     } catch (error: any) {
       console.error("❌ Chat error:", error);
 
@@ -193,70 +194,6 @@ export default function ChatScreen() {
     } finally {
       setChatLoading(false);
     }
-  };
-
-  const handleVoicePress = async () => {
-    // Check if currently speaking
-    const speaking = await isSpeaking();
-
-    if (speaking) {
-      // Stop current speech
-      await stopSpeaking();
-      return;
-    }
-
-    // For Expo Go: Show info about voice input
-    Alert.alert(
-      "🎤 Voice Input",
-      "Voice input (Speech-to-Text) memerlukan Development Build.\n\nUntuk MVP, gunakan:\n• Quick questions di bawah\n• Ketik pertanyaan manual\n• Voice output (TTS) sudah aktif! 🔊",
-      [
-        {
-          text: "Try Quick Question",
-          onPress: () =>
-            handleQuickQuestion("Bagaimana kondisi lalu lintas saya?"),
-        },
-        { text: "OK" },
-      ]
-    );
-
-    // Uncomment ini kalau sudah pakai Development Build:
-    /*
-    try {
-      const available = await isSpeechRecognitionAvailable();
-      if (!available) {
-        Alert.alert('Voice Input', 'Speech recognition not available');
-        return;
-      }
-
-      await startListening(
-        (transcript) => {
-          setInputText(transcript);
-          setIsListening(false);
-        },
-        (error) => {
-          setIsListening(false);
-          Alert.alert('Voice Error', error);
-        }
-      );
-    } catch (error: any) {
-      Alert.alert('Voice Input Error', error.message);
-    }
-    */
-  };
-
-  const handleQuickQuestion = (question: string) => {
-    setInputText(question);
-  };
-
-  const toggleAutoSpeak = () => {
-    setAutoSpeak(!autoSpeak);
-    const message: ChatMessageType = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content: `🔊 Auto-speak ${!autoSpeak ? "enabled" : "disabled"}`,
-      timestamp: Date.now(),
-    };
-    addMessage(message);
   };
 
   const handleClearChat = () => {
@@ -287,80 +224,44 @@ export default function ChatScreen() {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.headerActions}>
-      <TouchableOpacity style={styles.headerButton} onPress={toggleAutoSpeak}>
-        <Ionicons
-          name={autoSpeak ? "volume-high" : "volume-mute"}
-          size={20}
-          color={autoSpeak ? "#007AFF" : "#8E8E93"}
-        />
-        <Text
-          style={[
-            styles.headerButtonText,
-            !autoSpeak && styles.headerButtonTextMuted,
-          ]}
-        >
-          Auto-speak {autoSpeak ? "ON" : "OFF"}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.headerButton}
-        onPress={handleClearChat}
-        disabled={messages.length === 0}
-      >
-        <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-        <Text style={[styles.headerButtonText, { color: "#FF3B30" }]}>
-          Clear
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <AppHeader
-        onLogout={() => {
-          logout();
-          router.replace("/login");
-        }}
-      />
-      {/* Status Header - Always visible */}
-      <View style={styles.topHeader}>
-        {/* Left: Session ID */}
-        <View style={styles.sessionInfo}>
-          <Text style={styles.sessionLabel}>Session:</Text>
-          <Text style={styles.sessionValue}>
-            {sessionId ? sessionId.substring(0, 8) + "..." : "None"}
-          </Text>
-        </View>
-
-        {/* Right: Backend Status */}
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
-          ]}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.back()}
         >
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
-            ]}
-          />
-          <Text style={styles.statusText}>
-            {backendConnected === null
-              ? "Checking..."
-              : backendConnected
-              ? "Connected"
-              : "Offline"}
-          </Text>
-          {!backendConnected && backendConnected !== null && (
-            <TouchableOpacity onPress={checkBackendConnection}>
-              <Ionicons name="refresh" size={14} color="#FF3B30" />
-            </TouchableOpacity>
-          )}
+          <Ionicons name="chevron-back" size={22} color="#111827" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Image source={polantasLogo} style={styles.headerLogo} />
+          <View>
+            <Text style={styles.headerTitle}>Polantas Menyapa</Text>
+            <View style={styles.statusRow}>
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: statusColor },
+                ]}
+              />
+              <Text style={styles.statusText}>
+                {backendConnected === null
+                  ? "Menghubungkan..."
+                  : backendConnected
+                  ? "Online"
+                  : "Offline"}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleClearChat}
+            disabled={messages.length === 0}
+          >
+            <Ionicons name="create-outline" size={20} color="#111827" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -380,7 +281,6 @@ export default function ChatScreen() {
             messages.length === 0 && styles.messagesListEmpty,
           ]}
           ListEmptyComponent={renderEmpty}
-          ListHeaderComponent={messages.length > 0 ? renderHeader : null}
           onContentSizeChange={() =>
             flatListRef.current?.scrollToEnd({ animated: true })
           }
@@ -395,32 +295,42 @@ export default function ChatScreen() {
         )}
 
         {/* Input Area */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Tanya sesuatu..."
-            placeholderTextColor={COLORS.TEXT_SECONDARY}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            editable={!chatLoading}
-            onSubmitEditing={handleSend}
-            returnKeyType="send"
-          />
-
-          <VoiceButton onPress={handleVoicePress} disabled={chatLoading} />
-
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              (!inputText.trim() || chatLoading) && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!inputText.trim() || chatLoading}
-          >
-            <Ionicons name="send" size={24} color="white" />
-          </TouchableOpacity>
+        <View style={styles.bottomBar}>
+          <View style={styles.inputContainer}>
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.circleButton}>
+                <Ionicons name="image-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton}>
+                <Ionicons name="camera-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.circleButton}>
+                <Ionicons name="location-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Type here..."
+              placeholderTextColor="#9CA3AF"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+              editable={!chatLoading}
+              onSubmitEditing={handleSend}
+              returnKeyType="send"
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputText.trim() || chatLoading) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSend}
+              disabled={!inputText.trim() || chatLoading}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -430,39 +340,69 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: "#FFFFFF",
   },
-  topHeader: {
+  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: COLORS.CARD,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    borderBottomColor: "#EEF2F7",
+    backgroundColor: "#FFFFFF",
   },
-  sessionInfo: {
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F4F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerLogo: {
+    width: 28,
+    height: 34,
+    resizeMode: "contain",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+  statusRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    marginTop: 2,
   },
-  sessionLabel: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    fontWeight: "600",
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  sessionValue: {
+  statusText: {
     fontSize: 12,
-    color: COLORS.PRIMARY,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+    color: "#6B7280",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   keyboardView: {
     flex: 1,
   },
   messagesList: {
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 120,
   },
   messagesListEmpty: {
     flexGrow: 1,
@@ -474,80 +414,17 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
+    fontSize: 15,
+    color: "#6B7280",
     textAlign: "center",
-    lineHeight: 24,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  suggestionsContainer: {
-    width: "100%",
-  },
-  suggestionsTitle: {
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 12,
-    fontWeight: "600",
-  },
-  suggestionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.CARD,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-    gap: 8,
-  },
-  suggestionText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.PRIMARY,
-  },
-  headerActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
-  },
-  headerButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  headerButtonText: {
-    fontSize: 14,
-    color: "#007AFF",
-    fontWeight: "600",
-  },
-  headerButtonTextMuted: {
-    color: "#8E8E93",
+    lineHeight: 22,
   },
   loadingContainer: {
     flexDirection: "row",
@@ -558,35 +435,54 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    fontStyle: "italic",
+    color: "#6B7280",
+  },
+  bottomBar: {
+    backgroundColor: "#0C3AC5",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    backgroundColor: COLORS.CARD,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     gap: 8,
-    marginBottom: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  circleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F4F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   input: {
     flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: COLORS.TEXT_PRIMARY,
+    minHeight: 36,
+    maxHeight: 120,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 15,
+    color: "#111827",
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.PRIMARY,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#0C3AC5",
     justifyContent: "center",
     alignItems: "center",
   },
