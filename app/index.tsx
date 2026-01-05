@@ -1,9 +1,10 @@
-import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import { useStore } from "@/src/store/useStore";
-import { COLORS } from "@/src/utils/constants";
+import { router } from "expo-router";
+import { useEffect } from "react";
+import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
 export default function SplashScreen() {
   const { user, hasLocationPermission } = useStore();
@@ -23,8 +24,8 @@ export default function SplashScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.logoWrapper}>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>LL</Text>
+        <View style={styles.logoFrame}>
+          <Image source={polantasLogo} style={styles.logoImage} />
         </View>
         <Text style={styles.title}>POLANTAS</Text>
         <Text style={styles.title}>MENYAPA</Text>
@@ -40,7 +41,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0C3AC5",
+    backgroundColor: "#FFF",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
@@ -49,23 +50,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  badge: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+  logoFrame: {
+    width: 140,
+    height: 160,
+    borderRadius: 16,
+    padding: 10,
+    backgroundColor: "#FFF",
     borderWidth: 3,
     borderColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#163EDB",
   },
-  badgeText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 22,
+  logoImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
   title: {
-    color: "#fff",
+    color: "#0C3AC5",
     fontSize: 32,
     fontWeight: "900",
     letterSpacing: 1,

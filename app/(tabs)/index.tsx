@@ -1,8 +1,10 @@
+import AppHeader from "@/src/components/AppHeader";
 import SpeedMeter from "@/src/components/SpeedMeter";
 import { getTrafficInfo } from "@/src/services/api";
 import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -12,9 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
-import { router } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const {
@@ -190,50 +191,49 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.greetingContainer}>
-            <View style={styles.greetingRow}>
-              <TouchableOpacity
-                onPress={handleLogout}
-                style={styles.logoutButton}
-              >
-                <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-              </TouchableOpacity>
-              <View>
-                <Text style={styles.greetingTitle}>
-                  Halo{user?.name ? "," : ""}
-                </Text>
-                <Text style={styles.greetingName}>
-                  {user?.name || "Pengguna"}
-                </Text>
-              </View>
+        <AppHeader onLogout={handleLogout} />
+
+        {/* Quick stats */}
+        <View style={styles.quickRow}>
+          <View style={styles.quickCard}>
+            <View style={styles.quickIconWrapper}>
+              <Ionicons name="locate" size={18} color="#0B57D0" />
+            </View>
+            <View>
+              <Text style={styles.quickLabel}>Tracking</Text>
+              <Text style={styles.quickValue}>{isTracking ? "Aktif" : "Idle"}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={refreshLocation}
-            style={styles.refreshButton}
-          >
-            <Ionicons name="refresh" size={24} color="#007AFF" />
-          </TouchableOpacity>
+          <View style={styles.quickCard}>
+            <View style={[styles.quickIconWrapper, { backgroundColor: "#FFF4E5" }]}>
+              <Ionicons name="speedometer" size={18} color="#FB923C" />
+            </View>
+            <View>
+              <Text style={styles.quickLabel}>Kecepatan</Text>
+              <Text style={styles.quickValue}>{speed > 0 ? speed : 0} km/j</Text>
+            </View>
+          </View>
+          <View style={styles.quickCard}>
+            <View style={[styles.quickIconWrapper, { backgroundColor: "#E4F8ED" }]}>
+              <Ionicons name="time" size={18} color="#16A34A" />
+            </View>
+            <View>
+              <Text style={styles.quickLabel}>Terakhir</Text>
+              <Text style={styles.quickValue}>
+                {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
+              </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Status Card */}
-        <View style={styles.card}>
-          <View style={styles.statusRow}>
-            <View
-              style={[styles.statusDot, isTracking && styles.statusActive]}
-            />
-            <Text style={styles.statusText}>
-              {isTracking ? "Tracking Active" : "Not Tracking"}
-            </Text>
-          </View>
-          {lastUpdate && (
-            <Text style={styles.lastUpdate}>
-              Last update: {lastUpdate.toLocaleTimeString()}
-            </Text>
-          )}
+        {/* Refresh row replaces old status */}
+        <View style={styles.refreshRow}>
+          <Text style={styles.subGreeting}>Perbarui data lokasi & lalu lintas</Text>
+          <TouchableOpacity onPress={refreshLocation} style={styles.refreshButton}>
+            <Ionicons name="refresh" size={22} color="#0B57D0" />
+          </TouchableOpacity>
         </View>
 
         {/* Location Card */}
@@ -354,59 +354,93 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F2F2F7",
+    backgroundColor: "#FFFFFF",
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  scrollContent: {
+    paddingBottom: 24,
   },
-  greetingContainer: {
-    flex: 1,
-  },
-  greetingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  greetingTitle: {
-    fontSize: 16,
+  subGreeting: {
+    fontSize: 14,
     color: "#6B7280",
-    fontWeight: "600",
-  },
-  greetingName: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#111827",
-    marginTop: 2,
-  },
-  logoutButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#FEE2E2",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#FCA5A5",
+    lineHeight: 20,
+    paddingHorizontal: 16,
+    marginBottom: 8,
   },
   refreshButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: "white",
+    borderRadius: 14,
+    backgroundColor: "#E8F0FE",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  quickRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  quickCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  quickIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#E8F0FE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  quickLabel: {
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  quickValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0B1E6B",
+  },
+  refreshRow: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   card: {
     backgroundColor: "white",
@@ -429,29 +463,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginLeft: 8,
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#8E8E93",
-    marginRight: 8,
-  },
-  statusActive: {
-    backgroundColor: "#34C759",
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  lastUpdate: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginTop: 4,
   },
   addressText: {
     fontSize: 16,

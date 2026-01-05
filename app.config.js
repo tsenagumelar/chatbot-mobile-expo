@@ -1,14 +1,14 @@
 export default {
   expo: {
-    name: "Chat Assistant",
+    name: "POLANTAS MENYAPA",
     slug: "police-assistant-app",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/icon.png",
+    icon: "./assets/images/Polantas Logo.png",
     scheme: "policeassistant",
     userInterfaceStyle: "light",
     splash: {
-      image: "./assets/splash.png",
+      image: "./assets/images/Polantas Logo.png",
       resizeMode: "contain",
       backgroundColor: "#007AFF",
     },
@@ -32,7 +32,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/adaptive-icon.png",
+        foregroundImage: "./assets/images/Polantas Logo.png",
         backgroundColor: "#007AFF",
       },
       package: "com.policeassistant.app",
@@ -49,7 +49,7 @@ export default {
       },
     },
     web: {
-      favicon: "./assets/favicon.png",
+      favicon: "./assets/images/Polantas Logo.png",
     },
     plugins: [
       "expo-router",

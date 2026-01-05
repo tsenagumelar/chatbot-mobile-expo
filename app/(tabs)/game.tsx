@@ -1,6 +1,9 @@
 import quizData from "@/src/data/quizQuestions.json";
+import AppHeader from "@/src/components/AppHeader";
+import { useStore } from "@/src/store/useStore";
 import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Animated,
@@ -35,6 +38,7 @@ interface QuizResult {
 }
 
 export default function GameScreen() {
+  const { logout } = useStore();
   const [gameStarted, setGameStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedQuestions, setSelectedQuestions] = useState<QuizQuestion[]>(
@@ -329,6 +333,12 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <AppHeader
+        onLogout={() => {
+          logout();
+          router.replace("/login");
+        }}
+      />
       {!gameStarted
         ? renderStartScreen()
         : showResult

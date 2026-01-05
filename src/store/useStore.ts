@@ -13,6 +13,7 @@ interface UserProfile {
   name: string;
   phone: string;
   email: string;
+  dob?: string;
 }
 
 interface AppState {

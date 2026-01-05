@@ -17,6 +17,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useStore } from "@/src/store/useStore";
 import { COLORS } from "@/src/utils/constants";
 import type { IncidentReport, IncidentType } from "@/src/types";
+import AppHeader from "@/src/components/AppHeader";
+import { router } from "expo-router";
 
 const INCIDENT_TYPES: { label: string; value: IncidentType }[] = [
   { label: "Kecelakaan", value: "kecelakaan" },
@@ -33,6 +35,7 @@ export default function ReportsScreen() {
     addReport,
     deleteReport,
     hasLocationPermission,
+    logout,
   } = useStore();
 
   const [incidentType, setIncidentType] = useState<IncidentType>("kecelakaan");
@@ -165,6 +168,12 @@ export default function ReportsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <AppHeader
+        onLogout={() => {
+          logout();
+          router.replace("/login");
+        }}
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"

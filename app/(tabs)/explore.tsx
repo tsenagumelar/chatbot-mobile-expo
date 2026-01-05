@@ -5,6 +5,8 @@ import { isSpeaking, speak, stopSpeaking } from "@/src/services/voice";
 import { useStore } from "@/src/store/useStore";
 import type { ChatMessage as ChatMessageType } from "@/src/types";
 import { COLORS } from "@/src/utils/constants";
+import AppHeader from "@/src/components/AppHeader";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -34,6 +36,7 @@ export default function ChatScreen() {
     clearMessages,
     setChatLoading,
     setSessionId,
+    logout,
   } = useStore();
 
   const [inputText, setInputText] = useState("");
@@ -317,6 +320,12 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <AppHeader
+        onLogout={() => {
+          logout();
+          router.replace("/login");
+        }}
+      />
       {/* Status Header - Always visible */}
       <View style={styles.topHeader}>
         {/* Left: Session ID */}

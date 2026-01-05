@@ -6,7 +6,9 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -16,8 +18,31 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const polantasLogo = require("@/assets/images/Polantas Logo.png");
+
+const formatDate = (date: Date) => {
+  const day = `${date.getDate()}`.padStart(2, "0");
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const parseDob = (value?: string) => {
+  if (!value) return null;
+  const parts = value.split(/[-/]/).map((part) => parseInt(part, 10));
+  if (parts.length === 3) {
+    const [d, m, y] = parts;
+    const parsed = new Date(y, m - 1, d);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  const fallback = new Date(value);
+  return Number.isNaN(fallback.getTime()) ? null : fallback;
+};
 
 export default function LoginScreen() {
   const { user, hasLocationPermission, login, setLocationPermission } =
@@ -25,9 +50,36 @@ export default function LoginScreen() {
 
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
+  const [dob, setDob] = useState(user?.dob ?? "");
+  const [dobDate, setDobDate] = useState<Date | null>(
+    user?.dob ? parseDob(user.dob) : null
+  );
+  const [showDobPicker, setShowDobPicker] = useState(false);
   const [checkingLocation, setCheckingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  const handleDateChange = (_: DateTimePickerEvent, selected?: Date) => {
+    if (!selected) return;
+    setDobDate(selected);
+    setDob(formatDate(selected));
+    if (Platform.OS === "ios") {
+      setShowDobPicker(false);
+    }
+  };
+
+  const handleOpenDatePicker = () => {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: dobDate || new Date(),
+        onChange: handleDateChange,
+        mode: "date",
+        maximumDate: new Date(),
+      });
+    } else {
+      setShowDobPicker(true);
+    }
+  };
 
   useEffect(() => {
     if (user && hasLocationPermission) {
@@ -41,9 +93,9 @@ export default function LoginScreen() {
     }
   }, []);
 
-  const handleRequestLocation = async () => {
+  const handleRequestLocation = async (): Promise<boolean> => {
+    setCheckingLocation(true);
     try {
-      setCheckingLocation(true);
       const granted = await requestLocationPermission();
       setLocationPermission(granted);
 
@@ -53,19 +105,16 @@ export default function LoginScreen() {
           "Aktifkan izin lokasi untuk bisa masuk ke aplikasi."
         );
       }
+
+      return granted;
     } finally {
       setCheckingLocation(false);
     }
   };
 
   const validateForm = () => {
-    if (!name.trim() || !phone.trim() || !email.trim()) {
-      setError("Nama, No HP, dan Email wajib diisi.");
-      return false;
-    }
-
-    if (!emailRegex.test(email.trim())) {
-      setError("Format email tidak valid.");
+    if (!name.trim() || !phone.trim() || !dob.trim()) {
+      setError("Nama, No HP, dan tanggal lahir wajib diisi.");
       return false;
     }
 
@@ -73,10 +122,13 @@ export default function LoginScreen() {
     return true;
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!hasLocationPermission) {
-      Alert.alert("Izin lokasi dibutuhkan", "Izinkan lokasi untuk melanjutkan.");
-      return;
+      const granted = await handleRequestLocation();
+      if (!granted) {
+        Alert.alert("Izin lokasi dibutuhkan", "Izinkan lokasi untuk melanjutkan.");
+        return;
+      }
     }
 
     if (!validateForm()) return;
@@ -84,13 +136,17 @@ export default function LoginScreen() {
     login({
       name: name.trim(),
       phone: phone.trim(),
-      email: email.trim().toLowerCase(),
+      email: "",
+      dob: dob.trim(),
     });
 
     router.replace("/(tabs)");
+    setShowForm(false);
   };
 
-  const formDisabled = checkingLocation || !hasLocationPermission;
+  const openForm = () => {
+    setShowForm(true);
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -103,8 +159,8 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.hero}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>LL</Text>
+            <View style={styles.logoFrame}>
+              <Image source={polantasLogo} style={styles.logoImage} />
             </View>
             <Text style={styles.appTitle}>POLANTAS</Text>
             <Text style={styles.appTitle}>MENYAPA</Text>
@@ -145,6 +201,36 @@ export default function LoginScreen() {
               Lokasi wajib diaktifkan agar fitur peta & dashboard berjalan.
             </Text>
 
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={openForm}
+              disabled={checkingLocation}
+            >
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.storageNote}>
+              Data login disimpan lokal (AsyncStorage) agar tetap masuk saat
+              aplikasi dibuka lagi.
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Modal form */}
+      <Modal
+        visible={showForm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowForm(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Lengkapi data</Text>
+            <Text style={styles.modalSubtitle}>
+              Isi nama, nomor HP, dan tanggal lahir untuk melanjutkan.
+            </Text>
+
             <Text style={styles.label}>Nama</Text>
             <TextInput
               style={styles.input}
@@ -152,7 +238,6 @@ export default function LoginScreen() {
               placeholderTextColor="#6E7ACF"
               value={name}
               onChangeText={setName}
-              editable={!formDisabled}
               returnKeyType="next"
             />
 
@@ -164,45 +249,54 @@ export default function LoginScreen() {
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
-              editable={!formDisabled}
-              returnKeyType="next"
-            />
-
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="email@contoh.com"
-              placeholderTextColor="#6E7ACF"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!formDisabled}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
             />
 
+            <Text style={styles.label}>Tanggal Lahir</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={handleOpenDatePicker}
+              activeOpacity={0.8}
+            >
+              <Text style={dob ? styles.inputValue : styles.placeholderText}>
+                {dob || "DD/MM/YYYY"}
+              </Text>
+            </TouchableOpacity>
+            {Platform.OS === "ios" && showDobPicker && (
+              <DateTimePicker
+                value={dobDate || new Date()}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                onChange={handleDateChange}
+                style={styles.datePicker}
+              />
+            )}
+
             {error && <Text style={styles.errorText}>{error}</Text>}
 
-            <TouchableOpacity
-              style={[
-                styles.loginButton,
-                (!hasLocationPermission || checkingLocation) &&
-                  styles.loginButtonDisabled,
-              ]}
-              onPress={handleLogin}
-              disabled={!hasLocationPermission || checkingLocation}
-            >
-              <Text style={styles.loginButtonText}>Login</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.storageNote}>
-              Data login hanya disimpan lokal (AsyncStorage) agar tetap masuk
-              saat aplikasi dibuka lagi.
-            </Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => setShowForm(false)}
+              >
+                <Text style={styles.secondaryText}>Batal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.primaryButton,
+                  checkingLocation && styles.loginButtonDisabled,
+                ]}
+                onPress={handleLogin}
+                disabled={checkingLocation}
+              >
+                <Text style={styles.primaryText}>Simpan & Login</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -210,7 +304,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0C3AC5",
+    backgroundColor: "#FFF",
   },
   content: {
     paddingHorizontal: 24,
@@ -222,31 +316,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  logoCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: "#1845D1",
+  logoFrame: {
+    width: 120,
+    height: 140,
+    borderRadius: 14,
+    backgroundColor: "#FFF",
     borderWidth: 3,
     borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    padding: 8,
   },
-  logoText: {
-    color: "#fff",
-    fontWeight: "900",
-    fontSize: 24,
+  logoImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "contain",
   },
   appTitle: {
     fontSize: 30,
     fontWeight: "900",
-    color: "#fff",
+    color: "#0C3AC5",
     letterSpacing: 1,
   },
   welcome: {
     marginTop: 12,
     fontSize: 20,
-    color: "#E8ECFF",
+    color: "#0C3AC5",
   },
   formCard: {
     backgroundColor: "#F7F8FF",
@@ -315,6 +410,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     marginBottom: 8,
   },
+  inputValue: {
+    fontSize: 16,
+    color: "#0B1E6B",
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: "#6E7ACF",
+  },
+  datePicker: {
+    backgroundColor: "#fff",
+  },
   errorText: {
     color: COLORS.DANGER,
     fontSize: 14,
@@ -342,5 +448,56 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     textAlign: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    gap: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0B1E6B",
+  },
+  modalSubtitle: {
+    color: COLORS.TEXT_SECONDARY,
+    marginBottom: 4,
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 10,
+    marginTop: 8,
+  },
+  secondaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+  },
+  secondaryText: {
+    color: "#6B7280",
+    fontWeight: "700",
+  },
+  primaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.PRIMARY,
+  },
+  primaryText: {
+    color: "#fff",
+    fontWeight: "800",
   },
 });
