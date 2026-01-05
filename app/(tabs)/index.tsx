@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import { router } from "expo-router";
 
 export default function HomeScreen() {
   const {
@@ -21,6 +22,8 @@ export default function HomeScreen() {
     speed,
     address,
     traffic,
+    user,
+    logout,
     setLocation,
     setSpeed,
     setAddress,
@@ -30,6 +33,7 @@ export default function HomeScreen() {
 
   const [isTracking, setIsTracking] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [lastGeocodeAt, setLastGeocodeAt] = useState<number>(0);
 
   useEffect(() => {
     startLocationTracking();
@@ -117,22 +121,26 @@ export default function HomeScreen() {
     setSpeed(Math.round(speedKmh));
     setLastUpdate(new Date());
 
-    // Reverse geocode
-    try {
-      const addresses = await Location.reverseGeocodeAsync({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      });
+    // Reverse geocode (throttled to avoid rate limits)
+    const now = Date.now();
+    if (now - lastGeocodeAt > 30000) {
+      try {
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
 
-      if (addresses.length > 0) {
-        const addr = addresses[0];
-        const formatted = [addr.street, addr.city, addr.region, addr.country]
-          .filter(Boolean)
-          .join(", ");
-        setAddress(formatted || "Unknown Location");
+        if (addresses.length > 0) {
+          const addr = addresses[0];
+          const formatted = [addr.street, addr.city, addr.region, addr.country]
+            .filter(Boolean)
+            .join(", ");
+          setAddress(formatted || "Unknown Location");
+        }
+        setLastGeocodeAt(now);
+      } catch (err) {
+        console.error("Geocode error:", err);
       }
-    } catch (err) {
-      console.error("Geocode error:", err);
     }
   };
 
@@ -175,12 +183,34 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <ScrollView style={styles.scrollView}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>💬 Chat Assistant</Text>
+          <View style={styles.greetingContainer}>
+            <View style={styles.greetingRow}>
+              <TouchableOpacity
+                onPress={handleLogout}
+                style={styles.logoutButton}
+              >
+                <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.greetingTitle}>
+                  Halo{user?.name ? "," : ""}
+                </Text>
+                <Text style={styles.greetingName}>
+                  {user?.name || "Pengguna"}
+                </Text>
+              </View>
+            </View>
+          </View>
           <TouchableOpacity
             onPress={refreshLocation}
             style={styles.refreshButton}
@@ -336,9 +366,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
+  greetingContainer: {
+    flex: 1,
+  },
+  greetingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  greetingTitle: {
+    fontSize: 16,
+    color: "#6B7280",
+    fontWeight: "600",
+  },
+  greetingName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 2,
+  },
+  logoutButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FEE2E2",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
   },
   refreshButton: {
     width: 40,

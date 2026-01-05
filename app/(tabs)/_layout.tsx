@@ -1,12 +1,18 @@
 import { COLORS } from "@/src/utils/constants";
+import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
+  const { user, hasLocationPermission } = useStore();
+
+  if (!user || !hasLocationPermission) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs
@@ -55,12 +61,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="routes"
+        name="reports"
         options={{
-          title: "Rute",
+          title: "Laporan",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? "navigate" : "navigate-outline"}
+              name={focused ? "document-text" : "document-text-outline"}
               size={24}
               color={color}
             />

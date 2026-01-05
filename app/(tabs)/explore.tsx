@@ -554,13 +554,13 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     padding: 12,
     backgroundColor: COLORS.CARD,
     borderTopWidth: 1,
     borderTopColor: "#E5E5EA",
     gap: 8,
-    marginBottom: 30,
+    marginBottom: 0,
   },
   input: {
     flex: 1,

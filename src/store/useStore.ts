@@ -1,10 +1,19 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 import type {
   ChatMessage,
+  IncidentReport,
   LocationData,
   RouteData,
   TrafficData,
 } from "../types";
+
+interface UserProfile {
+  name: string;
+  phone: string;
+  email: string;
+}
 
 interface AppState {
   // Location
@@ -29,6 +38,13 @@ interface AppState {
   // UI
   isMapReady: boolean;
 
+  // Auth
+  user: UserProfile | null;
+  hasLocationPermission: boolean;
+
+  // Reports
+  reports: IncidentReport[];
+
   // Actions
   setLocation: (location: LocationData | null) => void;
   setAddress: (address: string) => void;
@@ -47,50 +63,96 @@ interface AppState {
   setRoutesLoading: (loading: boolean) => void;
 
   setMapReady: (ready: boolean) => void;
+
+  login: (user: UserProfile) => void;
+  logout: () => void;
+  setLocationPermission: (granted: boolean) => void;
+
+  addReport: (report: IncidentReport) => void;
+  deleteReport: (id: string) => void;
 }
 
-export const useStore = create<AppState>((set) => ({
-  // Initial state
-  location: null,
-  address: "Unknown location",
-  speed: 0,
+export const useStore = create<AppState>()(
+  persist(
+    (set) => ({
+      // Initial state
+      location: null,
+      address: "Unknown location",
+      speed: 0,
 
-  traffic: null,
-  trafficLoading: false,
+      traffic: null,
+      trafficLoading: false,
 
-  messages: [],
-  chatLoading: false,
-  sessionId: null,
+      messages: [],
+      chatLoading: false,
+      sessionId: null,
 
-  routes: [],
-  selectedRoute: null,
-  routesLoading: false,
+      routes: [],
+      selectedRoute: null,
+      routesLoading: false,
 
-  isMapReady: false,
+      isMapReady: false,
 
-  // Location actions
-  setLocation: (location) => set({ location }),
-  setAddress: (address) => set({ address }),
-  setSpeed: (speed) => set({ speed }),
+      user: null,
+      hasLocationPermission: false,
 
-  // Traffic actions
-  setTraffic: (traffic) => set({ traffic }),
-  setTrafficLoading: (loading) => set({ trafficLoading: loading }),
+      reports: [],
 
-  // Chat actions
-  addMessage: (message) =>
-    set((state) => ({
-      messages: [...state.messages, message],
-    })),
-  clearMessages: () => set({ messages: [], sessionId: null }),
-  setChatLoading: (loading) => set({ chatLoading: loading }),
-  setSessionId: (sessionId) => set({ sessionId }),
+      // Location actions
+      setLocation: (location) => set({ location }),
+      setAddress: (address) => set({ address }),
+      setSpeed: (speed) => set({ speed }),
 
-  // Routes actions
-  setRoutes: (routes) => set({ routes }),
-  setSelectedRoute: (route) => set({ selectedRoute: route }),
-  setRoutesLoading: (loading) => set({ routesLoading: loading }),
+      // Traffic actions
+      setTraffic: (traffic) => set({ traffic }),
+      setTrafficLoading: (loading) => set({ trafficLoading: loading }),
 
-  // UI actions
-  setMapReady: (ready) => set({ isMapReady: ready }),
-}));
+      // Chat actions
+      addMessage: (message) =>
+        set((state) => ({
+          messages: [...state.messages, message],
+        })),
+      clearMessages: () => set({ messages: [], sessionId: null }),
+      setChatLoading: (loading) => set({ chatLoading: loading }),
+      setSessionId: (sessionId) => set({ sessionId }),
+
+      // Routes actions
+      setRoutes: (routes) => set({ routes }),
+      setSelectedRoute: (route) => set({ selectedRoute: route }),
+      setRoutesLoading: (loading) => set({ routesLoading: loading }),
+
+      // UI actions
+      setMapReady: (ready) => set({ isMapReady: ready }),
+
+      login: (user) => set({ user }),
+      logout: () =>
+        set({
+          user: null,
+          sessionId: null,
+          messages: [],
+        }),
+      setLocationPermission: (granted) =>
+        set({
+          hasLocationPermission: granted,
+        }),
+
+      addReport: (report) =>
+        set((state) => ({
+          reports: [report, ...state.reports].slice(0, 100),
+        })),
+      deleteReport: (id) =>
+        set((state) => ({
+          reports: state.reports.filter((r) => r.id !== id),
+        })),
+    }),
+    {
+      name: "assistant-storage",
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        user: state.user,
+        hasLocationPermission: state.hasLocationPermission,
+        reports: state.reports,
+      }),
+    }
+  )
+);

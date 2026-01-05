@@ -98,3 +98,22 @@ export interface RouteRequestCoords {
   destination_lat: number;
   destination_lng: number;
 }
+
+// Report types
+export type IncidentType = "kecelakaan" | "pelanggaran" | "lainnya";
+
+export interface IncidentReport {
+  id: string;
+  type: IncidentType;
+  customType?: string;
+  description: string;
+  photoUri?: string;
+  isAnonymous: boolean;
+  reporterName?: string;
+  reporterPhone?: string;
+  reporterEmail?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  createdAt: number;
+}
