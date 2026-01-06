@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { AppHeader } from "@/src/components/AppHeader";
 import SpeedMeter from "@/src/components/SpeedMeter";
+import WarningToast from "@/src/components/WarningToast";
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { getTrafficInfo } from "@/src/services/api";
 import { useStore } from "@/src/store/useStore";
@@ -39,6 +40,7 @@ export default function HomeScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastGeocodeAt, setLastGeocodeAt] = useState<number>(0);
+  const [showWarningToast, setShowWarningToast] = useState(false);
 
   useEffect(() => {
     startLocationTracking();
@@ -193,8 +195,18 @@ export default function HomeScreen() {
     router.replace("/login");
   };
 
+  const handleLocationCardPress = () => {
+    setShowWarningToast(true);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      {/* Warning Toast */}
+      <WarningToast
+        visible={showWarningToast}
+        onHide={() => setShowWarningToast(false)}
+      />
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <AppHeader onLogout={handleLogout} />
@@ -241,7 +253,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Location Card */}
-        <View style={styles.card}>
+        <TouchableOpacity style={styles.card} onPress={handleLocationCardPress} activeOpacity={0.7}>
           <View style={styles.cardHeader}>
             <Ionicons name="location" size={20} color="#007AFF" />
             <Text style={styles.cardTitle}>Current Location</Text>
@@ -255,7 +267,7 @@ export default function HomeScreen() {
           <Text style={styles.accuracyText}>
             Accuracy: ±{location?.accuracy?.toFixed(0) || "N/A"}m
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Speed Card */}
         <View style={styles.card}>

@@ -4,6 +4,8 @@ import { Alert, Image, Linking, StyleSheet, Text, View } from "react-native";
 import type { ChatMessage as ChatMessageType } from "../types";
 import { COLORS } from "../utils/constants";
 
+const polantasLogo = require("@/assets/images/Polantas Logo.png");
+
 interface ChatMessageProps {
   message: ChatMessageType;
 }
@@ -60,9 +62,7 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
       {!isUser && (
-        <View style={styles.avatar}>
-          <Ionicons name="shield-checkmark" size={16} color="#fff" />
-        </View>
+        <Image source={polantasLogo} style={styles.avatar} />
       )}
       <View
         style={[
@@ -113,9 +113,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#1239C2",
-    alignItems: "center",
-    justifyContent: "center",
   },
   bubble: {
     maxWidth: "82%",
