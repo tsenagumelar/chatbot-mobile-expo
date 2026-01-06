@@ -1,0 +1,42 @@
+export const PDF_LIBRARY = [
+  {
+    id: "1",
+    name: "Keselamatan Lalu Lintas",
+    fileName: "Keselamatan Lalu Lintas.pdf",
+    description: "Panduan keselamatan berkendara",
+    path: "../../docs/library/Keselamatan Lalu Lintas.pdf",
+    url: "https://s3minio.activa.id/attachment/pdf/Keselamatan%20Lalu%20Lintas.pdf",
+  },
+  {
+    id: "2",
+    name: "Psikologi Lalu Lintas",
+    fileName: "Psikologi Lalu Lintas.pdf",
+    description: "Aspek psikologi dalam berkendara",
+    path: "../../docs/library/Psikologi Lalu Lintas.pdf",
+    url: "https://s3minio.activa.id/attachment/pdf/Psikologi%20Lalu%20Lintas.pdf",
+  },
+  {
+    id: "3",
+    name: "Rekayasa Lalu Lintas dan Keselamatan Jalan",
+    fileName: "Rekayasa Lalu Lintas dan Keselamatan Jalan.pdf",
+    description: "Teknik rekayasa lalu lintas",
+    path: "../../docs/library/Rekayasa Lalu Lintas dan Keselamatan Jalan.pdf",
+    url: "https://s3minio.activa.id/attachment/pdf/Rekayasa%20Lalu%20Lintas%20dan%20Keselamatan%20Jalan.pdf",
+  },
+  {
+    id: "4",
+    name: "Tata Cara Lalu Lintas Highway Code",
+    fileName: "Tata Cara Lalu Lintas Highway Code.pdf",
+    description: "Kode etik berkendara di jalan raya",
+    path: "../../docs/library/Tata Cara Lalu Lintas Highway Code.pdf",
+    url: "https://s3minio.activa.id/attachment/pdf/Tata%20Cara%20Lalu%20Lintas%20Highway%20Code.pdf",
+  },
+  {
+    id: "5",
+    name: "UU Lalu Lintas",
+    fileName: "UU Lalu Lintas.pdf",
+    description: "Undang-undang lalu lintas dan jalan raya",
+    path: "../../docs/library/UU Lalu Lintas.pdf",
+    url: "https://s3minio.activa.id/attachment/pdf/UU%20Lalu%20Lintas.pdf",
+  },
+];

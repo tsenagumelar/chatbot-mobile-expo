@@ -1,5 +1,6 @@
 import AppHeader from "@/src/components/AppHeader";
 import SpeedMeter from "@/src/components/SpeedMeter";
+import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { getTrafficInfo } from "@/src/services/api";
 import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,15 +8,17 @@ import * as Location from "expo-location";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
 
 export default function HomeScreen() {
   const {
@@ -346,6 +349,42 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
+        {/* Library Section */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Ionicons name="library" size={20} color="#007AFF" />
+            <Text style={styles.cardTitle}>Perpustakaan</Text>
+          </View>
+          <Text style={styles.librarySubtitle}>
+            Akses dokumen dan panduan lalu lintas
+          </Text>
+
+          {LIBRARY_PREVIEW.map((pdf) => (
+            <TouchableOpacity
+              key={pdf.id}
+              style={styles.pdfItem}
+              onPress={() => router.push({ pathname: "/pdf-viewer", params: { id: pdf.id } })}
+            >
+              <View style={styles.pdfIconContainer}>
+                <Ionicons name="document-text" size={24} color="#EF4444" />
+              </View>
+              <View style={styles.pdfInfo}>
+                <Text style={styles.pdfTitle}>{pdf.name}</Text>
+                <Text style={styles.pdfDescription}>{pdf.description}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#8E8E93" />
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity
+            style={styles.viewAllButton}
+            onPress={() => router.push("/library")}
+          >
+            <Text style={styles.viewAllText}>Lihat Semua</Text>
+            <Ionicons name="arrow-forward" size={18} color="#007AFF" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -534,5 +573,55 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  librarySubtitle: {
+    fontSize: 14,
+    color: "#8E8E93",
+    marginBottom: 12,
+  },
+  pdfItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  pdfIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: "#FEE2E2",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pdfInfo: {
+    flex: 1,
+  },
+  pdfTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 2,
+  },
+  pdfDescription: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
+  viewAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#E8F0FE",
+    borderRadius: 12,
+    gap: 8,
+  },
+  viewAllText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#007AFF",
   },
 });
