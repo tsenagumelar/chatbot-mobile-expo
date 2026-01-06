@@ -1,15 +1,16 @@
+import { AppHeader } from "@/src/components/AppHeader";
+import { COLORS } from "@/src/utils/constants";
+import { ResizeMode, Video } from "expo-av";
 import React, { useMemo, useState } from "react";
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Video } from "expo-av";
-import AppHeader from "@/src/components/AppHeader";
-import { COLORS } from "@/src/utils/constants";
 
 type InfoTab = "traffic" | "cctv" | "incidents";
 
@@ -21,15 +22,16 @@ type InfoItem = {
   time: string;
 };
 
-type ListItem = InfoItem | (InfoItem & { video: any });
+type ListItem = InfoItem | (InfoItem & { video?: any; image?: any });
 
-const dummyTraffic: InfoItem[] = [
+const dummyTraffic: (InfoItem & { image: any })[] = [
   {
     id: "t1",
     title: "Jl. Sudirman → Senayan",
     status: "Padat",
     detail: "Kecepatan rata-rata 18 km/j, antrean 600 m.",
     time: "3 mnt lalu",
+    image: require("@/assets/info/Lalu Lintas 1.jpg"),
   },
   {
     id: "t2",
@@ -37,6 +39,15 @@ const dummyTraffic: InfoItem[] = [
     status: "Lancar",
     detail: "Semua lajur dibuka, cuaca cerah.",
     time: "8 mnt lalu",
+    image: require("@/assets/info/Lalu Lintas 2.jpg"),
+  },
+  {
+    id: "t3",
+    title: "Jl. Asia Afrika",
+    status: "Lancar",
+    detail: "Arus lalu lintas lancar, tidak ada kendala.",
+    time: "5 mnt lalu",
+    image: require("@/assets/info/Lalu Lintas 3.jpg"),
   },
 ];
 
@@ -47,7 +58,7 @@ const dummyCctv: (InfoItem & { video: any })[] = [
     status: "Aktif",
     detail: "Menampilkan arus lalin bundaran utama.",
     time: "Live",
-    video: require("@/assets/video/1.mp4"),
+    video: require("@/assets/info/CCTV 1.mp4"),
   },
   {
     id: "c2",
@@ -55,7 +66,7 @@ const dummyCctv: (InfoItem & { video: any })[] = [
     status: "Aktif",
     detail: "Kepadatan sedang, jalur kiri lebih lancar.",
     time: "Live",
-    video: require("@/assets/video/2.mp4"),
+    video: require("@/assets/info/CCTV 2.mp4"),
   },
   {
     id: "c3",
@@ -63,17 +74,18 @@ const dummyCctv: (InfoItem & { video: any })[] = [
     status: "Aktif",
     detail: "Lalin lancar, cuaca cerah, zebra cross ramai pejalan.",
     time: "Live",
-    video: require("@/assets/video/3.mp4"),
+    video: require("@/assets/info/CCTV 3.mp4"),
   },
 ];
 
-const dummyIncidents: InfoItem[] = [
+const dummyIncidents: (InfoItem & { image: any })[] = [
   {
     id: "i1",
     title: "Insiden minor di Jl. Dago",
     status: "Ditangani",
     detail: "Tabrakan kecil, tidak ada korban. Petugas mengatur arus.",
     time: "12 mnt lalu",
+    image: require("@/assets/info/Kejadian 1.jpg"),
   },
   {
     id: "i2",
@@ -81,6 +93,15 @@ const dummyIncidents: InfoItem[] = [
     status: "Proses",
     detail: "Jalur kanan ditutup sementara, gunakan jalur alternatif.",
     time: "25 mnt lalu",
+    image: require("@/assets/info/Kejadian 2.jpg"),
+  },
+  {
+    id: "i3",
+    title: "Kecelakaan di Jl. Pasteur",
+    status: "Ditangani",
+    detail: "Kecelakaan ringan, sudah ditangani petugas.",
+    time: "30 mnt lalu",
+    image: require("@/assets/info/Kejadian 3.jpg"),
   },
 ];
 
@@ -149,18 +170,33 @@ export default function InfoScreen() {
               <StatusPill status={item.status} />
             </View>
             <Text style={styles.cardDetail}>{item.detail}</Text>
+            
+            {/* Tampilkan gambar untuk Lalu Lintas dan Kejadian */}
+            {(activeTab === "traffic" || activeTab === "incidents") && 
+             "image" in item && item.image && (
+              <View style={styles.imageWrapper}>
+                <Image
+                  source={item.image}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+              </View>
+            )}
+            
+            {/* Tampilkan video untuk CCTV */}
             {activeTab === "cctv" && "video" in item && item.video && (
               <View style={styles.videoWrapper}>
                 <Video
                   source={item.video}
                   style={styles.video}
-                  resizeMode="cover"
+                  resizeMode={ResizeMode.COVER}
                   shouldPlay
                   isLooping
                   useNativeControls
                 />
               </View>
             )}
+            
             <Text style={styles.cardTime}>{item.time}</Text>
           </View>
         ))}
@@ -230,6 +266,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 4,
     gap: 8,
+    marginBottom: 8,
   },
   tabButton: {
     flex: 1,
@@ -283,6 +320,16 @@ const styles = StyleSheet.create({
   cardDetail: {
     color: COLORS.TEXT_PRIMARY,
     lineHeight: 20,
+  },
+  imageWrapper: {
+    marginTop: 8,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+  image: {
+    width: "100%",
+    height: 180,
   },
   videoWrapper: {
     marginTop: 8,

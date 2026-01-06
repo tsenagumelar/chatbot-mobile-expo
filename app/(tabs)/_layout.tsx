@@ -1,9 +1,8 @@
-import { COLORS } from "@/src/utils/constants";
 import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import React from "react";
-import { Platform } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
@@ -14,24 +13,47 @@ export default function TabLayout() {
     return <Redirect href="/login" />;
   }
 
+  const tabBarHeight = 70;
+  const bottomSpacing = Platform.OS === "android" ? insets.bottom + 12 : 16;
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.PRIMARY,
-        tabBarInactiveTintColor: COLORS.TEXT_SECONDARY,
+        tabBarActiveTintColor: "#0C3AC5",
+        tabBarInactiveTintColor: "#9CA3AF",
         tabBarStyle: {
-          backgroundColor: COLORS.CARD,
-          borderTopWidth: 1,
-          borderTopColor: "#E5E5EA",
-          paddingBottom: Platform.OS === "android" ? insets.bottom + 8 : 8,
+          position: "absolute",
+          backgroundColor: "rgba(255, 255, 255, 0.98)",
+          borderTopWidth: 0,
+          elevation: 8,
+          marginHorizontal: 16,
+          marginBottom: bottomSpacing,
+          borderRadius: 24,
+          height: tabBarHeight,
           paddingTop: 8,
-          height: Platform.OS === "android" ? 60 + insets.bottom : 60,
+          paddingBottom: 8,
+          paddingHorizontal: 8,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 0,
+            height: 8,
+          },
+          shadowOpacity: 0.15,
+          shadowRadius: 16,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600",
+          fontSize: 11,
+          fontWeight: "700",
+          marginTop: -4,
+        },
+        tabBarItemStyle: {
+          borderRadius: 16,
+          paddingVertical: 4,
         },
         headerShown: false,
+        sceneStyle: {
+          paddingBottom: tabBarHeight + bottomSpacing + 8,
+        },
       }}
     >
       <Tabs.Screen
@@ -39,24 +61,28 @@ export default function TabLayout() {
         options={{
           title: "Beranda",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "map" : "map-outline"}
-              size={24}
-              color={color}
-            />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons
+                name={focused ? "map" : "map-outline"}
+                size={26}
+                color={color}
+              />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="chat"
         options={{
-          title: "Chat AI",
+          title: "Chat",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "chatbubbles" : "chatbubbles-outline"}
-              size={24}
-              color={color}
-            />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons
+                name={focused ? "chatbubbles" : "chatbubbles-outline"}
+                size={26}
+                color={color}
+              />
+            </View>
           ),
         }}
       />
@@ -65,11 +91,13 @@ export default function TabLayout() {
         options={{
           title: "Info",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "information-circle" : "information-circle-outline"}
-              size={24}
-              color={color}
-            />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons
+                name={focused ? "information-circle" : "information-circle-outline"}
+                size={26}
+                color={color}
+              />
+            </View>
           ),
         }}
       />
@@ -78,27 +106,44 @@ export default function TabLayout() {
         options={{
           title: "Laporan",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "document-text" : "document-text-outline"}
-              size={24}
-              color={color}
-            />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons
+                name={focused ? "document-text" : "document-text-outline"}
+                size={26}
+                color={color}
+              />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
-        name="game"
+        name="quiz"
         options={{
           title: "Kuis",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "trophy" : "trophy-outline"}
-              size={24}
-              color={color}
-            />
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons
+                name={focused ? "trophy" : "trophy-outline"}
+                size={26}
+                color={color}
+              />
+            </View>
           ),
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+  },
+  iconContainerActive: {
+    backgroundColor: "rgba(12, 58, 197, 0.12)",
+  },
+});
