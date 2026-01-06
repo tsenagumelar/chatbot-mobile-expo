@@ -36,6 +36,7 @@ export default function ChatScreen() {
     messages,
     chatLoading,
     sessionId,
+    user,
     addMessage,
     clearMessages,
     setChatLoading,
@@ -162,7 +163,8 @@ export default function ChatScreen() {
         userMessage.content,
         context,
         sessionId,
-        imageToSend // Pass imageUri directly, sendChatMessage will handle it
+        imageToSend, // Pass imageUri directly, sendChatMessage will handle it
+        user?.name // Pass user's name from login
       );
 
       console.log("📥 Received from backend:", response);

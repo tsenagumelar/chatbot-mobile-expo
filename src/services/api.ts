@@ -50,13 +50,15 @@ export async function sendChatMessage(
   message: string,
   context: ChatContext,
   sessionId: string | null = null,
-  imageUri?: string
+  imageUri?: string,
+  name?: string
 ): Promise<{ response: string; sessionId: string }> {
   try {
     // Build base payload
     const payload: any = {
       message,
       context,
+      name: name || "User",
     };
 
     if (sessionId && sessionId.trim() !== "") {

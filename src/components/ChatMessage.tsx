@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
   },
   messageImage: {
-    width: "100%",
+    width: 200,
     height: 200,
     borderRadius: 10,
     marginBottom: 8,
