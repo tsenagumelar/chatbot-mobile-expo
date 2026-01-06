@@ -22,6 +22,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   imageUri?: string;
+  documents?: DocumentInfo[];
   timestamp: number;
 }
 
@@ -38,10 +39,24 @@ export interface ChatContext {
   longitude: number;
 }
 
+export interface DocumentInfo {
+  file_name: string;
+  file_type: string;
+  file_url: string;
+  description?: string;
+}
+
 export interface ChatResponse {
   success: boolean;
   response: string;
   session_id?: string;
+  error?: string;
+}
+
+export interface UploadResponse {
+  success: boolean;
+  file_url: string;
+  file_name: string;
   error?: string;
 }
 

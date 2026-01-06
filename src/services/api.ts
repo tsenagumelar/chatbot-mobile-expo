@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import type {
-    ChatContext,
-    ChatResponse,
-    RouteRequestCoords,
-    RouteResponse,
-    TrafficResponse,
+  ChatContext,
+  ChatResponse,
+  RouteRequestCoords,
+  RouteResponse,
+  TrafficResponse
 } from "../types";
 import { API_BASE_URL } from "../utils/constants";
 
@@ -44,7 +44,7 @@ api.interceptors.response.use(
 );
 
 /**
- * Send chat message to AI assistant with session management
+ * Send chat message to AI assistant with session management and documents
  */
 export async function sendChatMessage(
   message: string,
@@ -53,7 +53,7 @@ export async function sendChatMessage(
   imageUri?: string
 ): Promise<{ response: string; sessionId: string }> {
   try {
-    // Only include session_id if it exists and is not empty
+    // Build base payload
     const payload: any = {
       message,
       context,
@@ -66,54 +66,33 @@ export async function sendChatMessage(
       console.log("🆕 Starting new session");
     }
 
-    // Handle image upload if provided
+    // If there's an image, add documents array with random file_url
     if (imageUri) {
-      const formData = new FormData();
-      formData.append('message', message);
-      formData.append('context', JSON.stringify(context));
-      if (sessionId && sessionId.trim() !== "") {
-        formData.append('session_id', sessionId);
-      }
-      
       // Extract filename from URI
-      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const filename = imageUri.split('/').pop() || 'document.jpg';
       const match = /\.([\w]+)$/.exec(filename);
       const type = match ? `image/${match[1]}` : 'image/jpeg';
       
-      formData.append('image', {
-        uri: imageUri,
-        name: filename,
-        type: type,
-      } as any);
-
-      console.log("📸 Uploading image with message");
+      // Generate random file URL (backend doesn't need actual file upload)
+      const randomId = Math.random().toString(36).substring(7);
+      const fileUrl = `https://storage.chatbotapi.activa.id/uploads/${randomId}_${filename}`;
       
-      const response = await api.post<ChatResponse>("/chat", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      // Build documents array
+      payload.documents = [
+        {
+          file_name: filename,
+          file_type: type,
+          file_url: fileUrl,
+          description: "User uploaded document"
+        }
+      ];
+
+      console.log("📤 Sending with document:", {
+        message,
+        context,
+        documents: payload.documents,
+        sessionId: sessionId || "(new session)",
       });
-
-      console.log(
-        "📥 API Response Data:",
-        JSON.stringify(response.data, null, 2)
-      );
-
-      if (!response.data.success) {
-        throw new Error(response.data.error || "Failed to get AI response");
-      }
-
-      const aiResponse =
-        typeof response.data.response === "string"
-          ? response.data.response
-          : JSON.stringify(response.data.response);
-
-      const resultSessionId = response.data.session_id || sessionId || "";
-
-      return {
-        response: aiResponse,
-        sessionId: resultSessionId,
-      };
     }
 
     console.log("🚀 API Request Payload:", JSON.stringify(payload, null, 2));
@@ -275,7 +254,7 @@ export async function testConnection(): Promise<boolean> {
  */
 export async function searchLocation(
   query: string
-): Promise<Array<{ name: string; lat: number; lon: number }>> {
+): Promise<{ name: string; lat: number; lon: number }[]> {
   try {
     // Use Nominatim OpenStreetMap API for geocoding
     const response = await axios.get(

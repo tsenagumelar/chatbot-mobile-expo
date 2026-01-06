@@ -40,6 +40,7 @@ export default {
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
       ],
       usesCleartextTraffic: true,
       config: {

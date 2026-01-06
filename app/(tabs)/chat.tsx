@@ -154,6 +154,7 @@ export default function ChatScreen() {
         message: userMessage.content,
         context,
         sessionId: sessionId || "(new session)",
+        hasImage: !!imageToSend,
       });
 
       // Get AI response from backend with session management
@@ -161,7 +162,7 @@ export default function ChatScreen() {
         userMessage.content,
         context,
         sessionId,
-        imageToSend
+        imageToSend // Pass imageUri directly, sendChatMessage will handle it
       );
 
       console.log("📥 Received from backend:", response);
@@ -389,7 +390,7 @@ export default function ChatScreen() {
               <TouchableOpacity
                 style={styles.circleButton}
                 onPress={() => setShowVoiceInput(true)}
-                disabled={chatLoading}
+                disabled={true}
               >
                 <Ionicons name="mic-outline" size={18} color="#6B7280" />
               </TouchableOpacity>

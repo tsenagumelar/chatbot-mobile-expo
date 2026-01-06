@@ -77,6 +77,18 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             style={styles.messageImage}
           />
         )}
+        {message.documents && message.documents.length > 0 && (
+          <View style={styles.documentsContainer}>
+            {message.documents.map((doc, index) => (
+              <View key={index} style={styles.documentItem}>
+                <Ionicons name="document-attach" size={16} color="#007AFF" />
+                <Text style={styles.documentName} numberOfLines={1}>
+                  {doc.file_name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
         {content && renderTextWithLinks(content)}
       </View>
     </View>
@@ -141,6 +153,25 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 8,
     resizeMode: "cover",
+  },
+  documentsContainer: {
+    marginBottom: 8,
+    gap: 6,
+  },
+  documentItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#F0F8FF",
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D0E8FF",
+  },
+  documentName: {
+    flex: 1,
+    fontSize: 13,
+    color: "#007AFF",
   },
   link: {
     color: "#007AFF",

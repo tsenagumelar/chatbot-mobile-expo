@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  PermissionsAndroid,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { COLORS } from "../utils/constants";
@@ -25,6 +27,38 @@ export default function VoiceInputWebView({
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const webViewRef = useRef<WebView>(null);
+
+  // Request microphone permission on Android
+  useEffect(() => {
+    if (visible && Platform.OS === 'android') {
+      requestMicrophonePermission();
+    }
+  }, [visible]);
+
+  const requestMicrophonePermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        {
+          title: 'Microphone Permission',
+          message: 'This app needs access to your microphone for voice input.',
+          buttonPositive: 'OK',
+          buttonNegative: 'Cancel',
+        }
+      );
+      
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+        Alert.alert(
+          'Permission Denied',
+          'Microphone permission is required for voice input. Please enable it in app settings.'
+        );
+      } else {
+        console.log('Microphone permission granted');
+      }
+    } catch (err) {
+      console.error('Error requesting microphone permission:', err);
+    }
+  };
 
   const voiceHTML = `
     <!DOCTYPE html>
@@ -120,116 +154,172 @@ export default function VoiceInputWebView({
         </div>
         <div class="status-text" id="status">Tap the mic to start</div>
         <select class="lang-select" id="langSelect">
-          <option value="id-ID">Bahasa Indonesia</option>
-          <option value="en-US">English (US)</option>
-          <option value="en-GB">English (UK)</option>
+          <option value="id-ID">🇮🇩 Bahasa Indonesia</option>
+          <option value="en-US">🇺🇸 English (US)</option>
+          <option value="en-GB">🇬🇧 English (UK)</option>
         </select>
         <div class="transcript empty" id="transcript">Your speech will appear here...</div>
         <div class="error" id="error" style="display: none;"></div>
+        <div style="margin-top: 10px; font-size: 12px; opacity: 0.7;" id="debug"></div>
       </div>
 
       <script>
         let recognition = null;
         let isListening = false;
         let finalTranscript = '';
+        let restartTimeout = null;
 
         // Check if browser supports Speech Recognition
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
+        console.log('Speech Recognition available:', !!SpeechRecognition);
+        
         if (SpeechRecognition) {
-          recognition = new SpeechRecognition();
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.lang = 'id-ID'; // Default Indonesian
+          try {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; // Keep listening until manually stopped
+            recognition.interimResults = true;
+            recognition.lang = 'id-ID'; // Default Indonesian
+            recognition.maxAlternatives = 1;
 
-          recognition.onstart = () => {
-            isListening = true;
-            document.getElementById('micButton').classList.add('listening');
-            document.getElementById('status').textContent = 'Listening... Speak now';
-            hideError();
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'status',
-              listening: true
-            }));
-          };
-
-          recognition.onend = () => {
-            isListening = false;
-            document.getElementById('micButton').classList.remove('listening');
-            document.getElementById('status').textContent = 'Tap the mic to start';
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'status',
-              listening: false
-            }));
-          };
-
-          recognition.onresult = (event) => {
-            let interimTranscript = '';
-            
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-              const transcript = event.results[i][0].transcript;
-              if (event.results[i].isFinal) {
-                finalTranscript += transcript + ' ';
-              } else {
-                interimTranscript += transcript;
-              }
-            }
-
-            const fullTranscript = finalTranscript + interimTranscript;
-            const transcriptEl = document.getElementById('transcript');
-            
-            if (fullTranscript.trim()) {
-              transcriptEl.classList.remove('empty');
-              transcriptEl.textContent = fullTranscript;
-              
-              // Send transcript to React Native
+            recognition.onstart = () => {
+              console.log('✅ Recognition started successfully');
+              isListening = true;
+              document.getElementById('micButton').classList.add('listening');
+              document.getElementById('status').textContent = 'Listening... Speak now';
+              document.getElementById('debug').textContent = '🎤 Microphone active';
+              hideError();
               window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'transcript',
-                text: fullTranscript.trim(),
-                isFinal: event.results[event.results.length - 1].isFinal
+                type: 'status',
+                listening: true
               }));
-            }
-          };
+            };
 
-          recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            let errorMsg = 'Error: ';
-            
-            switch(event.error) {
-              case 'no-speech':
-                errorMsg += 'No speech detected. Please try again.';
-                break;
-              case 'audio-capture':
-                errorMsg += 'No microphone found. Please check your device.';
-                break;
-              case 'not-allowed':
-                errorMsg += 'Microphone permission denied.';
-                break;
-              case 'network':
-                errorMsg += 'Network error. Please check your connection.';
-                break;
-              default:
-                errorMsg += event.error;
-            }
-            
-            showError(errorMsg);
+            recognition.onend = () => {
+              console.log('Recognition ended, isListening:', isListening);
+              document.getElementById('debug').textContent = '⏸️ Microphone stopped';
+              
+              // Only update UI if we're not trying to restart
+              if (isListening) {
+                isListening = false;
+                document.getElementById('micButton').classList.remove('listening');
+                document.getElementById('status').textContent = 'Tap the mic to start';
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'status',
+                  listening: false
+                }));
+              }
+            };
+
+            recognition.onresult = (event) => {
+              console.log('📝 Got result, results count:', event.results.length);
+              document.getElementById('debug').textContent = '✅ Detecting speech...';
+              
+              let interimTranscript = '';
+              
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                const confidence = event.results[i][0].confidence;
+                
+                if (event.results[i].isFinal) {
+                  finalTranscript += transcript + ' ';
+                  console.log('✅ Final transcript:', transcript, 'confidence:', confidence);
+                } else {
+                  interimTranscript += transcript;
+                  console.log('⏳ Interim transcript:', transcript);
+                }
+              }
+
+              const fullTranscript = finalTranscript + interimTranscript;
+              const transcriptEl = document.getElementById('transcript');
+              
+              if (fullTranscript.trim()) {
+                transcriptEl.classList.remove('empty');
+                transcriptEl.textContent = fullTranscript;
+                document.getElementById('debug').textContent = '✅ Speech detected: ' + fullTranscript.length + ' chars';
+                
+                // Send transcript to React Native
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'transcript',
+                  text: fullTranscript.trim(),
+                  isFinal: event.results[event.results.length - 1].isFinal
+                }));
+              } else {
+                console.log('⚠️ Empty transcript');
+              }
+            };
+
+            recognition.onerror = (event) => {
+              console.error('Speech recognition error:', event.error);
+              let errorMsg = 'Error: ';
+              let shouldStop = true;
+              
+              switch(event.error) {
+                case 'no-speech':
+                  errorMsg += 'No speech detected. Tap mic to try again.';
+                  shouldStop = true;
+                  break;
+                case 'audio-capture':
+                  errorMsg += 'No microphone found or permission denied.';
+                  shouldStop = true;
+                  break;
+                case 'not-allowed':
+                  errorMsg += 'Microphone permission denied. Please enable in settings.';
+                  shouldStop = true;
+                  break;
+                case 'network':
+                  errorMsg += 'Network error. Please check your connection.';
+                  shouldStop = true;
+                  break;
+                case 'aborted':
+                  errorMsg += 'Recognition stopped.';
+                  shouldStop = true;
+                  break;
+                default:
+                  errorMsg += event.error;
+                  shouldStop = true;
+              }
+              
+              if (shouldStop) {
+                stopRecognition();
+              }
+              
+              showError(errorMsg);
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'error',
+                error: event.error,
+                message: errorMsg
+              }));
+            };
+
+            // Language change listener
+            document.getElementById('langSelect').addEventListener('change', (e) => {
+              const newLang = e.target.value;
+              console.log('Language changed to:', newLang);
+              recognition.lang = newLang;
+              
+              if (isListening) {
+                // Restart with new language
+                stopRecognition();
+                setTimeout(() => {
+                  startRecognition();
+                }, 300);
+              }
+            });
+
+            console.log('Speech recognition initialized successfully');
+          } catch (error) {
+            console.error('Error initializing recognition:', error);
+            showError('Failed to initialize speech recognition: ' + error.message);
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'error',
-              error: event.error,
-              message: errorMsg
+              error: 'init-failed',
+              message: 'Failed to initialize: ' + error.message
             }));
-          };
-
-          // Language change listener
-          document.getElementById('langSelect').addEventListener('change', (e) => {
-            recognition.lang = e.target.value;
-            if (isListening) {
-              recognition.stop();
-              setTimeout(() => recognition.start(), 100);
-            }
-          });
+          }
         } else {
-          showError('Speech Recognition not supported in this browser. Please use Chrome or Safari.');
+          console.error('Speech Recognition not supported');
+          showError('Speech Recognition not supported in this browser. WebView may need updating.');
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'error',
             error: 'not-supported',
@@ -237,19 +327,97 @@ export default function VoiceInputWebView({
           }));
         }
 
-        function toggleRecording() {
+        function startRecognition() {
           if (!recognition) {
             showError('Speech Recognition not available');
-            return;
+            return false;
           }
 
+          // Check if already running
           if (isListening) {
-            recognition.stop();
-          } else {
+            console.log('Already listening, stopping first...');
+            stopRecognition();
+            setTimeout(() => startRecognition(), 300);
+            return false;
+          }
+
+          try {
+            console.log('🎬 Starting recognition...');
             finalTranscript = '';
-            document.getElementById('transcript').textContent = 'Listening...';
-            document.getElementById('transcript').classList.remove('empty');
-            recognition.start();
+            const transcriptEl = document.getElementById('transcript');
+            transcriptEl.textContent = 'Listening...';
+            transcriptEl.classList.remove('empty');
+            document.getElementById('debug').textContent = '🔄 Initializing microphone...';
+            hideError();
+            
+            // Check if getUserMedia is available (might not be in WebView)
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+              console.log('Using getUserMedia for permission check');
+              // Request microphone permission explicitly
+              navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                  console.log('✅ Microphone permission granted');
+                  document.getElementById('debug').textContent = '✅ Microphone ready';
+                  
+                  // Stop the test stream
+                  stream.getTracks().forEach(track => track.stop());
+                  
+                  // Now start recognition
+                  recognition.start();
+                })
+                .catch(err => {
+                  console.error('❌ Microphone permission error:', err);
+                  showError('Cannot access microphone: ' + err.message);
+                  document.getElementById('debug').textContent = '❌ Mic access denied';
+                });
+            } else {
+              // WebView doesn't support getUserMedia, rely on native permission
+              console.log('getUserMedia not available, starting recognition directly');
+              document.getElementById('debug').textContent = '✅ Starting with native permission...';
+              recognition.start();
+            }
+            
+            return true;
+          } catch(e) {
+            console.error('Error starting recognition:', e);
+            // Handle "already started" error
+            if (e.message && e.message.includes('already')) {
+              console.log('Recognition already started, forcing stop...');
+              stopRecognition();
+              setTimeout(() => startRecognition(), 300);
+            } else {
+              showError('Failed to start: ' + e.message);
+              document.getElementById('debug').textContent = '❌ ' + e.message;
+            }
+            return false;
+          }
+        }
+
+        function stopRecognition() {
+          if (!recognition) return;
+
+          try {
+            console.log('Stopping recognition...');
+            isListening = false;
+            recognition.stop();
+            document.getElementById('micButton').classList.remove('listening');
+            document.getElementById('status').textContent = 'Tap the mic to start';
+          } catch(e) {
+            console.error('Error stopping recognition:', e);
+            // Force update UI even if stop fails
+            isListening = false;
+            document.getElementById('micButton').classList.remove('listening');
+            document.getElementById('status').textContent = 'Tap the mic to start';
+          }
+        }
+
+        function toggleRecording() {
+          console.log('Toggle recording clicked, isListening:', isListening);
+          
+          if (isListening) {
+            stopRecognition();
+          } else {
+            startRecognition();
           }
         }
 
@@ -276,26 +444,31 @@ export default function VoiceInputWebView({
   const handleMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      console.log('WebView message:', data);
 
       switch (data.type) {
         case "ready":
+          console.log('WebView ready, speech supported:', data.supported);
           if (!data.supported) {
             Alert.alert(
               "Not Supported",
-              "Speech recognition is not supported in this WebView"
+              "Speech recognition is not supported. Please make sure you have Google app installed and WebView updated."
             );
           }
           break;
 
         case "status":
+          console.log('Listening status:', data.listening);
           setIsListening(data.listening);
           break;
 
         case "transcript":
+          console.log('Transcript received:', data.text);
           setTranscript(data.text);
           break;
 
         case "error":
+          console.error('WebView error:', data.error, data.message);
           Alert.alert("Voice Error", data.message);
           setIsListening(false);
           break;
@@ -349,6 +522,8 @@ export default function VoiceInputWebView({
           mediaPlaybackRequiresUserAction={false}
           allowsInlineMediaPlayback={true}
           originWhitelist={["*"]}
+          allowFileAccess={true}
+          mixedContentMode="always"
         />
 
         {/* Bottom Actions */}
