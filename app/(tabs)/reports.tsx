@@ -27,13 +27,22 @@ const INCIDENT_TYPES: { label: string; value: IncidentType }[] = [
   { label: "Lainnya", value: "lainnya" },
 ];
 
+// Image mapping untuk dummy reports
+const REPORT_IMAGES: Record<string, any> = {
+  "memotong_jalan.jpg": require("@/assets/pelanggaran/memotong_jalan.jpg"),
+  "parkir_di_trotoar.jpg": require("@/assets/pelanggaran/parkir_di_trotoar.jpg"),
+  "terobos_lampu_merah.jpg": require("@/assets/pelanggaran/terobos_lampu_merah.jpg"),
+  "lawan_arus.jpg": require("@/assets/pelanggaran/lawan_arus.jpg"),
+  "terobos_lampu_merah_mobil.jpg": require("@/assets/pelanggaran/terobos_lampu_merah_mobil.jpg"),
+};
+
 // Data dummy untuk semua laporan
 const ALL_REPORTS: IncidentReport[] = [
   {
     id: "dummy-1",
-    type: "kecelakaan",
-    description: "Tabrakan motor di persimpangan. Kedua pengendara luka ringan.",
-    photoUri: undefined,
+    type: "pelanggaran",
+    description: "Pengendara motor memotong jalur kendaraan lain secara tiba-tiba tanpa memberi isyarat.",
+    photoUri: "@/assets/pelanggaran/memotong_jalan.jpg",
     isAnonymous: false,
     reporterName: "Ahmad Wijaya",
     address: "Jl. Sudirman No. 45, Jakarta Pusat",
@@ -45,7 +54,7 @@ const ALL_REPORTS: IncidentReport[] = [
     id: "dummy-2",
     type: "pelanggaran",
     description: "Parkir sembarangan di trotoar menghalangi pejalan kaki.",
-    photoUri: undefined,
+    photoUri: "@/assets/pelanggaran/parkir_di_trotoar.jpg",
     isAnonymous: true,
     address: "Jl. Gatot Subroto, Jakarta Selatan",
     latitude: -6.2297,
@@ -54,10 +63,9 @@ const ALL_REPORTS: IncidentReport[] = [
   },
   {
     id: "dummy-3",
-    type: "lainnya",
-    customType: "Lampu lalu lintas rusak",
-    description: "Lampu merah di persimpangan tidak menyala sejak kemarin.",
-    photoUri: undefined,
+    type: "pelanggaran",
+    description: "Pengendara motor menerobos lampu merah saat lampu masih menyala merah.",
+    photoUri: "@/assets/pelanggaran/terobos_lampu_merah.jpg",
     isAnonymous: false,
     reporterName: "Siti Nurhaliza",
     address: "Jl. Thamrin, Jakarta Pusat",
@@ -67,9 +75,9 @@ const ALL_REPORTS: IncidentReport[] = [
   },
   {
     id: "dummy-4",
-    type: "kecelakaan",
-    description: "Mobil menabrak pembatas jalan. Tidak ada korban jiwa.",
-    photoUri: undefined,
+    type: "pelanggaran",
+    description: "Kendaraan melawan arus di jalan raya, sangat membahayakan pengendara lain.",
+    photoUri: "@/assets/pelanggaran/lawan_arus.jpg",
     isAnonymous: false,
     reporterName: "Budi Santoso",
     address: "Jl. Rasuna Said, Jakarta Selatan",
@@ -80,8 +88,8 @@ const ALL_REPORTS: IncidentReport[] = [
   {
     id: "dummy-5",
     type: "pelanggaran",
-    description: "Pengendara menerobos lampu merah dengan kecepatan tinggi.",
-    photoUri: undefined,
+    description: "Mobil menerobos lampu merah dengan kecepatan tinggi di persimpangan ramai.",
+    photoUri: "@/assets/pelanggaran/terobos_lampu_merah_mobil.jpg",
     isAnonymous: true,
     address: "Jl. Kuningan, Jakarta Selatan",
     latitude: -6.2382,
@@ -326,7 +334,11 @@ export default function ReportsScreen() {
                 </Text>
                 {report.photoUri && (
                   <Image
-                    source={{ uri: report.photoUri }}
+                    source={
+                      report.photoUri.startsWith("@/")
+                        ? REPORT_IMAGES[report.photoUri.split("/").pop() || ""]
+                        : { uri: report.photoUri }
+                    }
                     style={styles.reportPhoto}
                   />
                 )}

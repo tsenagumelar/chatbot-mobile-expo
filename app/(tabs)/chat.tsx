@@ -1,11 +1,13 @@
-import AppHeader from "@/src/components/AppHeader";
+import { AppHeader } from "@/src/components/AppHeader";
 import ChatMessage from "@/src/components/ChatMessage";
+import VoiceInputWebView from "@/src/components/VoiceInputWebView";
 import { sendChatMessage, testConnection } from "@/src/services/api";
 import { stopSpeaking } from "@/src/services/voice";
 import { useStore } from "@/src/store/useStore";
 import type { ChatMessage as ChatMessageType } from "@/src/types";
 import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -44,6 +46,8 @@ export default function ChatScreen() {
   const [backendConnected, setBackendConnected] = useState<boolean | null>(
     null
   );
+  const [showVoiceInput, setShowVoiceInput] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | undefined>();
   const flatListRef = useRef<FlatList>(null);
   const statusColor =
     backendConnected === null
@@ -105,13 +109,13 @@ export default function ChatScreen() {
           [{ text: "OK" }]
         );
       }
-    } catch (error) {
+    } catch {
       setBackendConnected(false);
     }
   };
 
   const handleSend = async () => {
-    if (!inputText.trim() || chatLoading) return;
+    if ((!inputText.trim() && !selectedImage) || chatLoading) return;
 
     // Check backend first
     if (backendConnected === false) {
@@ -125,12 +129,15 @@ export default function ChatScreen() {
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       role: "user",
-      content: inputText.trim(),
+      content: inputText.trim() || "[Gambar]",
+      imageUri: selectedImage,
       timestamp: Date.now(),
     };
 
     addMessage(userMessage);
+    const imageToSend = selectedImage;
     setInputText("");
+    setSelectedImage(undefined);
     setChatLoading(true);
 
     try {
@@ -153,7 +160,8 @@ export default function ChatScreen() {
       const response = await sendChatMessage(
         userMessage.content,
         context,
-        sessionId
+        sessionId,
+        imageToSend
       );
 
       console.log("📥 Received from backend:", response);
@@ -179,7 +187,6 @@ export default function ChatScreen() {
       };
 
       addMessage(assistantMessage);
-
     } catch (error: any) {
       console.error("❌ Chat error:", error);
 
@@ -209,6 +216,72 @@ export default function ChatScreen() {
         },
       },
     ]);
+  };
+
+  const handleVoiceTranscript = (text: string) => {
+    setInputText(text);
+    setShowVoiceInput(false);
+  };
+
+  const pickFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Izin dibutuhkan",
+        "Berikan akses galeri untuk melampirkan foto."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Izin kamera dibutuhkan",
+        "Aktifkan izin kamera untuk mengambil foto."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+    }
+  };
+
+  const handleImageAction = () => {
+    Alert.alert(
+      "Lampirkan foto",
+      "Pilih sumber foto",
+      [
+        { text: "Batal", style: "cancel" },
+        { text: "Kamera", onPress: takePhoto },
+        { text: "Galeri", onPress: pickFromLibrary },
+      ],
+      { cancelable: true }
+    );
   };
 
   const renderEmpty = () => (
@@ -241,10 +314,7 @@ export default function ChatScreen() {
             <Text style={styles.headerTitle}>Polantas Menyapa</Text>
             <View style={styles.statusRow}>
               <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: statusColor },
-                ]}
+                style={[styles.statusDot, { backgroundColor: statusColor }]}
               />
               <Text style={styles.statusText}>
                 {backendConnected === null
@@ -296,18 +366,39 @@ export default function ChatScreen() {
           </View>
         )}
 
+        {/* Image Preview */}
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.imagePreview}
+            />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={() => setSelectedImage(undefined)}
+            >
+              <Ionicons name="close-circle" size={24} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Input Area */}
         <View style={styles.bottomBar}>
           <View style={styles.inputContainer}>
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.circleButton}>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={() => setShowVoiceInput(true)}
+                disabled={chatLoading}
+              >
+                <Ionicons name="mic-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={handleImageAction}
+                disabled={chatLoading}
+              >
                 <Ionicons name="image-outline" size={18} color="#6B7280" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton}>
-                <Ionicons name="camera-outline" size={18} color="#6B7280" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.circleButton}>
-                <Ionicons name="location-outline" size={18} color="#6B7280" />
               </TouchableOpacity>
             </View>
             <TextInput
@@ -325,16 +416,23 @@ export default function ChatScreen() {
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                (!inputText.trim() || chatLoading) && styles.sendButtonDisabled,
+                (!inputText.trim() && !selectedImage || chatLoading) && styles.sendButtonDisabled,
               ]}
               onPress={handleSend}
-              disabled={!inputText.trim() || chatLoading}
+              disabled={!inputText.trim() && !selectedImage || chatLoading}
             >
               <Ionicons name="send" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Voice Input Modal */}
+      <VoiceInputWebView
+        visible={showVoiceInput}
+        onClose={() => setShowVoiceInput(false)}
+        onTranscript={handleVoiceTranscript}
+      />
     </SafeAreaView>
   );
 }
@@ -491,5 +589,30 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  imagePreviewContainer: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    position: "relative",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    resizeMode: "cover",
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 18,
+    right: 22,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });

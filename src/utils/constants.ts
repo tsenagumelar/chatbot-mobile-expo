@@ -1,5 +1,5 @@
 // Auto-detect development mode
-export const API_BASE_URL = "http://72.61.213.6:8080/api/v1";
+export const API_BASE_URL = "https://chatbotapi.activa.id/api/v1";
 
 // OpenStreetMap Tile Servers (FREE!)
 export const MAP_TILES = {

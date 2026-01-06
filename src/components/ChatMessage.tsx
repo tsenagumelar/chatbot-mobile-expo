@@ -1,6 +1,6 @@
-import React from "react";
-import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Alert, Image, Linking, StyleSheet, Text, View } from "react-native";
 import type { ChatMessage as ChatMessageType } from "../types";
 import { COLORS } from "../utils/constants";
 
@@ -17,6 +17,46 @@ export default function ChatMessage({ message }: ChatMessageProps) {
       ? message.content
       : JSON.stringify(message.content);
 
+  // URL regex pattern - stops at common domain extensions
+  const urlRegex = /(https?:\/\/[^\s]+?(?:\.com|\.id|\.org|\.net|\.edu|\.gov|\.io|\.co|\.me|\.info))/gi;
+
+  const handleOpenURL = async (url: string) => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Error", `Cannot open URL: ${url}`);
+      }
+    } catch {
+      Alert.alert("Error", "Failed to open URL");
+    }
+  };
+
+  const renderTextWithLinks = (text: string) => {
+    const parts = text.split(urlRegex);
+    const urls: string[] = text.match(urlRegex) || [];
+    
+    return (
+      <Text style={[styles.text, isUser ? styles.userText : styles.assistantText]}>
+        {parts.map((part, index) => {
+          if (urls.includes(part)) {
+            return (
+              <Text
+                key={index}
+                style={styles.link}
+                onPress={() => handleOpenURL(part)}
+              >
+                {part}
+              </Text>
+            );
+          }
+          return <Text key={index}>{part}</Text>;
+        })}
+      </Text>
+    );
+  };
+
   return (
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
       {!isUser && (
@@ -31,11 +71,13 @@ export default function ChatMessage({ message }: ChatMessageProps) {
           !isUser && styles.shadow,
         ]}
       >
-        <Text
-          style={[styles.text, isUser ? styles.userText : styles.assistantText]}
-        >
-          {content}
-        </Text>
+        {message.imageUri && (
+          <Image
+            source={{ uri: message.imageUri }}
+            style={styles.messageImage}
+          />
+        )}
+        {content && renderTextWithLinks(content)}
       </View>
     </View>
   );
@@ -92,5 +134,16 @@ const styles = StyleSheet.create({
   },
   assistantText: {
     color: COLORS.TEXT_PRIMARY,
+  },
+  messageImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 8,
+    resizeMode: "cover",
+  },
+  link: {
+    color: "#007AFF",
+    textDecorationLine: "underline",
   },
 });

@@ -28,9 +28,9 @@ export default function TabLayout() {
           elevation: 8,
           marginHorizontal: 16,
           marginBottom: bottomSpacing,
-          borderRadius: 24,
+          borderRadius: 50,
           height: tabBarHeight,
-          paddingTop: 8,
+          paddingTop: 4,
           paddingBottom: 8,
           paddingHorizontal: 8,
           shadowColor: "#000",
@@ -44,11 +44,12 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "700",
-          marginTop: -4,
+          marginTop: 2,
         },
         tabBarItemStyle: {
           borderRadius: 16,
-          paddingVertical: 4,
+          paddingTop: 2,
+          justifyContent: "center",
         },
         headerShown: false,
         sceneStyle: {
@@ -61,7 +62,7 @@ export default function TabLayout() {
         options={{
           title: "Beranda",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer]}>
               <Ionicons
                 name={focused ? "map" : "map-outline"}
                 size={26}
@@ -76,7 +77,7 @@ export default function TabLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer]}>
               <Ionicons
                 name={focused ? "chatbubbles" : "chatbubbles-outline"}
                 size={26}
@@ -91,7 +92,7 @@ export default function TabLayout() {
         options={{
           title: "Info",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer]}>
               <Ionicons
                 name={focused ? "information-circle" : "information-circle-outline"}
                 size={26}
@@ -106,7 +107,7 @@ export default function TabLayout() {
         options={{
           title: "Laporan",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer]}>
               <Ionicons
                 name={focused ? "document-text" : "document-text-outline"}
                 size={26}
@@ -121,7 +122,7 @@ export default function TabLayout() {
         options={{
           title: "Kuis",
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+            <View style={[styles.iconContainer]}>
               <Ionicons
                 name={focused ? "trophy" : "trophy-outline"}
                 size={26}
@@ -139,9 +140,9 @@ const styles = StyleSheet.create({
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 60,
+    height: 60,
+    borderRadius: 25,
   },
   iconContainerActive: {
     backgroundColor: "rgba(12, 58, 197, 0.12)",

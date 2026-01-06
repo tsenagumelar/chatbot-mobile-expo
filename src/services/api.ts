@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import type {
-  ChatContext,
-  ChatResponse,
-  RouteRequestCoords,
-  RouteResponse,
-  TrafficResponse,
+    ChatContext,
+    ChatResponse,
+    RouteRequestCoords,
+    RouteResponse,
+    TrafficResponse,
 } from "../types";
 import { API_BASE_URL } from "../utils/constants";
 
@@ -49,7 +49,8 @@ api.interceptors.response.use(
 export async function sendChatMessage(
   message: string,
   context: ChatContext,
-  sessionId: string | null = null
+  sessionId: string | null = null,
+  imageUri?: string
 ): Promise<{ response: string; sessionId: string }> {
   try {
     // Only include session_id if it exists and is not empty
@@ -63,6 +64,56 @@ export async function sendChatMessage(
       console.log("🔄 Using existing session:", sessionId);
     } else {
       console.log("🆕 Starting new session");
+    }
+
+    // Handle image upload if provided
+    if (imageUri) {
+      const formData = new FormData();
+      formData.append('message', message);
+      formData.append('context', JSON.stringify(context));
+      if (sessionId && sessionId.trim() !== "") {
+        formData.append('session_id', sessionId);
+      }
+      
+      // Extract filename from URI
+      const filename = imageUri.split('/').pop() || 'image.jpg';
+      const match = /\.([\w]+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      
+      formData.append('image', {
+        uri: imageUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      console.log("📸 Uploading image with message");
+      
+      const response = await api.post<ChatResponse>("/chat", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log(
+        "📥 API Response Data:",
+        JSON.stringify(response.data, null, 2)
+      );
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || "Failed to get AI response");
+      }
+
+      const aiResponse =
+        typeof response.data.response === "string"
+          ? response.data.response
+          : JSON.stringify(response.data.response);
+
+      const resultSessionId = response.data.session_id || sessionId || "";
+
+      return {
+        response: aiResponse,
+        sessionId: resultSessionId,
+      };
     }
 
     console.log("🚀 API Request Payload:", JSON.stringify(payload, null, 2));

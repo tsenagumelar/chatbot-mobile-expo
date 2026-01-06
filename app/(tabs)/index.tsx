@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { AppHeader } from "@/src/components/AppHeader";
 import SpeedMeter from "@/src/components/SpeedMeter";
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
@@ -27,7 +28,6 @@ export default function HomeScreen() {
     speed,
     address,
     traffic,
-    user,
     logout,
     setLocation,
     setSpeed,
@@ -183,7 +183,7 @@ export default function HomeScreen() {
         accuracy: Location.Accuracy.High,
       });
       updateLocation(position);
-    } catch (err) {
+    } catch {
       Alert.alert("Error", "Failed to refresh location");
     }
   };
