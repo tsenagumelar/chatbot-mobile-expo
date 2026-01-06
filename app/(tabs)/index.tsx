@@ -1,4 +1,4 @@
-import AppHeader from "@/src/components/AppHeader";
+import { AppHeader } from "@/src/components/AppHeader";
 import SpeedMeter from "@/src/components/SpeedMeter";
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { getTrafficInfo } from "@/src/services/api";
@@ -6,14 +6,15 @@ import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
+import moment from "moment";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -225,7 +226,7 @@ export default function HomeScreen() {
             <View>
               <Text style={styles.quickLabel}>Terakhir</Text>
               <Text style={styles.quickValue}>
-                {lastUpdate ? lastUpdate.toLocaleTimeString() : "-"}
+                {lastUpdate ? moment(lastUpdate).format("HH:mm") : "-"}
               </Text>
             </View>
           </View>
