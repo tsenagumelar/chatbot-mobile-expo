@@ -7,7 +7,9 @@ import React, { useMemo, useState } from "react";
 import {
   Alert,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -375,7 +377,10 @@ export default function InfoScreen() {
         transparent={true}
         onRequestClose={() => setShowReportModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Laporkan Kejadian</Text>
@@ -387,7 +392,11 @@ export default function InfoScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              style={styles.formContainer} 
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               <View style={styles.formGroup}>
                 <Text style={styles.formLabel}>Judul Kejadian *</Text>
                 <TextInput
@@ -471,7 +480,7 @@ export default function InfoScreen() {
               </TouchableOpacity>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );

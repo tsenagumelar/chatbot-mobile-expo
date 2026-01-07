@@ -279,6 +279,11 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      {/* Overlay Background */}
+      {showWarningToast && (
+        <View style={styles.notificationOverlay} />
+      )}
+      
       {/* Warning Toast */}
       <WarningToast
         visible={showWarningToast}
@@ -492,8 +497,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-  },
-  scrollView: {
+  },  notificationOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 999,
+  },  scrollView: {
     flex: 1,
   },
   scrollContent: {
