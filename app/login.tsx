@@ -1,27 +1,27 @@
 import { requestLocationPermission } from "@/src/services/location";
 import { useStore } from "@/src/store/useStore";
 import { COLORS } from "@/src/utils/constants";
+import DateTimePicker, {
+    DateTimePickerAndroid,
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import DateTimePicker, {
-  DateTimePickerAndroid,
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 
 const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
@@ -51,6 +51,7 @@ export default function LoginScreen() {
   const [name, setName] = useState(user?.name ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [dob, setDob] = useState(user?.dob ?? "");
+  const [gender, setGender] = useState(user?.gender ?? "");
   const [dobDate, setDobDate] = useState<Date | null>(
     user?.dob ? parseDob(user.dob) : null
   );
@@ -113,8 +114,8 @@ export default function LoginScreen() {
   };
 
   const validateForm = () => {
-    if (!name.trim() || !phone.trim() || !dob.trim()) {
-      setError("Nama, No HP, dan tanggal lahir wajib diisi.");
+    if (!name.trim() || !phone.trim() || !dob.trim() || !gender.trim()) {
+      setError("Semua field wajib diisi.");
       return false;
     }
 
@@ -138,6 +139,7 @@ export default function LoginScreen() {
       phone: phone.trim(),
       email: "",
       dob: dob.trim(),
+      gender: gender.trim(),
     });
 
     router.replace("/(tabs)");
@@ -273,6 +275,48 @@ export default function LoginScreen() {
                 style={styles.datePicker}
               />
             )}
+
+            <Text style={styles.label}>Jenis Kelamin</Text>
+            <View style={styles.genderContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === "Laki-laki" && styles.genderButtonActive,
+                ]}
+                onPress={() => setGender("Laki-laki")}
+              >
+                <View style={styles.radioOuter}>
+                  {gender === "Laki-laki" && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.genderText,
+                    gender === "Laki-laki" && styles.genderTextActive,
+                  ]}
+                >
+                  Laki-laki
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.genderButton,
+                  gender === "Perempuan" && styles.genderButtonActive,
+                ]}
+                onPress={() => setGender("Perempuan")}
+              >
+                <View style={styles.radioOuter}>
+                  {gender === "Perempuan" && <View style={styles.radioInner} />}
+                </View>
+                <Text
+                  style={[
+                    styles.genderText,
+                    gender === "Perempuan" && styles.genderTextActive,
+                  ]}
+                >
+                  Perempuan
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
@@ -420,6 +464,51 @@ const styles = StyleSheet.create({
   },
   datePicker: {
     backgroundColor: "#fff",
+  },
+  genderContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
+  },
+  genderButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#DCE1FF",
+    backgroundColor: "#fff",
+  },
+  genderButtonActive: {
+    borderColor: COLORS.PRIMARY,
+    backgroundColor: "#F0F4FF",
+  },
+  radioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#DCE1FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  radioInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.PRIMARY,
+  },
+  genderText: {
+    fontSize: 15,
+    color: "#6E7ACF",
+    fontWeight: "600",
+  },
+  genderTextActive: {
+    color: COLORS.PRIMARY,
+    fontWeight: "700",
   },
   errorText: {
     color: COLORS.DANGER,

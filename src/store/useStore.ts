@@ -2,12 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
-    ChatMessage,
-    ChatSession,
-    IncidentReport,
-    LocationData,
-    RouteData,
-    TrafficData,
+  ChatMessage,
+  ChatSession,
+  IncidentReport,
+  LocationData,
+  RouteData,
+  TrafficData,
 } from "../types";
 
 interface UserProfile {
@@ -15,6 +15,7 @@ interface UserProfile {
   phone: string;
   email: string;
   dob?: string;
+  gender?: string;
 }
 
 interface AppState {
