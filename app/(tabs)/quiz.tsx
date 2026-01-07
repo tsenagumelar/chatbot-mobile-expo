@@ -193,9 +193,9 @@ export default function GameScreen() {
   const renderStartScreen = () => (
     <View style={styles.centerContainer}>
       <Ionicons name="trophy" size={80} color={COLORS.PRIMARY} />
-      <Text style={styles.title}>Kuis AI</Text>
+      <Text style={styles.title}>Kuis Harian Polantas Menyapa</Text>
       <Text style={styles.subtitle}>
-        Uji pengetahuan Anda tentang lalu lintas!
+        Membangun Budaya Tertib Berlalu Lintas dimulai dari Uji Pengetahuan Kamu Disini
       </Text>
 
       <View style={styles.infoCard}>
@@ -209,7 +209,11 @@ export default function GameScreen() {
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="flash" size={24} color={COLORS.PRIMARY} />
-          <Text style={styles.infoText}>Makin cepat, makin besar nilai!</Text>
+          <Text style={styles.infoText}>Makin cepat, makin besar nilai poin!</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Ionicons name="gift" size={24} color={COLORS.PRIMARY} />
+          <Text style={styles.infoText}>Nilai poin kamu dapat ditukarkan menjadi berbagai reward seperti pembuatan SIM gratis, perpanjangan SIM gratis serta reward menarik lainnya dari Korlantas Polri</Text>
         </View>
       </View>
 
@@ -876,11 +880,13 @@ const styles = StyleSheet.create({
     color: COLORS.TEXT_PRIMARY,
     marginTop: 16,
     marginBottom: 8,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
     color: COLORS.TEXT_SECONDARY,
     marginBottom: 32,
+    textAlign: "center",
   },
   infoCard: {
     backgroundColor: COLORS.CARD,

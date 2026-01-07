@@ -321,7 +321,7 @@ export default function ChatScreen() {
       />
       <Text style={styles.emptyTitle}>Belum ada chat</Text>
       <Text style={styles.emptyText}>
-        Mulai percakapan dengan asisten AI Anda
+        Mulai percakapan dengan asisten polantas anda
       </Text>
       
       <View style={styles.suggestionsContainer}>
@@ -415,7 +415,7 @@ export default function ChatScreen() {
         {chatLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-            <Text style={styles.loadingText}>Asistent Polantas sedang mengetik...</Text>
+            <Text style={styles.loadingText}>Asisten Polantas sedang mengetik...</Text>
           </View>
         )}
 
