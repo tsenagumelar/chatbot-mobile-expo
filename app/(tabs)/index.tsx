@@ -23,6 +23,81 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
 
+const SAFETY_NOTIFICATIONS = [
+  {
+    icon: "warning" as const,
+    title: "Area Rawan Kecelakaan",
+    message: "Waspada ya Sobat! Kamu sedang melewati area rawan kecelakaan. Di lokasi ini sering terjadi tabrakan karena kecepatan tinggi. Yuk, kurangi laju kendaraan dan tetap fokus. Keselamatanmu nomor satu!\n👉 Mau saya tampilkan rute alternatif yang lebih aman dari lokasi kamu sekarang?",
+    color: "#F59E0B",
+  },
+  {
+    icon: "alert-circle" as const,
+    title: "Riwayat Kecelakaan Beruntun",
+    message: "Sobat, hati-hati ya. Jalur yang kamu lewati memiliki riwayat kecelakaan beruntun. Jaga jarak aman dan patuhi rambu di sekitar.\n👉 Perlu saya ingatkan jarak aman berkendara sesuai kecepatan kamu saat ini?",
+    color: "#EF4444",
+  },
+  {
+    icon: "rainy" as const,
+    title: "Hujan & Jalan Licin",
+    message: "Halo Sobat! Saat ini cuaca hujan dan jalanan licin. Kurangi kecepatan dan hindari pengereman mendadak ya.\n👉 Mau saya aktifkan mode berkendara aman saat hujan?",
+    color: "#3B82F6",
+  },
+  {
+    icon: "water" as const,
+    title: "Rawan Genangan / Banjir",
+    message: "Sobat, di jalur ini sering terjadi genangan saat hujan deras. Tetap waspada dan perhatikan kondisi jalan.\n👉 Perlu saya carikan jalur alternatif yang minim genangan?",
+    color: "#0EA5E9",
+  },
+  {
+    icon: "construct" as const,
+    title: "Rekayasa Lalu Lintas",
+    message: "Info Sobat! Saat ini sedang diberlakukan rekayasa lalu lintas di sekitar lokasi kamu. Ikuti rambu dan petunjuk ya.\n👉 Mau saya arahkan ke jalur yang sudah disesuaikan dengan rekayasa lalu lintas ini?",
+    color: "#F59E0B",
+  },
+  {
+    icon: "close-circle" as const,
+    title: "Penutupan Jalan",
+    message: "Perhatian Sobat! Jalan di depan ditutup sementara. Tenang, kamu tetap bisa lanjut dengan aman.\n👉 Mau saya carikan rute alternatif tercepat dari posisi kamu sekarang?",
+    color: "#DC2626",
+  },
+  {
+    icon: "speedometer" as const,
+    title: "Kecepatan Terlalu Tinggi",
+    message: "Sobat, kecepatan kamu terdeteksi cukup tinggi di area padat. Yuk, kurangi laju kendaraan demi keselamatan bersama.\n👉 Perlu saya ingatkan batas kecepatan maksimal di jalan ini?",
+    color: "#EF4444",
+  },
+  {
+    icon: "time" as const,
+    title: "Jam Rawan Kecelakaan",
+    message: "Halo Sobat! Kamu sedang berkendara di jam rawan kecelakaan. Tetap fokus dan jaga jarak aman ya.\n👉 Mau saya aktifkan pengingat keselamatan selama perjalanan ini?",
+    color: "#F59E0B",
+  },
+  {
+    icon: "bed" as const,
+    title: "Potensi Mengantuk",
+    message: "Sobat, kamu sudah berkendara cukup lama. Jika merasa mengantuk, jangan dipaksakan ya.\n👉 Mau saya carikan rest area terdekat untuk istirahat?",
+    color: "#8B5CF6",
+  },
+  {
+    icon: "car" as const,
+    title: "Perjalanan Jarak Jauh",
+    message: "Perjalanan jauh terdeteksi, Sobat. Istirahat rutin bisa mencegah kecelakaan.\n👉 Perlu saya atur pengingat istirahat setiap 2 jam?",
+    color: "#06B6D4",
+  },
+  {
+    icon: "shield-checkmark" as const,
+    title: "Pengingat Helm & Sabuk Pengaman",
+    message: "Sedikit pengingat ya Sobat 😊 Helm dan sabuk pengaman bukan sekadar aturan, tapi pelindung utama di jalan.\n👉 Mau saya jelaskan risiko kecelakaan tanpa perlengkapan keselamatan?",
+    color: "#10B981",
+  },
+  {
+    icon: "happy" as const,
+    title: "Ajakan Positif",
+    message: "Terima kasih sudah tertib berlalu lintas, Sobat! Perjalanan aman dimulai dari kepatuhan kita bersama.\n👉 Mau saya kirimkan tips keselamatan singkat sesuai rute perjalanan kamu?",
+    color: "#10B981",
+  },
+];
+
 export default function HomeScreen() {
   const {
     location,
@@ -41,6 +116,7 @@ export default function HomeScreen() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastGeocodeAt, setLastGeocodeAt] = useState<number>(0);
   const [showWarningToast, setShowWarningToast] = useState(false);
+  const [currentNotification, setCurrentNotification] = useState(SAFETY_NOTIFICATIONS[0]);
 
   useEffect(() => {
     startLocationTracking();
@@ -196,6 +272,8 @@ export default function HomeScreen() {
   };
 
   const handleLocationCardPress = () => {
+    const randomIndex = Math.floor(Math.random() * SAFETY_NOTIFICATIONS.length);
+    setCurrentNotification(SAFETY_NOTIFICATIONS[randomIndex]);
     setShowWarningToast(true);
   };
 
@@ -205,6 +283,10 @@ export default function HomeScreen() {
       <WarningToast
         visible={showWarningToast}
         onHide={() => setShowWarningToast(false)}
+        icon={currentNotification.icon}
+        title={currentNotification.title}
+        message={currentNotification.message}
+        color={currentNotification.color}
       />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -253,10 +335,13 @@ export default function HomeScreen() {
         </View>
 
         {/* Location Card */}
-        <TouchableOpacity style={styles.card} onPress={handleLocationCardPress} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.locationCard} onPress={handleLocationCardPress} activeOpacity={0.7}>
           <View style={styles.cardHeader}>
             <Ionicons name="location" size={20} color="#007AFF" />
             <Text style={styles.cardTitle}>Current Location</Text>
+            <View style={styles.notifBadge}>
+              <Ionicons name="notifications" size={14} color="#FFFFFF" />
+            </View>
           </View>
           <Text style={styles.addressText}>{address}</Text>
           {location && (
@@ -505,6 +590,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+  },
+  locationCard: {
+    backgroundColor: "#F0F9FF",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#3B82F6",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  notifBadge: {
+    marginLeft: "auto",
+    backgroundColor: "#3B82F6",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
   cardHeader: {
     flexDirection: "row",

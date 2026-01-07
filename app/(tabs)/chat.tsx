@@ -1,4 +1,5 @@
 import { AppHeader } from "@/src/components/AppHeader";
+import ChatHistoryModal from "@/src/components/ChatHistoryModal";
 import ChatMessage from "@/src/components/ChatMessage";
 import VoiceInputWebView from "@/src/components/VoiceInputWebView";
 import { sendChatMessage, testConnection } from "@/src/services/api";
@@ -37,10 +38,14 @@ export default function ChatScreen() {
     chatLoading,
     sessionId,
     user,
+    chatSessions,
     addMessage,
-    clearMessages,
     setChatLoading,
     setSessionId,
+    createNewSession,
+    switchSession,
+    deleteSession,
+    saveCurrentSession,
   } = useStore();
 
   const [inputText, setInputText] = useState("");
@@ -48,6 +53,7 @@ export default function ChatScreen() {
     null
   );
   const [showVoiceInput, setShowVoiceInput] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | undefined>();
   const flatListRef = useRef<FlatList>(null);
   const statusColor =
@@ -190,6 +196,9 @@ export default function ChatScreen() {
       };
 
       addMessage(assistantMessage);
+      
+      // Auto-save session after AI response
+      setTimeout(() => saveCurrentSession(), 500);
     } catch (error: any) {
       console.error("❌ Chat error:", error);
 
@@ -207,18 +216,23 @@ export default function ChatScreen() {
     }
   };
 
-  const handleClearChat = () => {
-    Alert.alert("Clear Chat", "Are you sure you want to clear all messages?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        style: "destructive",
-        onPress: () => {
-          clearMessages();
-          stopSpeaking();
+  const handleNewSession = () => {
+    if (messages.length === 0) return;
+    
+    Alert.alert(
+      "Chat Baru",
+      "Mulai chat baru? Chat saat ini akan disimpan di history.",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Chat Baru",
+          onPress: () => {
+            createNewSession();
+            stopSpeaking();
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleVoiceTranscript = (text: string) => {
@@ -287,6 +301,17 @@ export default function ChatScreen() {
     );
   };
 
+  const chatSuggestions = [
+    "Dimana saya bisa perpanjang SIM?",
+    "Bantu saya cek tilang",
+    "Bagaimana kondisi lalu lintas?",
+    "Apakah ada penutupan jalan?",
+  ];
+
+  const handleSuggestionPress = (suggestion: string) => {
+    setInputText(suggestion);
+  };
+
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Ionicons
@@ -298,6 +323,21 @@ export default function ChatScreen() {
       <Text style={styles.emptyText}>
         Mulai percakapan dengan asisten AI Anda
       </Text>
+      
+      <View style={styles.suggestionsContainer}>
+        <Text style={styles.suggestionsTitle}>Coba tanyakan:</Text>
+        {chatSuggestions.map((suggestion, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.suggestionChip}
+            onPress={() => handleSuggestionPress(suggestion)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chatbubble-outline" size={16} color="#0C3AC5" />
+            <Text style={styles.suggestionText}>{suggestion}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
@@ -332,10 +372,20 @@ export default function ChatScreen() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.iconButton}
-            onPress={handleClearChat}
+            onPress={() => setShowHistory(true)}
+          >
+            <Ionicons name="time-outline" size={20} color="#111827" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleNewSession}
             disabled={messages.length === 0}
           >
-            <Ionicons name="create-outline" size={20} color="#111827" />
+            <Ionicons 
+              name="create-outline" 
+              size={20} 
+              color={messages.length === 0 ? "#D1D5DB" : "#111827"} 
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -365,7 +415,7 @@ export default function ChatScreen() {
         {chatLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-            <Text style={styles.loadingText}>AI sedang mengetik...</Text>
+            <Text style={styles.loadingText}>Asistent Polantas sedang mengetik...</Text>
           </View>
         )}
 
@@ -435,6 +485,15 @@ export default function ChatScreen() {
         visible={showVoiceInput}
         onClose={() => setShowVoiceInput(false)}
         onTranscript={handleVoiceTranscript}
+      />
+
+      {/* Chat History Modal */}
+      <ChatHistoryModal
+        visible={showHistory}
+        sessions={chatSessions}
+        onClose={() => setShowHistory(false)}
+        onSelectSession={switchSession}
+        onDeleteSession={deleteSession}
       />
     </SafeAreaView>
   );
@@ -528,6 +587,41 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
     lineHeight: 22,
+  },
+  suggestionsContainer: {
+    marginTop: 32,
+    width: "100%",
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  suggestionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
   },
   loadingContainer: {
     flexDirection: "row",

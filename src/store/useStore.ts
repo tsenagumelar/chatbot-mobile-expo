@@ -2,11 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type {
-  ChatMessage,
-  IncidentReport,
-  LocationData,
-  RouteData,
-  TrafficData,
+    ChatMessage,
+    ChatSession,
+    IncidentReport,
+    LocationData,
+    RouteData,
+    TrafficData,
 } from "../types";
 
 interface UserProfile {
@@ -30,6 +31,8 @@ interface AppState {
   messages: ChatMessage[];
   chatLoading: boolean;
   sessionId: string | null;
+  chatSessions: ChatSession[];
+  activeSessionId: string | null;
 
   // Routes
   routes: RouteData[];
@@ -58,6 +61,10 @@ interface AppState {
   clearMessages: () => void;
   setChatLoading: (loading: boolean) => void;
   setSessionId: (sessionId: string | null) => void;
+  createNewSession: () => void;
+  switchSession: (sessionId: string) => void;
+  deleteSession: (sessionId: string) => void;
+  saveCurrentSession: () => void;
 
   setRoutes: (routes: RouteData[]) => void;
   setSelectedRoute: (route: RouteData | null) => void;
@@ -87,6 +94,8 @@ export const useStore = create<AppState>()(
       messages: [],
       chatLoading: false,
       sessionId: null,
+      chatSessions: [],
+      activeSessionId: null,
 
       routes: [],
       selectedRoute: null,
@@ -116,6 +125,65 @@ export const useStore = create<AppState>()(
       clearMessages: () => set({ messages: [], sessionId: null }),
       setChatLoading: (loading) => set({ chatLoading: loading }),
       setSessionId: (sessionId) => set({ sessionId }),
+
+      createNewSession: () =>
+        set((state) => {
+          // Save current session if there are messages
+          if (state.messages.length > 0) {
+            const currentSession: ChatSession = {
+              id: state.activeSessionId || Date.now().toString(),
+              sessionId: state.sessionId,
+              name: `Chat ${new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+              messages: state.messages,
+              createdAt: state.messages[0]?.timestamp || Date.now(),
+              lastMessageAt: state.messages[state.messages.length - 1]?.timestamp || Date.now(),
+            };
+            const updatedSessions = [currentSession, ...state.chatSessions.filter(s => s.id !== currentSession.id)];
+            return {
+              messages: [],
+              sessionId: null,
+              activeSessionId: null,
+              chatSessions: updatedSessions,
+            };
+          }
+          return { messages: [], sessionId: null, activeSessionId: null };
+        }),
+
+      switchSession: (sessionId) =>
+        set((state) => {
+          const session = state.chatSessions.find((s) => s.id === sessionId);
+          if (session) {
+            return {
+              messages: session.messages,
+              sessionId: session.sessionId,
+              activeSessionId: session.id,
+            };
+          }
+          return state;
+        }),
+
+      deleteSession: (sessionId) =>
+        set((state) => ({
+          chatSessions: state.chatSessions.filter((s) => s.id !== sessionId),
+        })),
+
+      saveCurrentSession: () =>
+        set((state) => {
+          if (state.messages.length === 0) return state;
+          const sessionToSave: ChatSession = {
+            id: state.activeSessionId || Date.now().toString(),
+            sessionId: state.sessionId,
+            name: `Chat ${new Date(state.messages[0]?.timestamp || Date.now()).toLocaleDateString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+            messages: state.messages,
+            createdAt: state.messages[0]?.timestamp || Date.now(),
+            lastMessageAt: state.messages[state.messages.length - 1]?.timestamp || Date.now(),
+          };
+          const updatedSessions = [
+            sessionToSave,
+            ...state.chatSessions.filter((s) => s.id !== sessionToSave.id),
+          ];
+          return { chatSessions: updatedSessions, activeSessionId: sessionToSave.id };
+        }),
 
       // Routes actions
       setRoutes: (routes) => set({ routes }),
@@ -153,6 +221,8 @@ export const useStore = create<AppState>()(
         user: state.user,
         hasLocationPermission: state.hasLocationPermission,
         reports: state.reports,
+        chatSessions: state.chatSessions,
+        activeSessionId: state.activeSessionId,
       }),
     }
   )

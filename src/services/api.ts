@@ -53,13 +53,18 @@ export async function sendChatMessage(
   imageUri?: string,
   name?: string
 ): Promise<{ response: string; sessionId: string }> {
+  let payload: any;
   try {
     // Build base payload
-    const payload: any = {
+    payload = {
       message,
       context,
-      name: name || "User",
     };
+
+    // Add name only if provided
+    if (name && name.trim()) {
+      payload.name = name.trim();
+    }
 
     if (sessionId && sessionId.trim() !== "") {
       payload.session_id = sessionId;
@@ -97,7 +102,11 @@ export async function sendChatMessage(
       });
     }
 
-    console.log("🚀 API Request Payload:", JSON.stringify(payload, null, 2));
+    console.log("\n" + "=".repeat(60));
+    console.log("🚀 PAYLOAD YANG DIKIRIM KE BACKEND CHAT:");
+    console.log("=".repeat(60));
+    console.log(JSON.stringify(payload, null, 2));
+    console.log("=".repeat(60) + "\n");
 
     const response = await api.post<ChatResponse>("/chat", payload);
 
@@ -129,12 +138,22 @@ export async function sendChatMessage(
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
+      console.error("❌ Full Error Details:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        code: error.code,
+        requestPayload: payload,
+      });
+      
       const errorMsg = [
         `Backend URL: ${API_BASE_URL}`,
         `Endpoint: /chat`,
-        `Error: ${error.response?.data?.error || error.message}`,
+        `Error: ${error.response?.data?.error || error.response?.data?.message || error.message}`,
         error.code ? `Code: ${error.code}` : null,
         !error.response ? "⚠️ Backend Offline/Tidak dapat dijangkau" : `HTTP Status: ${error.response?.status}`,
+        error.response?.data ? `Backend Response: ${JSON.stringify(error.response.data)}` : null,
       ].filter(Boolean).join("\n");
       throw new Error(errorMsg);
     }

@@ -26,6 +26,15 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface ChatSession {
+  id: string;
+  sessionId: string | null;
+  name: string;
+  messages: ChatMessage[];
+  createdAt: number;
+  lastMessageAt: number;
+}
+
 export interface ChatHistoryItem {
   role: "user" | "assistant";
   content: string;

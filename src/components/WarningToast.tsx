@@ -5,11 +5,22 @@ import { Animated, Image, StyleSheet, Text, View } from "react-native";
 interface WarningToastProps {
   visible: boolean;
   onHide: () => void;
+  icon?: keyof typeof Ionicons.glyphMap;
+  title?: string;
+  message?: string;
+  color?: string;
 }
 
 const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
-export default function WarningToast({ visible, onHide }: WarningToastProps) {
+export default function WarningToast({ 
+  visible, 
+  onHide,
+  icon = "warning",
+  title = "Peringatan Area Rawan",
+  message = "Waspada ya Sobat! Kamu sedang melewati area rawan kecelakaan.",
+  color = "#F59E0B"
+}: WarningToastProps) {
   const translateY = useRef(new Animated.Value(-200)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -77,13 +88,11 @@ export default function WarningToast({ visible, onHide }: WarningToastProps) {
         {/* Content */}
         <View style={styles.content}>
           <View style={styles.header}>
-            <Ionicons name="warning" size={20} color="#F59E0B" />
-            <Text style={styles.title}>Peringatan Area Rawan</Text>
+            <Ionicons name={icon} size={20} color={color} />
+            <Text style={styles.title}>{title}</Text>
           </View>
           <Text style={styles.message}>
-            Waspada ya Sobat! Kamu sedang melewati area rawan kecelakaan. Di
-            lokasi kamu saat ini pernah terjadi kecelakaan beruntun lho. Yuk,
-            kurangi kecepatan dan fokus pada jalan. Keselamatanmu nomor satu.
+            {message}
           </Text>
         </View>
       </View>
