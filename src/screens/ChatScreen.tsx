@@ -1,8 +1,21 @@
+import { AppHeader } from "@/src/components/AppHeader";
+import ChatHistoryModal from "@/src/components/ChatHistoryModal";
+import ChatMessage from "@/src/components/ChatMessage";
+import VoiceInputWebView from "@/src/components/VoiceInputWebView";
+import { sendChatMessage, testConnection } from "@/src/services/api";
+import { stopSpeaking } from "@/src/services/voice";
+import { useStore } from "@/src/store/useStore";
+import type { ChatMessage as ChatMessageType } from "@/src/types";
+import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -12,13 +25,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import ChatMessage from "../components/ChatMessage";
-import VoiceButton from "../components/VoiceButton";
-import { sendChatMessage, testConnection } from "../services/api";
-import { speak } from "../services/voice";
-import { useStore } from "../store/useStore";
-import type { ChatMessage as ChatMessageType } from "../types";
-import { AUTO_SPEAK_RESPONSES, COLORS } from "../utils/constants";
+
+const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
 export default function ChatScreen() {
   const {
@@ -29,49 +37,63 @@ export default function ChatScreen() {
     messages,
     chatLoading,
     sessionId,
+    user,
+    chatSessions,
     addMessage,
     setChatLoading,
     setSessionId,
-    clearMessages,
+    createNewSession,
+    switchSession,
+    deleteSession,
+    saveCurrentSession,
   } = useStore();
 
   const [inputText, setInputText] = useState("");
   const [backendConnected, setBackendConnected] = useState<boolean | null>(
     null
   );
+  const [showVoiceInput, setShowVoiceInput] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | undefined>();
   const flatListRef = useRef<FlatList>(null);
+  const statusColor =
+    backendConnected === null
+      ? "#D1D5DB"
+      : backendConnected
+      ? "#34C759"
+      : "#FF3B30";
+
+  // Speech recognition event listeners (disabled for Expo Go)
+  // Uncomment when using Development Build
+  /*
+  useSpeechRecognitionEvent('start', () => {
+    console.log('🎤 Started');
+    setIsListening(true);
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    console.log('🛑 Ended');
+    setIsListening(false);
+  });
+
+  useSpeechRecognitionEvent('result', (event) => {
+    const transcript = event.results[0]?.transcript;
+    if (transcript) {
+      setInputText(transcript);
+    }
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    console.error('❌ Error:', event.error);
+    setIsListening(false);
+    Alert.alert('Voice Error', event.error);
+  });
+  */
 
   // Test backend connection on mount
   useEffect(() => {
     checkBackendConnection();
   }, []);
-
-  // Clear old messages on mount to prevent data corruption issues
-  useEffect(() => {
-    // Check if there are any corrupt messages
-    const hasCorruptMessages = messages.some(
-      (msg) => typeof msg.content !== "string"
-    );
-    if (hasCorruptMessages) {
-      console.log("🧹 Clearing corrupt messages");
-      clearMessages();
-    }
-  }, []);
-
-  const checkBackendConnection = async () => {
-    try {
-      const connected = await testConnection();
-      setBackendConnected(connected);
-      if (connected) {
-        console.log("✅ Backend connected");
-      } else {
-        console.log("⚠️ Backend offline");
-      }
-    } catch (error) {
-      setBackendConnected(false);
-      console.error("❌ Backend connection failed:", error);
-    }
-  };
 
   // Auto-scroll to bottom when new message arrives
   useEffect(() => {
@@ -82,57 +104,86 @@ export default function ChatScreen() {
     }
   }, [messages.length]);
 
+  const checkBackendConnection = async () => {
+    try {
+      const connected = await testConnection();
+      setBackendConnected(connected);
+
+      if (!connected) {
+        Alert.alert(
+          "Backend Offline",
+          "Cannot connect to backend API. Please check if backend is running.",
+          [{ text: "OK" }]
+        );
+      }
+    } catch {
+      setBackendConnected(false);
+    }
+  };
+
   const handleSend = async () => {
-    if (!inputText.trim() || chatLoading) return;
+    if ((!inputText.trim() && !selectedImage) || chatLoading) return;
+
+    // Check backend first
+    if (backendConnected === false) {
+      Alert.alert("Backend Offline", "Please start the backend server first.", [
+        { text: "Retry", onPress: checkBackendConnection },
+        { text: "Cancel" },
+      ]);
+      return;
+    }
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       role: "user",
-      content: inputText.trim(),
+      content: inputText.trim() || "[Gambar]",
+      imageUri: selectedImage,
       timestamp: Date.now(),
     };
 
     addMessage(userMessage);
+    const imageToSend = selectedImage;
     setInputText("");
+    setSelectedImage(undefined);
     setChatLoading(true);
 
     try {
       // Prepare context
       const context = {
-        location: address,
-        speed,
+        location: address || "Unknown",
+        speed: speed || 0,
         traffic: traffic?.condition || "unknown",
         latitude: location?.latitude || 0,
         longitude: location?.longitude || 0,
       };
 
-      // Debug logging - show current session state
-      console.log("📤 Sending to backend:");
-      console.log("Message:", userMessage.content);
-      console.log("Current Session ID from store:", sessionId);
-      console.log("Session ID being sent:", sessionId || null);
+      console.log("📤 Sending to backend:", {
+        message: userMessage.content,
+        context,
+        sessionId: sessionId || "(new session)",
+        hasImage: !!imageToSend,
+      });
 
-      // Get AI response with session (backend manages history)
-      const { response, sessionId: newSessionId } = await sendChatMessage(
+      // Get AI response from backend with session management
+      const response = await sendChatMessage(
         userMessage.content,
         context,
-        sessionId
+        sessionId,
+        imageToSend, // Pass imageUri directly, sendChatMessage will handle it
+        user?.name // Pass user's name from login
       );
 
-      console.log("📥 Received from backend:");
-      console.log("Response type:", typeof response);
-      console.log("Response:", response);
-      console.log("New Session ID from backend:", newSessionId);
+      console.log("📥 Received from backend:", response);
 
       // Save/update session ID from backend
-      if (newSessionId && newSessionId !== sessionId) {
+      if (response.sessionId && response.sessionId !== sessionId) {
         console.log("💾 Updating session ID:", {
           old: sessionId,
-          new: newSessionId,
+          new: response.sessionId,
         });
-        setSessionId(newSessionId);
-      } else if (newSessionId) {
-        console.log("✅ Session ID unchanged:", newSessionId);
+        setSessionId(response.sessionId);
+      } else if (response.sessionId) {
+        console.log("✅ Session ID unchanged:", response.sessionId);
       } else {
         console.warn("⚠️ No session ID received from backend");
       }
@@ -140,45 +191,125 @@ export default function ChatScreen() {
       const assistantMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: typeof response === "string" ? response : String(response),
+        content: response.response,
         timestamp: Date.now(),
       };
 
-      console.log("💾 Saving message:", {
-        ...assistantMessage,
-        contentType: typeof assistantMessage.content,
-      });
       addMessage(assistantMessage);
+      
+      // Auto-save session after AI response
+      setTimeout(() => saveCurrentSession(), 500);
+    } catch (error: any) {
+      console.error("❌ Chat error:", error);
 
-      // Auto-speak response
-      if (AUTO_SPEAK_RESPONSES) {
-        speak(response);
-      }
-    } catch (error) {
       const errorMessage: ChatMessageType = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "❌ Maaf, terjadi kesalahan. Silakan coba lagi.",
+        content: `❌ Error: ${
+          error.message || "Failed to get response from AI"
+        }. Please check backend connection.`,
         timestamp: Date.now(),
       };
       addMessage(errorMessage);
-      console.error("Chat error:", error);
     } finally {
       setChatLoading(false);
     }
   };
 
-  const handleVoicePress = () => {
-    // TODO: Implement voice input (Speech-to-Text)
-    // For MVP, show info
-    const infoMessage: ChatMessageType = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content:
-        "🎤 Fitur voice input akan segera hadir! Untuk saat ini, gunakan text input ya.",
-      timestamp: Date.now(),
-    };
-    addMessage(infoMessage);
+  const handleNewSession = () => {
+    if (messages.length === 0) return;
+    
+    Alert.alert(
+      "Chat Baru",
+      "Mulai chat baru? Chat saat ini akan disimpan di history.",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Chat Baru",
+          onPress: () => {
+            createNewSession();
+            stopSpeaking();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleVoiceTranscript = (text: string) => {
+    setInputText(text);
+    setShowVoiceInput(false);
+  };
+
+  const pickFromLibrary = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Izin dibutuhkan",
+        "Berikan akses galeri untuk melampirkan foto."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Izin kamera dibutuhkan",
+        "Aktifkan izin kamera untuk mengambil foto."
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+      setSelectedImage(asset.uri);
+    }
+  };
+
+  const handleImageAction = () => {
+    Alert.alert(
+      "Lampirkan foto",
+      "Pilih sumber foto",
+      [
+        { text: "Batal", style: "cancel" },
+        { text: "Kamera", onPress: takePhoto },
+        { text: "Galeri", onPress: pickFromLibrary },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const chatSuggestions = [
+    "Dimana saya bisa perpanjang SIM?",
+    "Bantu saya cek tilang",
+    "Bagaimana kondisi lalu lintas?",
+    "Apakah ada penutupan jalan?",
+  ];
+
+  const handleSuggestionPress = (suggestion: string) => {
+    setInputText(suggestion);
   };
 
   const renderEmpty = () => (
@@ -188,65 +319,74 @@ export default function ChatScreen() {
         size={64}
         color={COLORS.TEXT_SECONDARY}
       />
-      <Text style={styles.emptyTitle}>Halo! 👋</Text>
+      <Text style={styles.emptyTitle}>Belum ada chat</Text>
       <Text style={styles.emptyText}>
-        Saya asisten chat AI Anda.{"\n"}
-        Silahkan tanya apa saja!
+        Mulai percakapan dengan asisten polantas anda
       </Text>
+      
+      <View style={styles.suggestionsContainer}>
+        <Text style={styles.suggestionsTitle}>Coba tanyakan:</Text>
+        {chatSuggestions.map((suggestion, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.suggestionChip}
+            onPress={() => handleSuggestionPress(suggestion)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chatbubble-outline" size={16} color="#0C3AC5" />
+            <Text style={styles.suggestionText}>{suggestion}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Status Header - Always visible */}
-      <View style={styles.statusHeader}>
-        {/* Left: Session ID */}
-        <View style={styles.sessionInfo}>
-          <Text style={styles.sessionLabel}>Session:</Text>
-          <Text style={styles.sessionValue}>
-            {sessionId ? sessionId.substring(0, 8) + "..." : "None"}
-          </Text>
-        </View>
-
-        {/* Right: Backend Status & Clear Button */}
-        <View style={styles.rightActions}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: backendConnected ? "#E5F7ED" : "#FFE5E5" },
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                { backgroundColor: backendConnected ? "#34C759" : "#FF3B30" },
-              ]}
-            />
-            <Text style={styles.statusText}>
-              {backendConnected === null
-                ? "Checking..."
-                : backendConnected
-                ? "Connected"
-                : "Offline"}
-            </Text>
-            {!backendConnected && backendConnected !== null && (
-              <TouchableOpacity onPress={checkBackendConnection}>
-                <Ionicons name="refresh" size={14} color="#FF3B30" />
-              </TouchableOpacity>
-            )}
+      <AppHeader />
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="chevron-back" size={22} color="#111827" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Image source={polantasLogo} style={styles.headerLogo} />
+          <View>
+            <Text style={styles.headerTitle}>Polantas Menyapa</Text>
+            <View style={styles.statusRow}>
+              <View
+                style={[styles.statusDot, { backgroundColor: statusColor }]}
+              />
+              <Text style={styles.statusText}>
+                {backendConnected === null
+                  ? "Menghubungkan..."
+                  : backendConnected
+                  ? "Online"
+                  : "Offline"}
+              </Text>
+            </View>
           </View>
-
-          {messages.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() => {
-                clearMessages();
-                console.log("🧹 Chat cleared, session reset");
-              }}
-            >
-              <Ionicons name="trash-outline" size={16} color="#FF3B30" />
-            </TouchableOpacity>
-          )}
+        </View>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => setShowHistory(true)}
+          >
+            <Ionicons name="time-outline" size={20} color="#111827" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={handleNewSession}
+            disabled={messages.length === 0}
+          >
+            <Ionicons 
+              name="create-outline" 
+              size={20} 
+              color={messages.length === 0 ? "#D1D5DB" : "#111827"} 
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -275,38 +415,86 @@ export default function ChatScreen() {
         {chatLoading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color={COLORS.PRIMARY} />
-            <Text style={styles.loadingText}>Mengetik...</Text>
+            <Text style={styles.loadingText}>Asisten Polantas sedang mengetik...</Text>
+          </View>
+        )}
+
+        {/* Image Preview */}
+        {selectedImage && (
+          <View style={styles.imagePreviewContainer}>
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.imagePreview}
+            />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={() => setSelectedImage(undefined)}
+            >
+              <Ionicons name="close-circle" size={24} color="#EF4444" />
+            </TouchableOpacity>
           </View>
         )}
 
         {/* Input Area */}
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Tanya sesuatu..."
-            placeholderTextColor={COLORS.TEXT_SECONDARY}
-            value={inputText}
-            onChangeText={setInputText}
-            multiline
-            maxLength={500}
-            editable={!chatLoading}
-            onSubmitEditing={handleSend}
-          />
-
-          <VoiceButton onPress={handleVoicePress} disabled={chatLoading} />
-
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !inputText.trim() && styles.sendButtonDisabled,
-            ]}
-            onPress={handleSend}
-            disabled={!inputText.trim() || chatLoading}
-          >
-            <Ionicons name="send" size={24} color="white" />
-          </TouchableOpacity>
+        <View style={styles.bottomBar}>
+          <View style={styles.inputContainer}>
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={() => setShowVoiceInput(true)}
+                disabled={true}
+              >
+                <Ionicons name="mic-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.circleButton}
+                onPress={handleImageAction}
+                disabled={chatLoading}
+              >
+                <Ionicons name="image-outline" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Type here..."
+              placeholderTextColor="#9CA3AF"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+              editable={!chatLoading}
+              onSubmitEditing={handleSend}
+              returnKeyType="send"
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                (!inputText.trim() && !selectedImage || chatLoading) && styles.sendButtonDisabled,
+              ]}
+              onPress={handleSend}
+              disabled={!inputText.trim() && !selectedImage || chatLoading}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Voice Input Modal */}
+      <VoiceInputWebView
+        visible={showVoiceInput}
+        onClose={() => setShowVoiceInput(false)}
+        onTranscript={handleVoiceTranscript}
+      />
+
+      {/* Chat History Modal */}
+      <ChatHistoryModal
+        visible={showHistory}
+        sessions={chatSessions}
+        onClose={() => setShowHistory(false)}
+        onSelectSession={switchSession}
+        onDeleteSession={deleteSession}
+      />
     </SafeAreaView>
   );
 }
@@ -314,71 +502,69 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+    backgroundColor: "#FFFFFF",
   },
-  statusHeader: {
+  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: COLORS.CARD,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
+    borderBottomColor: "#EEF2F7",
+    backgroundColor: "#FFFFFF",
   },
-  sessionInfo: {
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F4F4F6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  headerLogo: {
+    width: 28,
+    height: 34,
+    resizeMode: "contain",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+  },
+  statusRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    marginTop: 2,
   },
-  sessionLabel: {
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
     fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    fontWeight: "600",
+    color: "#6B7280",
   },
-  sessionValue: {
-    fontSize: 12,
-    color: COLORS.PRIMARY,
-    fontWeight: "700",
-    fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
-  },
-  rightActions: {
+  headerActions: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-  },
-  clearButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#FFE5E5",
   },
   keyboardView: {
     flex: 1,
   },
   messagesList: {
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingBottom: 16,
   },
   messagesListEmpty: {
     flexGrow: 1,
@@ -390,17 +576,52 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 12,
+    marginBottom: 6,
   },
   emptyText: {
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
+    fontSize: 15,
+    color: "#6B7280",
     textAlign: "center",
-    lineHeight: 24,
+    lineHeight: 22,
+  },
+  suggestionsContainer: {
+    marginTop: 32,
+    width: "100%",
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6B7280",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  suggestionChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  suggestionText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#374151",
+    fontWeight: "500",
   },
   loadingContainer: {
     flexDirection: "row",
@@ -411,39 +632,84 @@ const styles = StyleSheet.create({
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    fontStyle: "italic",
+    color: "#6B7280",
+  },
+  bottomBar: {
+    backgroundColor: "#0C3AC5",
+    paddingHorizontal: 12,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   inputContainer: {
     flexDirection: "row",
-    alignItems: "flex-end",
-    padding: 12,
-    backgroundColor: COLORS.CARD,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  circleButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#F4F4F6",
+    alignItems: "center",
+    justifyContent: "center",
   },
   input: {
     flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: COLORS.TEXT_PRIMARY,
-    marginRight: 8,
+    minHeight: 28,
+    maxHeight: 90,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    fontSize: 15,
+    color: "#111827",
   },
   sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.PRIMARY,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#0C3AC5",
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 8,
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  imagePreviewContainer: {
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    position: "relative",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    resizeMode: "cover",
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: 18,
+    right: 22,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });

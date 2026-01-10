@@ -1,418 +1,318 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { getRoutesByAddress, getRoutesByCoords } from "../services/api";
-import { useStore } from "../store/useStore";
-import type { RouteData } from "../types";
-import { COLORS } from "../utils/constants";
+import * as Location from "expo-location";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import MapView, { Marker, Polygon, Polyline, UrlTile } from "react-native-maps";
 
-export default function RoutesScreen() {
-  const { location, routes, routesLoading, setRoutes, setRoutesLoading } =
-    useStore();
+type LatLng = { latitude: number; longitude: number };
 
-  const [origin, setOrigin] = useState("");
-  const [destination, setDestination] = useState("");
-  const [useCurrentLocation, setUseCurrentLocation] = useState(true);
+function offsetLatLng(origin: LatLng, northMeters: number, eastMeters: number): LatLng {
+  const dLat = northMeters / 111_320;
+  const dLng = eastMeters / (111_320 * Math.cos((origin.latitude * Math.PI) / 180));
+  return { latitude: origin.latitude + dLat, longitude: origin.longitude + dLng };
+}
 
-  const handleSearch = async () => {
-    if (!destination.trim()) {
-      Alert.alert("Error", "Masukkan tujuan Anda");
-      return;
-    }
+function squarePolygon(center: LatLng, halfSizeMeters: number): LatLng[] {
+  return [
+    offsetLatLng(center, +halfSizeMeters, -halfSizeMeters),
+    offsetLatLng(center, +halfSizeMeters, +halfSizeMeters),
+    offsetLatLng(center, -halfSizeMeters, +halfSizeMeters),
+    offsetLatLng(center, -halfSizeMeters, -halfSizeMeters),
+  ];
+}
 
-    setRoutesLoading(true);
-    setRoutes([]);
+function centroid(coords: LatLng[]): LatLng {
+  let lat = 0, lng = 0;
+  coords.forEach(p => { lat += p.latitude; lng += p.longitude; });
+  return { latitude: lat / coords.length, longitude: lng / coords.length };
+}
 
-    try {
-      let response;
+// decode polyline (Google polyline format) -> LatLng[]
+function decodePolyline(encoded: string): LatLng[] {
+  let index = 0, lat = 0, lng = 0;
+  const coordinates: LatLng[] = [];
 
-      if (useCurrentLocation && location) {
-        // Use current location as origin
-        response = await getRoutesByCoords({
-          origin_lat: location.latitude,
-          origin_lng: location.longitude,
-          destination_lat: 0, // Will be geocoded by backend
-          destination_lng: 0,
-        });
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lat += dlat;
 
-        // Fallback: use address-based search
-        response = await getRoutesByAddress("Lokasi Saat Ini", destination);
-      } else {
-        if (!origin.trim()) {
-          Alert.alert("Error", "Masukkan lokasi asal");
-          return;
-        }
-        response = await getRoutesByAddress(origin, destination);
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = (result & 1) ? ~(result >> 1) : (result >> 1);
+    lng += dlng;
+
+    coordinates.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+
+  return coordinates;
+}
+
+async function fetchRouteOSRM(from: LatLng, to: LatLng): Promise<LatLng[]> {
+  // OSRM format: lon,lat
+  const url =
+    `https://router.project-osrm.org/route/v1/driving/` +
+    `${from.longitude},${from.latitude};${to.longitude},${to.latitude}` +
+    `?overview=full&geometries=polyline`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Gagal mengambil rute");
+  const json = await res.json();
+
+  const encoded = json?.routes?.[0]?.geometry;
+  if (!encoded) throw new Error("Rute tidak ditemukan");
+  return decodePolyline(encoded);
+}
+
+export default function MapZonesAndRestRoute() {
+  const mapRef = useRef<MapView>(null);
+  const [userLoc, setUserLoc] = useState<LatLng | null>(null);
+  const [route, setRoute] = useState<LatLng[] | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const newUserLoc = { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
+      setUserLoc(newUserLoc);
+      
+      // Fokus langsung ke lokasi user
+      if (mapRef.current) {
+        mapRef.current.animateCamera({
+          center: newUserLoc,
+          zoom: 15,
+        }, { duration: 1000 });
       }
+    })();
+  }, []);
 
-      setRoutes(response.routes);
+  const areas = useMemo(() => {
+    if (!userLoc) return [];
 
-      if (response.routes.length === 0) {
-        Alert.alert("Info", "Tidak ada rute yang ditemukan");
-      }
-    } catch (error: any) {
-      Alert.alert("Error", error.message || "Gagal mencari rute");
-      console.error("Route search error:", error);
-    } finally {
-      setRoutesLoading(false);
-    }
+    const dangerCenter = offsetLatLng(userLoc, +250, +120);
+    const schoolCenter = offsetLatLng(userLoc, -150, -200);
+
+    return [
+      { id: "rawan", name: "Rawan Kecelakaan", kind: "danger" as const, coords: squarePolygon(dangerCenter, 120) },
+      { id: "sekolah", name: "Zona Sekolah", kind: "school" as const, coords: squarePolygon(schoolCenter, 90) },
+    ];
+  }, [userLoc]);
+
+  const restArea = useMemo(() => {
+    if (!userLoc) return null;
+    // contoh: rest area 400m ke timur dan 80m ke utara dari user
+    return {
+      id: "rest-1",
+      name: "Rest Area Terdekat",
+      coord: offsetLatLng(userLoc, +80, +400),
+    };
+  }, [userLoc]);
+
+  const initialRegion = {
+    latitude: userLoc?.latitude ?? -6.2,
+    longitude: userLoc?.longitude ?? 106.8,
+    latitudeDelta: 0.02,
+    longitudeDelta: 0.02,
   };
 
-  const renderRoute = (route: RouteData, index: number) => {
-    const trafficColor =
-      route.traffic_condition === "light"
-        ? COLORS.TRAFFIC_LIGHT
-        : route.traffic_condition === "moderate"
-        ? COLORS.TRAFFIC_MODERATE
-        : COLORS.TRAFFIC_HEAVY;
-
-    return (
-      <View key={index} style={styles.routeCard}>
-        <View style={styles.routeHeader}>
-          <View style={styles.routeNumber}>
-            <Text style={styles.routeNumberText}>{route.route_number}</Text>
-          </View>
-          <View style={styles.routeInfo}>
-            <Text style={styles.routeSummary}>{route.summary}</Text>
-            <View style={styles.routeStats}>
-              <View style={styles.statItem}>
-                <Ionicons
-                  name="navigate"
-                  size={16}
-                  color={COLORS.TEXT_SECONDARY}
-                />
-                <Text style={styles.statText}>{route.distance}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Ionicons name="time" size={16} color={COLORS.TEXT_SECONDARY} />
-                <Text style={styles.statText}>{route.duration}</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text
-                  style={[
-                    styles.trafficBadge,
-                    { backgroundColor: trafficColor },
-                  ]}
-                >
-                  {route.condition_emoji}{" "}
-                  {route.traffic_condition.toUpperCase()}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Steps */}
-        {route.steps && route.steps.length > 0 && (
-          <View style={styles.stepsContainer}>
-            <Text style={styles.stepsTitle}>Langkah-langkah:</Text>
-            {route.steps.slice(0, 3).map((step, i) => (
-              <View key={i} style={styles.stepItem}>
-                <View style={styles.stepBullet} />
-                <Text style={styles.stepText}>{step.instruction}</Text>
-              </View>
-            ))}
-            {route.total_steps > 3 && (
-              <Text style={styles.moreSteps}>
-                +{route.total_steps - 3} langkah lainnya
-              </Text>
-            )}
-          </View>
-        )}
-      </View>
-    );
+  const onPressRestRoute = async () => {
+    if (!userLoc || !restArea) return;
+    try {
+      setLoadingRoute(true);
+      const pts = await fetchRouteOSRM(userLoc, restArea.coord);
+      setRoute(pts);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingRoute(false);
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView style={styles.scrollView}>
-        {/* Search Form */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.title}>Cari Rute 🗺️</Text>
+    <View style={{ flex: 1 }}>
+      <MapView 
+        ref={mapRef}
+        style={{ flex: 1 }} 
+        initialRegion={initialRegion}
+      >
+        <UrlTile urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} />
 
-          {/* Current Location Toggle */}
-          <TouchableOpacity
-            style={styles.toggleContainer}
-            onPress={() => setUseCurrentLocation(!useCurrentLocation)}
-          >
-            <Ionicons
-              name={useCurrentLocation ? "checkbox" : "square-outline"}
-              size={24}
-              color={COLORS.PRIMARY}
-            />
-            <Text style={styles.toggleText}>Gunakan lokasi saat ini</Text>
-          </TouchableOpacity>
-
-          {/* Origin Input */}
-          {!useCurrentLocation && (
-            <View style={styles.inputGroup}>
-              <Ionicons
-                name="location"
-                size={20}
-                color={COLORS.TEXT_SECONDARY}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Dari mana?"
-                placeholderTextColor={COLORS.TEXT_SECONDARY}
-                value={origin}
-                onChangeText={setOrigin}
-                editable={!routesLoading}
-              />
+        {/* User location dengan icon khusus (biru) */}
+        {userLoc && (
+          <Marker coordinate={userLoc} title="Lokasi Kamu">
+            <View style={styles.userMarker}>
+              <View style={styles.userDot} />
             </View>
-          )}
-
-          {/* Destination Input */}
-          <View style={styles.inputGroup}>
-            <Ionicons name="flag" size={20} color={COLORS.TEXT_SECONDARY} />
-            <TextInput
-              style={styles.input}
-              placeholder="Mau ke mana?"
-              placeholderTextColor={COLORS.TEXT_SECONDARY}
-              value={destination}
-              onChangeText={setDestination}
-              editable={!routesLoading}
-            />
-          </View>
-
-          {/* Search Button */}
-          <TouchableOpacity
-            style={[
-              styles.searchButton,
-              routesLoading && styles.searchButtonDisabled,
-            ]}
-            onPress={handleSearch}
-            disabled={routesLoading}
-          >
-            {routesLoading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <Ionicons name="search" size={20} color="white" />
-                <Text style={styles.searchButtonText}>Cari Rute</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Routes List */}
-        {routes.length > 0 && (
-          <View style={styles.routesContainer}>
-            <Text style={styles.routesTitle}>
-              {routes.length} Rute Ditemukan
-            </Text>
-            {routes.map((route, index) => renderRoute(route, index))}
-          </View>
+          </Marker>
         )}
 
-        {/* Empty State */}
-        {!routesLoading && routes.length === 0 && (
-          <View style={styles.emptyState}>
-            <Ionicons
-              name="map-outline"
-              size={64}
-              color={COLORS.TEXT_SECONDARY}
-            />
-            <Text style={styles.emptyText}>
-              Cari rute untuk melihat alternatif perjalanan
-            </Text>
-          </View>
+        {/* Rest area dengan icon khusus (hijau) */}
+        {restArea && (
+          <Marker coordinate={restArea.coord} title={restArea.name}>
+            <View style={styles.restMarker}>
+              <Text style={styles.restIcon}>🅿️</Text>
+            </View>
+          </Marker>
         )}
-      </ScrollView>
-    </SafeAreaView>
+
+        {areas.map(a => {
+          const c = centroid(a.coords);
+          const fill = a.kind === "danger" ? "rgba(255,140,0,0.25)" : "rgba(0,122,255,0.18)";
+          const stroke = a.kind === "danger" ? "rgba(255,140,0,0.9)" : "rgba(0,122,255,0.9)";
+          return (
+            <React.Fragment key={a.id}>
+              <Polygon coordinates={a.coords} fillColor={fill} strokeColor={stroke} strokeWidth={2} />
+              {/* Marker dengan icon berbeda per tipe */}
+              <Marker coordinate={c} title={a.name}>
+                {a.kind === "danger" ? (
+                  <View style={styles.dangerMarker}>
+                    <Text style={styles.dangerIcon}>⚠️</Text>
+                  </View>
+                ) : (
+                  <View style={styles.schoolMarker}>
+                    <Text style={styles.schoolIcon}>🏫</Text>
+                  </View>
+                )}
+              </Marker>
+            </React.Fragment>
+          );
+        })}
+
+        {route && (
+          <Polyline
+            coordinates={route}
+            strokeWidth={5}
+            strokeColor="rgba(0,122,255,0.95)"
+          />
+        )}
+      </MapView>
+
+      {/* Panel tombol sederhana */}
+      <View style={styles.panel}>
+        <TouchableOpacity
+          style={[styles.btn, loadingRoute && { opacity: 0.6 }]}
+          disabled={loadingRoute}
+          onPress={onPressRestRoute}
+        >
+          <Text style={styles.btnText}>
+            {loadingRoute ? "Mencari rute..." : "Rest Area Terdekat"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.btnGhost} onPress={() => setRoute(null)}>
+          <Text style={styles.btnGhostText}>Hapus Rute</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.BACKGROUND,
+  panel: {
+    position: "absolute",
+    left: 16, right: 16, bottom: 18,
+    gap: 10,
   },
-  scrollView: {
-    flex: 1,
-  },
-  searchContainer: {
-    padding: 16,
-    backgroundColor: COLORS.CARD,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 16,
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  toggleText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: COLORS.TEXT_PRIMARY,
-  },
-  inputGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.BACKGROUND,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-  },
-  input: {
-    flex: 1,
-    height: 48,
-    marginLeft: 8,
-    fontSize: 16,
-    color: COLORS.TEXT_PRIMARY,
-  },
-  searchButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: COLORS.PRIMARY,
-    borderRadius: 12,
+  btn: {
+    backgroundColor: "rgba(255,255,255,0.95)",
     paddingVertical: 14,
-    marginTop: 8,
+    borderRadius: 999,
+    alignItems: "center",
   },
-  searchButtonDisabled: {
-    opacity: 0.6,
+  btnText: { fontWeight: "800", color: "#0A285A" },
+  btnGhost: {
+    backgroundColor: "rgba(10,40,90,0.9)",
+    paddingVertical: 12,
+    borderRadius: 999,
+    alignItems: "center",
   },
-  searchButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  routesContainer: {
-    padding: 16,
-  },
-  routesTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 12,
-  },
-  routeCard: {
-    backgroundColor: COLORS.CARD,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  routeHeader: {
-    flexDirection: "row",
-  },
-  routeNumber: {
+  btnGhostText: { fontWeight: "800", color: "white" },
+  // Icon markers
+  userMarker: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.PRIMARY,
+    backgroundColor: "#007AFF",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    borderWidth: 3,
+    borderColor: "white",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  routeNumberText: {
-    color: "white",
+  userDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "white",
+  },
+  dangerMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FF8C00",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  dangerIcon: {
+    fontSize: 20,
+  },
+  schoolMarker: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  schoolIcon: {
     fontSize: 18,
-    fontWeight: "bold",
   },
-  routeInfo: {
-    flex: 1,
-  },
-  routeSummary: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
-  },
-  routeStats: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-    marginBottom: 4,
-  },
-  statText: {
-    marginLeft: 4,
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-  },
-  trafficBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "white",
-  },
-  stepsContainer: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
-  },
-  stepsTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.TEXT_PRIMARY,
-    marginBottom: 8,
-  },
-  stepItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 8,
-  },
-  stepBullet: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.PRIMARY,
-    marginTop: 6,
-    marginRight: 8,
-  },
-  stepText: {
-    flex: 1,
-    fontSize: 14,
-    color: COLORS.TEXT_SECONDARY,
-    lineHeight: 20,
-  },
-  moreSteps: {
-    fontSize: 12,
-    color: COLORS.TEXT_SECONDARY,
-    fontStyle: "italic",
-    marginTop: 4,
-  },
-  emptyState: {
-    flex: 1,
+  restMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 64,
+    borderWidth: 2,
+    borderColor: "#34C759",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: COLORS.TEXT_SECONDARY,
-    textAlign: "center",
-    paddingHorizontal: 32,
+  restIcon: {
+    fontSize: 22,
   },
 });
