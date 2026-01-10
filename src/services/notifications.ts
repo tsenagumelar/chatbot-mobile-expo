@@ -19,6 +19,13 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     return null;
   }
 
+  if (Platform.OS === "android" && Constants.appOwnership === "expo") {
+    console.warn(
+      "Expo Go on Android does not support remote push notifications. Skipping token."
+    );
+    return null;
+  }
+
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 

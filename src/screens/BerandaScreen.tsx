@@ -1,33 +1,42 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { AppHeader } from "@/src/components/AppHeader";
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
-import notificationData from "@/src/services/notification.json";
 import { getTrafficInfo } from "@/src/services/api";
+import notificationData from "@/src/services/notification.json";
 import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
+import * as Speech from "expo-speech";
 import moment from "moment";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import MapView, {
-    Marker,
-    Polyline,
-    PROVIDER_DEFAULT,
+  Marker,
+  Polyline,
+  PROVIDER_DEFAULT,
+  UrlTile,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
 
 type NotificationPayload = (typeof notificationData)[number];
+type ScenarioMarker = {
+  id: string;
+  title: string;
+  coord: LatLng;
+  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
 
 type LatLng = { latitude: number; longitude: number };
 
@@ -41,6 +50,74 @@ function buildVoiceText(payload: NotificationPayload): string {
     return `Hai Sobat Lantas, ${title}. Tetap hati-hati di jalan.`;
   }
   return "Hai Sobat Lantas, tetap hati-hati di jalan.";
+}
+
+function getIoniconName(name?: string): keyof typeof Ionicons.glyphMap {
+  if (name && Object.prototype.hasOwnProperty.call(Ionicons.glyphMap, name)) {
+    return name as keyof typeof Ionicons.glyphMap;
+  }
+  return "alert-circle";
+}
+
+function getScenarioIcon(payload: NotificationPayload): keyof typeof Ionicons.glyphMap {
+  switch (payload.id) {
+    case "school_zone_active":
+      return "school";
+    case "blackspot_enter":
+      return "warning";
+    case "wrong_way_detected":
+      return "swap-vertical";
+    case "illegal_uturn_zone":
+      return "return-down-back";
+    case "rain_slippery_road":
+    case "rain_active_general":
+      return "rainy";
+    case "fatigue_detected":
+      return "bed";
+    case "high_risk_hour":
+      return "time";
+    case "traffic_operation_active":
+    case "roadwork_active":
+      return "construct";
+    case "traffic_density_high":
+      return "stats-chart";
+    case "helmet_education":
+      return "shield-checkmark";
+    case "steep_descent_ahead":
+      return "arrow-down";
+    case "big_intersection":
+      return "git-branch";
+    case "low_light_area":
+      return "flash";
+    case "safe_trip_completed":
+      return "happy";
+    case "bike_unfriendly_route":
+    case "bike_night_no_light":
+      return "bicycle";
+    case "crime_prone_area":
+      return "alert-circle";
+    case "unsafe_crossing":
+      return "walk";
+    case "sidewalk_disrupted":
+      return "trail-sign";
+    case "public_transport_dropoff_risk":
+    case "route_changed":
+      return "bus";
+    case "event_or_demo_area":
+      return "megaphone";
+    default:
+      return getIoniconName(payload.icon);
+  }
+}
+
+function getModeForScenario(payload: NotificationPayload) {
+  const users = payload.pengguna ?? [];
+  if (users.includes("pejalan_kaki")) return "Jalan Kaki";
+  if (users.includes("pesepeda")) return "Sepeda";
+  if (users.includes("angkutan_umum")) return "Kereta";
+  if (users.includes("motor")) return "Motor";
+  if (users.includes("mobil")) return "Mobil";
+  return "Mobil";
 }
 
 function offsetLatLng(
@@ -145,6 +222,9 @@ export default function HomeScreen() {
   const [route, setRoute] = useState<LatLng[] | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
   const [showRoutePicker, setShowRoutePicker] = useState(false);
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(
+    notificationData[0]?.id ?? null
+  );
 
   const transportModes: {
     label: "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Kereta";
@@ -200,6 +280,69 @@ export default function HomeScreen() {
     () => areas.find((area) => area.kind === "danger") ?? null,
     [areas]
   );
+  const activeScenario = useMemo(
+    () => notificationData.find((item) => item.id === activeScenarioId) ?? null,
+    [activeScenarioId]
+  );
+  const scenarioMarkers = useMemo<ScenarioMarker[]>(() => {
+    if (!userCoord || !activeScenario) return [];
+
+    const id = activeScenario.id;
+    const base = userCoord;
+    const offset = (north: number, east: number) =>
+      offsetLatLng(base, north, east);
+
+    const icon = getScenarioIcon(activeScenario);
+    const color = activeScenario.color ?? "#0B57D0";
+
+    if (
+      [
+        "blackspot_enter",
+        "school_zone_active",
+        "wrong_way_detected",
+        "illegal_uturn_zone",
+        "traffic_operation_active",
+        "traffic_density_high",
+        "low_light_area",
+        "roadwork_active",
+        "big_intersection",
+        "event_or_demo_area",
+        "rain_slippery_road",
+        "rain_active_general",
+        "unsafe_crossing",
+        "sidewalk_disrupted",
+        "public_transport_dropoff_risk",
+        "route_changed",
+        "bike_unfriendly_route",
+        "bike_night_no_light",
+        "crime_prone_area",
+      ].includes(id)
+    ) {
+      return [
+        {
+          id,
+          title: activeScenario.title,
+          coord: offset(120, 140),
+          color,
+          icon,
+        },
+      ];
+    }
+
+    if (id === "fatigue_detected" && restArea) {
+      return [
+        {
+          id,
+          title: "Rest Area Terdekat",
+          coord: restArea.coord,
+          color: "#34C759",
+          icon: "bed",
+        },
+      ];
+    }
+
+    return [];
+  }, [userCoord, activeScenario, restArea]);
   const safeDestination = useMemo(() => {
     if (!dangerArea) return null;
     const dangerCenter = centroid(dangerArea.coords);
@@ -351,40 +494,68 @@ export default function HomeScreen() {
 
   const sendSampleNotification = async () => {
     if (!notificationData.length) return;
+    const { status: currentStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = currentStatus;
+    if (currentStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      Alert.alert(
+        "Izin Notifikasi",
+        "Aktifkan izin notifikasi untuk menerima pemberitahuan."
+      );
+      return;
+    }
+
     const randomIndex = Math.floor(Math.random() * notificationData.length);
-    const randomNotif: NotificationPayload = notificationData[randomIndex];
+    const payload: NotificationPayload =
+      activeScenario ?? notificationData[randomIndex];
     const coords = location
       ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
       : "Lokasi tidak tersedia";
 
     try {
+      const voiceText = buildVoiceText(payload);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "Polantas Menyapa Digital",
-          subtitle: randomNotif.title,
-          body: `${randomNotif.message}\n\nLokasi: ${address}\n${coords}`,
+          subtitle: payload.title,
+          body: `${payload.message}\n\nLokasi: ${address}\n${coords}`,
           sound: "default",
           data: {
-            id: randomNotif.id,
-            kategori: randomNotif.kategori,
-            trigger: randomNotif.trigger,
-            data_utama: randomNotif.data_utama,
-            sapaan_ringkas: randomNotif.sapaan_ringkas,
-            pengguna: randomNotif.pengguna,
-            icon: randomNotif.icon,
-            color: randomNotif.color,
-            cta: randomNotif.cta,
+            id: payload.id,
+            kategori: payload.kategori,
+            trigger: payload.trigger,
+            data_utama: payload.data_utama,
+            sapaan_ringkas: payload.sapaan_ringkas,
+            pengguna: payload.pengguna,
+            icon: payload.icon,
+            color: payload.color,
+            cta: payload.cta,
             address,
             coords,
-            voiceText: buildVoiceText(randomNotif),
+            voiceText,
           },
         },
         trigger: null,
+      });
+      Speech.stop();
+      Speech.speak(voiceText, {
+        language: "id-ID",
+        rate: 0.9,
+        pitch: 1.1,
       });
     } catch (error) {
       console.error("Notification error:", error);
     }
   };
+
+  useEffect(() => {
+    if (!activeScenario) return;
+    const nextMode = getModeForScenario(activeScenario);
+    setSelectedMode(nextMode);
+  }, [activeScenario?.id]);
 
   const onPressRestRoute = async () => {
     if (!userCoord || !restArea) return;
@@ -555,8 +726,53 @@ export default function HomeScreen() {
                 )}
               </View>
             </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.scenarioScrollerContent}
+              style={styles.scenarioScroller}
+            >
+              {notificationData.map((item) => {
+                const isActive = item.id === activeScenarioId;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[
+                      styles.scenarioChip,
+                      isActive && styles.scenarioChipActive,
+                    ]}
+                    onPress={() => setActiveScenarioId(item.id)}
+                  >
+                      <Ionicons
+                      name={getScenarioIcon(item)}
+                      size={14}
+                      color={isActive ? "#FFFFFF" : "#0B57D0"}
+                    />
+                    <Text
+                      style={[
+                        styles.scenarioChipText,
+                        isActive && styles.scenarioChipTextActive,
+                      ]}
+                    >
+                      {item.sapaan_ringkas}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            {activeScenario && (
+              <View style={styles.scenarioHint}>
+                <Text style={styles.scenarioHintTitle}>
+                  Simulasi: {activeScenario.kategori}
+                </Text>
+                <Text style={styles.scenarioHintText}>
+                  Trigger: {activeScenario.trigger}
+                </Text>
+              </View>
+            )}
             <View style={styles.mapContainer}>
               <MapView
+                key={`map-${activeScenarioId ?? "default"}`}
                 style={styles.map}
                 provider={PROVIDER_DEFAULT}
                 region={{
@@ -571,22 +787,26 @@ export default function HomeScreen() {
                 showsCompass={true}
                 showsScale={true}
               >
-                {areas.map((area) => {
-                  const center = centroid(area.coords);
-                  return (
-                    <Marker key={area.id} coordinate={center} title={area.name}>
-                      {area.kind === "danger" ? (
-                        <View style={styles.dangerMarker}>
-                          <Text style={styles.dangerIcon}>⚠️</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.schoolMarker}>
-                          <Text style={styles.schoolIcon}>🏫</Text>
-                        </View>
-                      )}
-                    </Marker>
-                  );
-                })}
+                <UrlTile
+                  urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  maximumZ={19}
+                />
+                {scenarioMarkers.map((marker) => (
+                  <Marker
+                    key={marker.id}
+                    coordinate={marker.coord}
+                    title={marker.title}
+                  >
+                    <View
+                      style={[
+                        styles.scenarioMarker,
+                        { borderColor: marker.color },
+                      ]}
+                    >
+                      <Ionicons name={marker.icon} size={18} color={marker.color} />
+                    </View>
+                  </Marker>
+                ))}
 
                 {restArea && (
                   <Marker coordinate={restArea.coord} title={restArea.name}>
@@ -941,6 +1161,67 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: "100%",
+  },
+  scenarioScroller: {
+    paddingHorizontal: 12,
+    marginBottom: 6,
+  },
+  scenarioScrollerContent: {
+    gap: 8,
+    paddingVertical: 6,
+  },
+  scenarioChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "#E8F0FE",
+  },
+  scenarioChipActive: {
+    backgroundColor: "#0B57D0",
+  },
+  scenarioChipText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0B57D0",
+  },
+  scenarioChipTextActive: {
+    color: "#FFFFFF",
+  },
+  scenarioHint: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 10,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  scenarioHintTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#0B57D0",
+    marginBottom: 2,
+  },
+  scenarioHintText: {
+    fontSize: 12,
+    color: "#475569",
+  },
+  scenarioMarker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
   },
   routeFloatingContainer: {
     position: "absolute",
