@@ -1,11 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { AppHeader } from "@/src/components/AppHeader";
-import WarningToast from "@/src/components/WarningToast";
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
+import notificationData from "@/src/services/notification.json";
 import { getTrafficInfo } from "@/src/services/api";
 import { useStore } from "@/src/store/useStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import moment from "moment";
 import React, { useEffect, useMemo, useState } from "react";
@@ -19,7 +20,6 @@ import {
 } from "react-native";
 import MapView, {
     Marker,
-    Polygon,
     Polyline,
     PROVIDER_DEFAULT,
 } from "react-native-maps";
@@ -27,92 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
 
-const SAFETY_NOTIFICATIONS = [
-  {
-    icon: "warning" as const,
-    title: "Area Rawan Kecelakaan",
-    message:
-      "Waspada ya Sobat! Kamu sedang melewati area rawan kecelakaan. Di lokasi ini sering terjadi tabrakan karena kecepatan tinggi. Yuk, kurangi laju kendaraan dan tetap fokus. Keselamatanmu nomor satu!\n👉 Mau saya tampilkan rute alternatif yang lebih aman dari lokasi kamu sekarang?",
-    color: "#F59E0B",
-  },
-  {
-    icon: "alert-circle" as const,
-    title: "Riwayat Kecelakaan Beruntun",
-    message:
-      "Sobat, hati-hati ya. Jalur yang kamu lewati memiliki riwayat kecelakaan beruntun. Jaga jarak aman dan patuhi rambu di sekitar.\n👉 Perlu saya ingatkan jarak aman berkendara sesuai kecepatan kamu saat ini?",
-    color: "#EF4444",
-  },
-  {
-    icon: "rainy" as const,
-    title: "Hujan & Jalan Licin",
-    message:
-      "Halo Sobat! Saat ini cuaca hujan dan jalanan licin. Kurangi kecepatan dan hindari pengereman mendadak ya.\n👉 Mau saya aktifkan mode berkendara aman saat hujan?",
-    color: "#3B82F6",
-  },
-  {
-    icon: "water" as const,
-    title: "Rawan Genangan / Banjir",
-    message:
-      "Sobat, di jalur ini sering terjadi genangan saat hujan deras. Tetap waspada dan perhatikan kondisi jalan.\n👉 Perlu saya carikan jalur alternatif yang minim genangan?",
-    color: "#0EA5E9",
-  },
-  {
-    icon: "construct" as const,
-    title: "Rekayasa Lalu Lintas",
-    message:
-      "Info Sobat! Saat ini sedang diberlakukan rekayasa lalu lintas di sekitar lokasi kamu. Ikuti rambu dan petunjuk ya.\n👉 Mau saya arahkan ke jalur yang sudah disesuaikan dengan rekayasa lalu lintas ini?",
-    color: "#F59E0B",
-  },
-  {
-    icon: "close-circle" as const,
-    title: "Penutupan Jalan",
-    message:
-      "Perhatian Sobat! Jalan di depan ditutup sementara. Tenang, kamu tetap bisa lanjut dengan aman.\n👉 Mau saya carikan rute alternatif tercepat dari posisi kamu sekarang?",
-    color: "#DC2626",
-  },
-  {
-    icon: "speedometer" as const,
-    title: "Kecepatan Terlalu Tinggi",
-    message:
-      "Sobat, kecepatan kamu terdeteksi cukup tinggi di area padat. Yuk, kurangi laju kendaraan demi keselamatan bersama.\n👉 Perlu saya ingatkan batas kecepatan maksimal di jalan ini?",
-    color: "#EF4444",
-  },
-  {
-    icon: "time" as const,
-    title: "Jam Rawan Kecelakaan",
-    message:
-      "Halo Sobat! Kamu sedang berkendara di jam rawan kecelakaan. Tetap fokus dan jaga jarak aman ya.\n👉 Mau saya aktifkan pengingat keselamatan selama perjalanan ini?",
-    color: "#F59E0B",
-  },
-  {
-    icon: "bed" as const,
-    title: "Potensi Mengantuk",
-    message:
-      "Sobat, kamu sudah berkendara cukup lama. Jika merasa mengantuk, jangan dipaksakan ya.\n👉 Mau saya carikan rest area terdekat untuk istirahat?",
-    color: "#8B5CF6",
-  },
-  {
-    icon: "car" as const,
-    title: "Perjalanan Jarak Jauh",
-    message:
-      "Perjalanan jauh terdeteksi, Sobat. Istirahat rutin bisa mencegah kecelakaan.\n👉 Perlu saya atur pengingat istirahat setiap 2 jam?",
-    color: "#06B6D4",
-  },
-  {
-    icon: "shield-checkmark" as const,
-    title: "Pengingat Helm & Sabuk Pengaman",
-    message:
-      "Sedikit pengingat ya Sobat 😊 Helm dan sabuk pengaman bukan sekadar aturan, tapi pelindung utama di jalan.\n👉 Mau saya jelaskan risiko kecelakaan tanpa perlengkapan keselamatan?",
-    color: "#10B981",
-  },
-  {
-    icon: "happy" as const,
-    title: "Ajakan Positif",
-    message:
-      "Terima kasih sudah tertib berlalu lintas, Sobat! Perjalanan aman dimulai dari kepatuhan kita bersama.\n👉 Mau saya kirimkan tips keselamatan singkat sesuai rute perjalanan kamu?",
-    color: "#10B981",
-  },
-];
+type NotificationPayload = (typeof notificationData)[number];
 
 type LatLng = { latitude: number; longitude: number };
 
@@ -211,10 +126,6 @@ export default function HomeScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastGeocodeAt, setLastGeocodeAt] = useState<number>(0);
-  const [showWarningToast, setShowWarningToast] = useState(false);
-  const [currentNotification, setCurrentNotification] = useState(
-    SAFETY_NOTIFICATIONS[0]
-  );
   const [showModePicker, setShowModePicker] = useState(false);
   const [selectedMode, setSelectedMode] = useState<
     "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Kereta"
@@ -423,9 +334,43 @@ export default function HomeScreen() {
   };
 
   const handleLocationCardPress = () => {
-    const randomIndex = Math.floor(Math.random() * SAFETY_NOTIFICATIONS.length);
-    setCurrentNotification(SAFETY_NOTIFICATIONS[randomIndex]);
-    setShowWarningToast(true);
+    sendSampleNotification();
+  };
+
+  const sendSampleNotification = async () => {
+    if (!notificationData.length) return;
+    const randomIndex = Math.floor(Math.random() * notificationData.length);
+    const randomNotif: NotificationPayload = notificationData[randomIndex];
+    const coords = location
+      ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
+      : "Lokasi tidak tersedia";
+
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Polantas Menyapa Digital",
+          subtitle: randomNotif.title,
+          body: `${randomNotif.message}\n\nLokasi: ${address}\n${coords}`,
+          sound: "default",
+          data: {
+            id: randomNotif.id,
+            kategori: randomNotif.kategori,
+            trigger: randomNotif.trigger,
+            data_utama: randomNotif.data_utama,
+            sapaan_ringkas: randomNotif.sapaan_ringkas,
+            pengguna: randomNotif.pengguna,
+            icon: randomNotif.icon,
+            color: randomNotif.color,
+            cta: randomNotif.cta,
+            address,
+            coords,
+          },
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.error("Notification error:", error);
+    }
   };
 
   const onPressRestRoute = async () => {
@@ -470,19 +415,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Overlay Background */}
-      {showWarningToast && <View style={styles.notificationOverlay} />}
-
-      {/* Warning Toast */}
-      <WarningToast
-        visible={showWarningToast}
-        onHide={() => setShowWarningToast(false)}
-        icon={currentNotification.icon}
-        title={currentNotification.title}
-        message={currentNotification.message}
-        color={currentNotification.color}
-      />
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -789,15 +721,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
-  },
-  notificationOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    zIndex: 999,
   },
   scrollView: {
     flex: 1,

@@ -21,6 +21,8 @@ export default {
           "Aplikasi membutuhkan akses lokasi untuk menampilkan posisi Anda di peta dan memberikan informasi lalu lintas yang akurat.",
         NSLocationAlwaysAndWhenInUseUsageDescription:
           "Aplikasi membutuhkan akses lokasi untuk tracking kecepatan dan kondisi lalu lintas.",
+        NSUserNotificationUsageDescription:
+          "Aplikasi membutuhkan izin notifikasi untuk memberikan peringatan keselamatan dan informasi perjalanan.",
         NSMicrophoneUsageDescription:
           "Aplikasi membutuhkan akses mikrofon untuk fitur voice input.",
         NSSpeechRecognitionUsageDescription:
@@ -39,6 +41,7 @@ export default {
       permissions: [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
       ],
@@ -54,6 +57,7 @@ export default {
     },
     plugins: [
       "expo-router",
+      "expo-notifications",
       "expo-speech-recognition",
       [
         "expo-location",
@@ -65,6 +69,10 @@ export default {
     ],
     experiments: {
       typedRoutes: true,
+    },
+    notification: {
+      icon: "./assets/images/Polantas Logo.png",
+      color: "#007AFF",
     },
     extra: {
       eas: {
