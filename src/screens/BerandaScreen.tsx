@@ -221,6 +221,7 @@ export default function HomeScreen() {
   >("Mobil");
   const [route, setRoute] = useState<LatLng[] | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
+  const [showRoutePicker, setShowRoutePicker] = useState(false);
 
   const transportModes: {
     label: "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Kereta";
@@ -267,6 +268,20 @@ export default function HomeScreen() {
       coord: offsetLatLng(userCoord, +80, +400),
     };
   }, [userCoord?.latitude, userCoord?.longitude]);
+
+  const schoolArea = useMemo(
+    () => areas.find((area) => area.kind === "school") ?? null,
+    [areas]
+  );
+  const dangerArea = useMemo(
+    () => areas.find((area) => area.kind === "danger") ?? null,
+    [areas]
+  );
+  const safeDestination = useMemo(() => {
+    if (!dangerArea) return null;
+    const dangerCenter = centroid(dangerArea.coords);
+    return offsetLatLng(dangerCenter, +300, 0);
+  }, [dangerArea]);
 
   useEffect(() => {
     startLocationTracking();
@@ -418,6 +433,33 @@ export default function HomeScreen() {
     try {
       setLoadingRoute(true);
       const pts = await fetchRouteOSRM(userCoord, restArea.coord);
+      setRoute(pts);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingRoute(false);
+    }
+  };
+
+  const onPressSchoolRoute = async () => {
+    if (!userCoord || !schoolArea) return;
+    try {
+      setLoadingRoute(true);
+      const schoolCenter = centroid(schoolArea.coords);
+      const pts = await fetchRouteOSRM(userCoord, schoolCenter);
+      setRoute(pts);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingRoute(false);
+    }
+  };
+
+  const onPressSafeRoute = async () => {
+    if (!userCoord || !safeDestination) return;
+    try {
+      setLoadingRoute(true);
+      const pts = await fetchRouteOSRM(userCoord, safeDestination);
       setRoute(pts);
     } catch (e) {
       console.log(e);
@@ -586,34 +628,18 @@ export default function HomeScreen() {
               >
                 {areas.map((area) => {
                   const center = centroid(area.coords);
-                  const fill =
-                    area.kind === "danger"
-                      ? "rgba(255,140,0,0.25)"
-                      : "rgba(0,122,255,0.18)";
-                  const stroke =
-                    area.kind === "danger"
-                      ? "rgba(255,140,0,0.9)"
-                      : "rgba(0,122,255,0.9)";
                   return (
-                    <React.Fragment key={area.id}>
-                      <Polygon
-                        coordinates={area.coords}
-                        fillColor={fill}
-                        strokeColor={stroke}
-                        strokeWidth={2}
-                      />
-                      <Marker coordinate={center} title={area.name}>
-                        {area.kind === "danger" ? (
-                          <View style={styles.dangerMarker}>
-                            <Text style={styles.dangerIcon}>⚠️</Text>
-                          </View>
-                        ) : (
-                          <View style={styles.schoolMarker}>
-                            <Text style={styles.schoolIcon}>🏫</Text>
-                          </View>
-                        )}
-                      </Marker>
-                    </React.Fragment>
+                    <Marker key={area.id} coordinate={center} title={area.name}>
+                      {area.kind === "danger" ? (
+                        <View style={styles.dangerMarker}>
+                          <Text style={styles.dangerIcon}>⚠️</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.schoolMarker}>
+                          <Text style={styles.schoolIcon}>🏫</Text>
+                        </View>
+                      )}
+                    </Marker>
                   );
                 })}
 
@@ -621,6 +647,14 @@ export default function HomeScreen() {
                   <Marker coordinate={restArea.coord} title={restArea.name}>
                     <View style={styles.restMarker}>
                       <Text style={styles.restIcon}>🅿️</Text>
+                    </View>
+                  </Marker>
+                )}
+
+                {safeDestination && (
+                  <Marker coordinate={safeDestination} title="Tujuan Akhir">
+                    <View style={styles.safeMarker}>
+                      <Text style={styles.safeIcon}>🏁</Text>
                     </View>
                   </Marker>
                 )}
@@ -643,22 +677,67 @@ export default function HomeScreen() {
                   />
                 )}
               </MapView>
-              <View style={styles.mapPanel}>
+              <View style={styles.routeFloatingContainer}>
                 <TouchableOpacity
-                  style={[styles.mapPanelButton, loadingRoute && { opacity: 0.6 }]}
-                  disabled={loadingRoute}
-                  onPress={onPressRestRoute}
+                  onPress={() => setShowRoutePicker((prev) => !prev)}
+                  style={styles.routeFloatingButton}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.mapPanelButtonText}>
-                    {loadingRoute ? "Mencari rute..." : "Rest Area Terdekat"}
-                  </Text>
+                  <Ionicons name="trail-sign" size={18} color="#FFFFFF" />
+                  <Text style={styles.routeFloatingText}>Pilih Rute</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.mapPanelButtonGhost}
-                  onPress={() => setRoute(null)}
-                >
-                  <Text style={styles.mapPanelButtonGhostText}>Hapus Rute</Text>
-                </TouchableOpacity>
+                {showRoutePicker && (
+                  <View style={styles.routePicker}>
+                    <TouchableOpacity
+                      style={styles.routeOption}
+                      onPress={() => {
+                        setShowRoutePicker(false);
+                        onPressRestRoute();
+                      }}
+                    >
+                      <Ionicons name="navigate" size={16} color="#1D4ED8" />
+                      <Text style={styles.routeOptionText}>
+                        {loadingRoute ? "Mencari rute..." : "Rest Area Terdekat"}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.routeOption}
+                      onPress={() => {
+                        setShowRoutePicker(false);
+                        onPressSchoolRoute();
+                      }}
+                    >
+                      <Ionicons name="school" size={16} color="#1D4ED8" />
+                      <Text style={styles.routeOptionText}>
+                        Rute ke Zona Sekolah
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.routeOption}
+                      onPress={() => {
+                        setShowRoutePicker(false);
+                        onPressSafeRoute();
+                      }}
+                    >
+                      <Ionicons name="shield" size={16} color="#1D4ED8" />
+                      <Text style={styles.routeOptionText}>
+                        Rute Aman
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.routeOption, styles.routeOptionDanger]}
+                      onPress={() => {
+                        setRoute(null);
+                        setShowRoutePicker(false);
+                      }}
+                    >
+                      <Ionicons name="close-circle" size={16} color="#DC2626" />
+                      <Text style={[styles.routeOptionText, styles.routeOptionTextDanger]}>
+                        Hapus Rute
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             </View>
           </View>
@@ -927,35 +1006,65 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  mapPanel: {
+  routeFloatingContainer: {
     position: "absolute",
-    left: 12,
     right: 12,
     bottom: 12,
+    alignItems: "flex-end",
+  },
+  routeFloatingButton: {
     flexDirection: "row",
-    gap: 8,
-  },
-  mapPanelButton: {
-    backgroundColor: "rgba(255,255,255,0.95)",
-    paddingVertical: 12,
-    borderRadius: 999,
     alignItems: "center",
-    flex: 1,
-  },
-  mapPanelButtonText: {
-    fontWeight: "800",
-    color: "#0A285A",
-  },
-  mapPanelButtonGhost: {
-    backgroundColor: "rgba(10,40,90,0.9)",
+    gap: 6,
+    backgroundColor: "#1D4ED8",
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 999,
-    alignItems: "center",
-    flex: 1,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  mapPanelButtonGhostText: {
-    fontWeight: "800",
+  routeFloatingText: {
     color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  routePicker: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 8,
+    gap: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+    position: "absolute",
+    bottom: 46,
+    right: 0,
+    zIndex: 10,
+  },
+  routeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#EFF6FF",
+  },
+  routeOptionText: {
+    fontSize: 12,
+    color: "#1D4ED8",
+    fontWeight: "600",
+  },
+  routeOptionDanger: {
+    backgroundColor: "#FEE2E2",
+  },
+  routeOptionTextDanger: {
+    color: "#DC2626",
   },
   dangerMarker: {
     width: 36,
@@ -1010,6 +1119,24 @@ const styles = StyleSheet.create({
   },
   restIcon: {
     fontSize: 22,
+  },
+  safeMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#0EA5E9",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  safeIcon: {
+    fontSize: 20,
   },
   modeFloatingContainer: {
     marginLeft: "auto",
