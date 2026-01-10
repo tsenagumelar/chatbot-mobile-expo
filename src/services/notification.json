@@ -2,337 +2,541 @@
   {
     "no": 1,
     "id": "wrong_way_detected",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Lawan arah",
     "trigger": "Arah GPS berlawanan",
-    "data_utama": ["gps", "peta_satu_arah"],
+    "data_utama": [
+      "gps",
+      "peta_satu_arah"
+    ],
     "sapaan_ringkas": "Jalur satu arah dari arah berlawanan",
     "icon": "warning",
     "title": "Lawan Arah Terdeteksi",
     "message": "Waspada ya Sobat! Arah perjalanan kamu terdeteksi berlawanan dengan jalur satu arah di depan. Demi keselamatan, yuk segera ambil tindakan aman.\n👉 Mau saya arahkan putar balik yang paling aman dari posisi kamu sekarang?",
-    "cta": { "type": "navigate_safe_uturn", "label": "Arahkan putar balik aman" },
-    "color": "#EF4444"
+    "cta": {
+      "type": "navigate_safe_uturn",
+      "label": "Arahkan putar balik aman"
+    },
+    "color": "#EF4444",
+    "voice_text": "arah kamu berlawanan. segera putar balik dengan aman."
   },
   {
     "no": 2,
     "id": "illegal_uturn_zone",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "U-turn terlarang",
     "trigger": "Berhenti di titik terlarang",
-    "data_utama": ["geofence_uturn"],
+    "data_utama": [
+      "geofence_uturn"
+    ],
     "sapaan_ringkas": "Putar balik di sini rawan",
     "icon": "close-circle",
     "title": "U-turn Terlarang",
     "message": "Info ya Sobat—kamu sedang berada di area yang melarang putar balik karena rawan konflik kendaraan. Lebih aman lanjut sedikit ke titik U-turn resmi.\n👉 Mau saya tampilkan U-turn resmi terdekat dan arah jalannya?",
-    "cta": { "type": "route_to_nearest_uturn", "label": "U-turn resmi terdekat" },
-    "color": "#DC2626"
+    "cta": {
+      "type": "route_to_nearest_uturn",
+      "label": "U-turn resmi terdekat"
+    },
+    "color": "#DC2626",
+    "voice_text": "di sini dilarang putar balik. lanjutkan ke U-turn resmi."
   },
   {
     "no": 3,
     "id": "blackspot_enter",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Zona rawan kecelakaan",
     "trigger": "Masuk blackspot",
-    "data_utama": ["data_blackspot"],
+    "data_utama": [
+      "data_blackspot"
+    ],
     "sapaan_ringkas": "Area rawan kecelakaan",
     "icon": "alert-circle",
     "title": "Area Rawan Kecelakaan",
     "message": "Sobat, kamu memasuki area yang tercatat sering terjadi kecelakaan. Biasanya dipicu kecepatan tinggi dan kurang jaga jarak. Yuk pelan-pelan dan tetap fokus.\n👉 Mau saya aktifkan mode waspada (pengingat jarak aman & batas kecepatan) selama melewati area ini?",
-    "cta": { "type": "enable_alert_mode", "label": "Aktifkan mode waspada" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "enable_alert_mode",
+      "label": "Aktifkan mode waspada"
+    },
+    "color": "#F59E0B",
+    "voice_text": "masuk area rawan kecelakaan. kurangi kecepatan dan jaga jarak."
   },
   {
     "no": 4,
     "id": "school_zone_active",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Zona sekolah",
     "trigger": "Jam sekolah + lokasi",
-    "data_utama": ["gis_sekolah", "waktu"],
+    "data_utama": [
+      "gis_sekolah",
+      "waktu"
+    ],
     "sapaan_ringkas": "Zona sekolah aktif",
     "icon": "warning",
     "title": "Zona Sekolah",
     "message": "Halo Sobat! Kamu sedang melintas di zona sekolah pada jam aktif. Biasanya ada anak menyeberang dan kendaraan berhenti mendadak.\n👉 Mau saya ingatkan batas kecepatan aman di area ini dan tampilkan penyeberangan terdekat?",
-    "cta": { "type": "show_school_safety", "label": "Ingatkan & tampilkan titik aman" },
-    "color": "#3B82F6"
+    "cta": {
+      "type": "show_school_safety",
+      "label": "Ingatkan & tampilkan titik aman"
+    },
+    "color": "#3B82F6",
+    "voice_text": "zona sekolah aktif. pelan dan waspadai penyeberang."
   },
   {
     "no": 5,
     "id": "rain_slippery_road",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Jalan licin / hujan",
     "trigger": "Hujan + ruas rawan",
-    "data_utama": ["cuaca", "data_kecelakaan"],
+    "data_utama": [
+      "cuaca",
+      "data_kecelakaan"
+    ],
     "sapaan_ringkas": "Jalan licin terdeteksi",
     "icon": "rainy",
     "title": "Hujan & Jalan Licin",
     "message": "Sobat, terdeteksi hujan di rute kamu dan ruas ini termasuk rawan selip. Jaga jarak, kurangi kecepatan, dan hindari pengereman mendadak ya.\n👉 Mau saya aktifkan mode aman saat hujan dan sarankan rute yang lebih minim titik rawan?",
-    "cta": { "type": "enable_rain_mode", "label": "Mode hujan + rute aman" },
-    "color": "#0EA5E9"
+    "cta": {
+      "type": "enable_rain_mode",
+      "label": "Mode hujan + rute aman"
+    },
+    "color": "#0EA5E9",
+    "voice_text": "hujan dan jalan licin. kurangi kecepatan, jaga jarak."
   },
   {
     "no": 6,
     "id": "fatigue_detected",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Kelelahan berkendara",
     "trigger": "Durasi > ambang",
-    "data_utama": ["time_tracking"],
+    "data_utama": [
+      "time_tracking"
+    ],
     "sapaan_ringkas": "Berkendara cukup lama",
     "icon": "bed",
     "title": "Waktunya Istirahat",
     "message": "Sobat, kamu sudah berkendara cukup lama. Jika mulai mengantuk, jangan dipaksakan ya—lebih baik berhenti sebentar.\n👉 Mau saya carikan rest area terdekat untuk istirahat?",
-    "cta": { "type": "route_to_rest_area", "label": "Rest area terdekat" },
-    "color": "#8B5CF6"
+    "cta": {
+      "type": "route_to_rest_area",
+      "label": "Rest area terdekat"
+    },
+    "color": "#8B5CF6",
+    "voice_text": "kamu sudah lama berkendara, silahkan istirhat sejenak."
   },
   {
     "no": 7,
     "id": "high_risk_hour",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Jam rawan",
     "trigger": "Waktu malam",
-    "data_utama": ["statistik_waktu"],
+    "data_utama": [
+      "statistik_waktu"
+    ],
     "sapaan_ringkas": "Jam rawan kecelakaan",
     "icon": "time",
     "title": "Jam Rawan Kecelakaan",
     "message": "Halo Sobat! Kamu sedang berkendara di jam rawan kecelakaan. Tetap fokus dan jaga jarak aman ya.\n👉 Mau saya aktifkan pengingat keselamatan selama perjalanan ini?",
-    "cta": { "type": "enable_safety_reminder", "label": "Aktifkan pengingat" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "enable_safety_reminder",
+      "label": "Aktifkan pengingat"
+    },
+    "color": "#F59E0B",
+    "voice_text": "ini jam rawan kecelakaan. tetap fokus dan hati-hati."
   },
   {
     "no": 8,
     "id": "traffic_operation_active",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Operasi lalu lintas",
     "trigger": "Operasi aktif",
-    "data_utama": ["data_korlantas"],
+    "data_utama": [
+      "data_korlantas"
+    ],
     "sapaan_ringkas": "Ada pengaturan lalu lintas",
     "icon": "construct",
     "title": "Operasi Lalu Lintas",
     "message": "Info ya Sobat—terdeteksi ada operasi lalu lintas aktif di sekitar jalur kamu. Pastikan kelengkapan dan patuhi rambu serta arahan petugas.\n👉 Mau saya arahkan jalur alternatif yang tetap aman dan sesuai kondisi lapangan?",
-    "cta": { "type": "suggest_alternative_route", "label": "Cari jalur alternatif" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "suggest_alternative_route",
+      "label": "Cari jalur alternatif"
+    },
+    "color": "#F59E0B",
+    "voice_text": "ada operasi lalu lintas di sekitar. siapkan kelengkapan."
   },
   {
     "no": 9,
     "id": "traffic_density_high",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Kepadatan lalu lintas",
     "trigger": "Kepadatan tinggi",
-    "data_utama": ["tmc", "crowd_data"],
+    "data_utama": [
+      "tmc",
+      "crowd_data"
+    ],
     "sapaan_ringkas": "Lalu lintas padat",
     "icon": "time",
     "title": "Lalu Lintas Padat",
     "message": "Sobat, jalur di depan terdeteksi padat. Biar perjalanan tetap nyaman, jaga emosi dan hindari pindah jalur mendadak ya.\n👉 Mau saya hitungkan rute alternatif tercepat atau tetap di jalur ini dengan estimasi waktu terbaru?",
-    "cta": { "type": "route_auto_estimation", "label": "Rute & estimasi" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "route_auto_estimation",
+      "label": "Rute & estimasi"
+    },
+    "color": "#F59E0B",
+    "voice_text": "lalu lintas padat. tetap tenang dan jaga jarak."
   },
   {
     "no": 10,
     "id": "helmet_education",
-    "pengguna": ["motor"],
+    "pengguna": [
+      "motor"
+    ],
     "kategori": "Edukasi helm",
     "trigger": "Zona rawan + motor",
-    "data_utama": ["mode_kendaraan"],
+    "data_utama": [
+      "mode_kendaraan"
+    ],
     "sapaan_ringkas": "Pastikan helm terpasang",
     "icon": "shield-checkmark",
     "title": "Pengingat Helm",
     "message": "Sedikit pengingat ya Sobat 😊 Helm bukan sekadar aturan, tapi pelindung utama di jalan.\n👉 Mau saya jelaskan risiko kecelakaan tanpa helm?",
-    "cta": { "type": "show_risk_info", "label": "Info risiko" },
-    "color": "#10B981"
+    "cta": {
+      "type": "show_risk_info",
+      "label": "Info risiko"
+    },
+    "color": "#10B981",
+    "voice_text": "pastikan helm terpasang dengan benar demi keselamatan."
   },
   {
     "no": 11,
     "id": "steep_descent_ahead",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Turunan curam",
     "trigger": "Elevasi tinggi",
-    "data_utama": ["elevation_map"],
+    "data_utama": [
+      "elevation_map"
+    ],
     "sapaan_ringkas": "Turunan curam di depan",
     "icon": "warning",
     "title": "Turunan Curam",
     "message": "Sobat, di depan ada turunan curam. Pastikan kecepatan terkendali dan gunakan pengereman dengan bijak.\n👉 Mau saya berikan tips pengereman aman saat turunan?",
-    "cta": { "type": "show_braking_tips", "label": "Tips pengereman" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "show_braking_tips",
+      "label": "Tips pengereman"
+    },
+    "color": "#F59E0B",
+    "voice_text": "turunan curam di depan. kendalikan kecepatan."
   },
   {
     "no": 12,
     "id": "big_intersection",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Persimpangan besar",
     "trigger": "Masuk simpang",
-    "data_utama": ["gis_simpang"],
+    "data_utama": [
+      "gis_simpang"
+    ],
     "sapaan_ringkas": "Persimpangan besar",
     "icon": "alert-circle",
     "title": "Persimpangan Besar",
     "message": "Halo Sobat! Kamu akan melewati persimpangan besar. Waspada kendaraan dari berbagai arah dan perhatikan rambu ya.\n👉 Mau saya tampilkan info prioritas arah dan titik aman berhenti?",
-    "cta": { "type": "show_intersection_priority", "label": "Info prioritas" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "show_intersection_priority",
+      "label": "Info prioritas"
+    },
+    "color": "#F59E0B",
+    "voice_text": "persimpangan besar di depan. perhatikan rambu dan arah."
   },
   {
     "no": 13,
     "id": "low_light_area",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Minim penerangan",
     "trigger": "Malam + jalan gelap",
-    "data_utama": ["gis_lampu_jalan"],
+    "data_utama": [
+      "gis_lampu_jalan"
+    ],
     "sapaan_ringkas": "Penerangan minim",
     "icon": "alert-circle",
     "title": "Area Minim Penerangan",
     "message": "Sobat, jalur ini terdeteksi minim penerangan. Kurangi kecepatan dan pastikan lampu kendaraan menyala optimal.\n👉 Mau saya sarankan rute yang lebih terang dan aman?",
-    "cta": { "type": "brighter_route", "label": "Rute lebih terang" },
-    "color": "#6366F1"
+    "cta": {
+      "type": "brighter_route",
+      "label": "Rute lebih terang"
+    },
+    "color": "#6366F1",
+    "voice_text": "area minim penerangan. nyalakan lampu dan kurangi kecepatan."
   },
   {
     "no": 14,
     "id": "roadwork_active",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Proyek jalan",
     "trigger": "Proyek aktif",
-    "data_utama": ["data_dishub_pu"],
+    "data_utama": [
+      "data_dishub_pu"
+    ],
     "sapaan_ringkas": "Ada pekerjaan jalan",
     "icon": "construct",
     "title": "Proyek Jalan",
     "message": "Info ya Sobat—ada pekerjaan jalan di jalur kamu. Biasanya terjadi penyempitan lajur dan perubahan arus.\n👉 Mau saya arahkan jalur alternatif yang lebih lancar?",
-    "cta": { "type": "alternate_roadwork_route", "label": "Jalur alternatif" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "alternate_roadwork_route",
+      "label": "Jalur alternatif"
+    },
+    "color": "#F59E0B",
+    "voice_text": "ada pekerjaan jalan. pelan dan ikuti rambu."
   },
   {
     "no": 15,
     "id": "safe_trip_completed",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Perjalanan aman",
     "trigger": "Perjalanan selesai",
-    "data_utama": ["event_perjalanan"],
+    "data_utama": [
+      "event_perjalanan"
+    ],
     "sapaan_ringkas": "Terima kasih berkendara aman",
     "icon": "happy",
     "title": "Terima Kasih, Sobat!",
     "message": "Terima kasih sudah tertib berlalu lintas, Sobat! Polantas Menyapa akan mendampingi perjalananmu dan hanya menyapa saat dibutuhkan.\n👉 Mau lihat ringkasan perjalanan kamu hari ini?",
-    "cta": { "type": "show_trip_summary", "label": "Lihat ringkasan" },
-    "color": "#10B981"
+    "cta": {
+      "type": "show_trip_summary",
+      "label": "Lihat ringkasan"
+    },
+    "color": "#10B981",
+    "voice_text": "terima kasih sudah tertib. perjalanan kamu aman."
   },
   {
     "no": 16,
     "id": "bike_unfriendly_route",
-    "pengguna": ["pesepeda"],
+    "pengguna": [
+      "pesepeda"
+    ],
     "kategori": "Jalur tidak ramah",
     "trigger": "Jalan padat",
-    "data_utama": ["gps", "bike_lane"],
+    "data_utama": [
+      "gps",
+      "bike_lane"
+    ],
     "sapaan_ringkas": "Jalur padat kendaraan",
     "icon": "warning",
     "title": "Jalur Kurang Ramah Sepeda",
     "message": "Sobat, jalur ini terdeteksi padat dan minim jalur sepeda. Demi keselamatan, tetap di sisi kiri dan hindari menyalip dari blind spot.\n👉 Mau saya carikan rute sepeda yang lebih aman?",
-    "cta": { "type": "bike_safe_route", "label": "Rute sepeda aman" },
-    "color": "#3B82F6"
+    "cta": {
+      "type": "bike_safe_route",
+      "label": "Rute sepeda aman"
+    },
+    "color": "#3B82F6",
+    "voice_text": "jalur padat untuk sepeda. tetap di sisi kiri."
   },
   {
     "no": 17,
     "id": "bike_night_no_light",
-    "pengguna": ["pesepeda"],
+    "pengguna": [
+      "pesepeda"
+    ],
     "kategori": "Malam tanpa lampu",
     "trigger": "Malam",
-    "data_utama": ["waktu"],
+    "data_utama": [
+      "waktu"
+    ],
     "sapaan_ringkas": "Pastikan lampu menyala",
     "icon": "alert-circle",
     "title": "Cek Lampu Sepeda",
     "message": "Halo Sobat! Sudah malam—pastikan lampu depan/belakang menyala agar terlihat jelas oleh pengendara lain.\n👉 Mau saya kirim tips perlengkapan aman berkendara malam?",
-    "cta": { "type": "night_bike_tips", "label": "Tips malam" },
-    "color": "#6366F1"
+    "cta": {
+      "type": "night_bike_tips",
+      "label": "Tips malam"
+    },
+    "color": "#6366F1",
+    "voice_text": "malam hari. pastikan lampu sepeda menyala."
   },
   {
     "no": 18,
     "id": "crime_prone_area",
-    "pengguna": ["pesepeda"],
+    "pengguna": [
+      "pesepeda"
+    ],
     "kategori": "Area rawan kriminal",
     "trigger": "Lokasi rawan",
-    "data_utama": ["data_wilayah"],
+    "data_utama": [
+      "data_wilayah"
+    ],
     "sapaan_ringkas": "Area kurang aman",
     "icon": "warning",
     "title": "Area Rawan Kriminal",
     "message": "Sobat, kamu memasuki area yang terdata rawan kriminal. Lebih aman tetap di jalur ramai dan hindari berhenti di tempat sepi.\n👉 Mau saya arahkan rute yang lebih aman dan ramai?",
-    "cta": { "type": "safe_crowded_route", "label": "Rute aman" },
-    "color": "#EF4444"
+    "cta": {
+      "type": "safe_crowded_route",
+      "label": "Rute aman"
+    },
+    "color": "#EF4444",
+    "voice_text": "area rawan kriminal. tetap di jalur ramai."
   },
   {
     "no": 19,
     "id": "unsafe_crossing",
-    "pengguna": ["pejalan_kaki"],
+    "pengguna": [
+      "pejalan_kaki"
+    ],
     "kategori": "Menyeberang tidak aman",
     "trigger": "Dekat jalan besar",
-    "data_utama": ["gps", "zebra_cross"],
+    "data_utama": [
+      "gps",
+      "zebra_cross"
+    ],
     "sapaan_ringkas": "Zebra cross terdekat",
     "icon": "warning",
     "title": "Menyeberang dengan Aman",
     "message": "Sobat, kamu berada dekat jalan besar. Demi keselamatan, sebaiknya menyeberang di zebra cross atau titik aman.\n👉 Mau saya arahkan ke zebra cross terdekat?",
-    "cta": { "type": "navigate_to_zebra_cross", "label": "Zebra cross terdekat" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "navigate_to_zebra_cross",
+      "label": "Zebra cross terdekat"
+    },
+    "color": "#F59E0B",
+    "voice_text": "menyeberang di zebra cross terdekat ya."
   },
   {
     "no": 20,
     "id": "sidewalk_disrupted",
-    "pengguna": ["pejalan_kaki"],
+    "pengguna": [
+      "pejalan_kaki"
+    ],
     "kategori": "Trotoar terganggu",
     "trigger": "Proyek / rusak",
-    "data_utama": ["data_aduan"],
+    "data_utama": [
+      "data_aduan"
+    ],
     "sapaan_ringkas": "Trotoar terganggu",
     "icon": "construct",
     "title": "Trotoar Terganggu",
     "message": "Info ya Sobat—trotoar di depan terdeteksi terganggu (proyek/rusak). Hati-hati jika harus turun ke bahu jalan.\n👉 Mau saya carikan rute jalan kaki yang lebih aman?",
-    "cta": { "type": "walk_safe_route", "label": "Rute lain" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "walk_safe_route",
+      "label": "Rute lain"
+    },
+    "color": "#F59E0B",
+    "voice_text": "trotoar terganggu. hati-hati turun ke bahu jalan."
   },
   {
     "no": 21,
     "id": "public_transport_dropoff_risk",
-    "pengguna": ["angkutan_umum"],
+    "pengguna": [
+      "angkutan_umum"
+    ],
     "kategori": "Turun tidak aman",
     "trigger": "Titik padat",
-    "data_utama": ["gps", "gis_halte"],
+    "data_utama": [
+      "gps",
+      "gis_halte"
+    ],
     "sapaan_ringkas": "Lokasi turun padat",
     "icon": "alert-circle",
     "title": "Turun di Titik Aman",
     "message": "Sobat, lokasi turun kamu terdeteksi padat dan rawan terserempet. Lebih aman turun di halte resmi atau titik aman.\n👉 Mau saya arahkan ke halte resmi terdekat?",
-    "cta": { "type": "navigate_to_official_stop", "label": "Halte resmi" },
-    "color": "#EF4444"
+    "cta": {
+      "type": "navigate_to_official_stop",
+      "label": "Halte resmi"
+    },
+    "color": "#EF4444",
+    "voice_text": "turun di titik aman atau halte resmi."
   },
   {
     "no": 22,
     "id": "route_changed",
-    "pengguna": ["angkutan_umum"],
+    "pengguna": [
+      "angkutan_umum"
+    ],
     "kategori": "Perubahan rute",
     "trigger": "Rute berubah",
-    "data_utama": ["route_data"],
+    "data_utama": [
+      "route_data"
+    ],
     "sapaan_ringkas": "Rute berubah",
     "icon": "construct",
     "title": "Perubahan Rute",
     "message": "Info ya Sobat—rute angkutan umum terdeteksi berubah untuk sementara. Tenang, kamu tetap bisa lanjut dengan aman.\n👉 Mau saya carikan rute alternatif yang paling dekat dengan tujuan kamu?",
-    "cta": { "type": "public_transport_alternative", "label": "Alternatif" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "public_transport_alternative",
+      "label": "Alternatif"
+    },
+    "color": "#F59E0B",
+    "voice_text": "rute angkutan berubah. ikuti jalur alternatif."
   },
   {
     "no": 23,
     "id": "event_or_demo_area",
-    "pengguna": ["angkutan_umum"],
+    "pengguna": [
+      "angkutan_umum"
+    ],
     "kategori": "Area demo / event",
     "trigger": "Event aktif",
-    "data_utama": ["data_event"],
+    "data_utama": [
+      "data_event"
+    ],
     "sapaan_ringkas": "Ada pengalihan jalan",
     "icon": "warning",
     "title": "Area Event / Demo",
     "message": "Sobat, terdeteksi ada event/demonstrasi aktif di sekitar jalur kamu. Biasanya ada pengalihan arus dan kepadatan meningkat.\n👉 Mau saya arahkan rute lain yang lebih lancar?",
-    "cta": { "type": "reroute_avoid_event", "label": "Rute lain" },
-    "color": "#F59E0B"
+    "cta": {
+      "type": "reroute_avoid_event",
+      "label": "Rute lain"
+    },
+    "color": "#F59E0B",
+    "voice_text": "ada event di sekitar. pilih rute lain yang lancar."
   },
   {
     "no": 24,
     "id": "rain_active_general",
-    "pengguna": ["semua"],
+    "pengguna": [
+      "semua"
+    ],
     "kategori": "Kondisi hujan turun",
     "trigger": "Hujan aktif",
-    "data_utama": ["cuaca"],
+    "data_utama": [
+      "cuaca"
+    ],
     "sapaan_ringkas": "Hati-hati jalan licin",
     "icon": "rainy",
     "title": "Hujan Turun",
     "message": "Halo Sobat! Hujan terdeteksi di sekitar lokasi kamu. Jalan bisa licin dan jarak pengereman jadi lebih panjang.\n👉 Mau saya aktifkan tips aman singkat selama hujan?",
-    "cta": { "type": "rain_safety_tips", "label": "Tips aman" },
-    "color": "#0EA5E9"
+    "cta": {
+      "type": "rain_safety_tips",
+      "label": "Tips aman"
+    },
+    "color": "#0EA5E9",
+    "voice_text": "hujan turun. jalan licin, kurangi kecepatan."
   }
 ]

@@ -31,6 +31,18 @@ type NotificationPayload = (typeof notificationData)[number];
 
 type LatLng = { latitude: number; longitude: number };
 
+function buildVoiceText(payload: NotificationPayload): string {
+  const customText = payload.voice_text?.trim();
+  if (customText) {
+    return `Hai Sobat Lantas, ${customText}`;
+  }
+  const title = payload.title?.trim();
+  if (title) {
+    return `Hai Sobat Lantas, ${title}. Tetap hati-hati di jalan.`;
+  }
+  return "Hai Sobat Lantas, tetap hati-hati di jalan.";
+}
+
 function offsetLatLng(
   origin: LatLng,
   northMeters: number,
@@ -364,6 +376,7 @@ export default function HomeScreen() {
             cta: randomNotif.cta,
             address,
             coords,
+            voiceText: buildVoiceText(randomNotif),
           },
         },
         trigger: null,

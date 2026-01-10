@@ -1,5 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import * as Notifications from "expo-notifications";
+import * as Speech from "expo-speech";
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from "react";
@@ -27,6 +28,22 @@ export default function RootLayout() {
     const receivedListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log("Notification received:", notification.request.content);
+        const data = notification.request.content.data as {
+          voiceText?: string;
+        };
+        const voiceText =
+          data?.voiceText ??
+          notification.request.content.subtitle ??
+          notification.request.content.title ??
+          "";
+        if (voiceText) {
+          Speech.stop();
+          Speech.speak(voiceText, {
+            language: "id-ID",
+            rate: 0.9,
+            pitch: 1.1,
+          });
+        }
       }
     );
 
