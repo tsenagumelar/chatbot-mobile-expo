@@ -29,7 +29,7 @@ export default {
           "Aplikasi membutuhkan akses speech recognition untuk voice input.",
       },
       config: {
-        googleMapsApiKey: "AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw",
+        googleMapsApiKey: "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc",
       },
     },
     android: {
@@ -48,7 +48,7 @@ export default {
       usesCleartextTraffic: true,
       config: {
         googleMaps: {
-          apiKey: "AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw",
+          apiKey: "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc",
         },
       },
     },

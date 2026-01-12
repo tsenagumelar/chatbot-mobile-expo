@@ -4,6 +4,7 @@ import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { getTrafficInfo } from "@/src/services/api";
 import notificationData from "@/src/services/notification.json";
 import { useStore } from "@/src/store/useStore";
+import { pickSeverityFromColor } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
@@ -27,7 +28,6 @@ import MapView, {
   UrlTile,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { pickSeverityFromColor } from "@/src/utils/notifications";
 
 const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
 const NOTIFICATION_CHANNEL_ID = "alerts";
@@ -943,7 +943,7 @@ export default function HomeScreen() {
             {activeScenario && (
               <View style={styles.scenarioHint}>
                 <Text style={styles.scenarioHintTitle}>
-                  Simulasi: {activeScenario.kategori}
+                  {activeScenario.kategori}
                 </Text>
                 <Text style={styles.scenarioHintText}>
                   Trigger: {activeScenario.trigger}

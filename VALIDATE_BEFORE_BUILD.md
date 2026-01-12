@@ -35,7 +35,7 @@ Harus menampilkan:
 
 **Test API key validity:**
 ```bash
-./scripts/test-maps-key.sh AIzaSyDaovWcTBGcZ5L2P8YDotpr5UXS44hHavw
+./scripts/test-maps-key.sh AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc
 ```
 
 Output harus:
