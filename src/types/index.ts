@@ -142,3 +142,38 @@ export interface IncidentReport {
   longitude?: number;
   createdAt: number;
 }
+
+// Notification types
+export type NotificationSeverity = "warning" | "danger" | "info";
+
+export interface NotificationCTA {
+  type: string;
+  label: string;
+}
+
+export interface NotificationDataPayload {
+  scenarioId?: string;
+  kategori?: string;
+  trigger?: string;
+  data_utama?: string[];
+  sapaan_ringkas?: string;
+  pengguna?: string[];
+  icon?: string;
+  color?: string;
+  type?: NotificationSeverity;
+  address?: string;
+  coords?: {
+    latitude: number;
+    longitude: number;
+  };
+  cta?: NotificationCTA;
+}
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  receivedAt: number;
+  read: boolean;
+  data?: NotificationDataPayload;
+}

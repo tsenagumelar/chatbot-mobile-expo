@@ -1,7 +1,9 @@
 import { COLORS } from "@/src/utils/constants";
+import { useStore } from "@/src/store/useStore";
+import { formatRelativeTime, getNotificationDisplay } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     ScrollView,
     StyleSheet,
@@ -11,128 +13,33 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type NotificationType = "warning" | "danger" | "info";
-
-interface Notification {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-}
-
-const allNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "danger",
-    title: "Kecepatan Berlebih",
-    message: "Kecepatan Anda melebihi batas. Harap kurangi kecepatan.",
-    time: "5 menit lalu",
-    read: false,
-  },
-  {
-    id: "2",
-    type: "warning",
-    title: "Kecelakaan Terdeteksi",
-    message: "Terjadi kecelakaan di daerah Anda, jarak 300m dari lokasi Anda.",
-    time: "15 menit lalu",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "info",
-    title: "Penutupan Jalan",
-    message:
-      "Jarak 500m dari lokasi Anda ada penutupan jalan. Gunakan rute alternatif.",
-    time: "30 menit lalu",
-    read: false,
-  },
-  {
-    id: "4",
-    type: "warning",
-    title: "Kemacetan Parah",
-    message: "Kemacetan parah di Jl. Sudirman. Estimasi waktu 45 menit.",
-    time: "1 jam lalu",
-    read: true,
-  },
-  {
-    id: "5",
-    type: "info",
-    title: "Rute Alternatif Tersedia",
-    message:
-      "Sistem telah menemukan rute alternatif yang 10 menit lebih cepat.",
-    time: "2 jam lalu",
-    read: true,
-  },
-  {
-    id: "6",
-    type: "danger",
-    title: "Peringatan Cuaca Buruk",
-    message: "Hujan lebat di area tujuan Anda. Berkendara dengan hati-hati.",
-    time: "3 jam lalu",
-    read: true,
-  },
-  {
-    id: "7",
-    type: "info",
-    title: "Pemeliharaan Jalan",
-    message: "Pemeliharaan jalan di Jl. Asia Afrika dari pukul 22:00-05:00.",
-    time: "5 jam lalu",
-    read: true,
-  },
-  {
-    id: "8",
-    type: "warning",
-    title: "Kendaraan Mogok",
-    message: "Ada kendaraan mogok di jalur kanan Tol Pasteur KM 12.",
-    time: "6 jam lalu",
-    read: true,
-  },
-];
-
 export default function NotificationsScreen() {
-  const [notifications, setNotifications] = useState(allNotifications);
+  const {
+    notifications,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useStore();
   const [filter, setFilter] = useState<"all" | "unread">("all");
+
+  const orderedNotifications = useMemo(
+    () => [...notifications].sort((a, b) => b.receivedAt - a.receivedAt),
+    [notifications]
+  );
 
   const filteredNotifications =
     filter === "all"
-      ? notifications
-      : notifications.filter((n) => !n.read);
+      ? orderedNotifications
+      : orderedNotifications.filter((n) => !n.read);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = orderedNotifications.filter((n) => !n.read).length;
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+    markNotificationRead(id);
   };
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const getNotificationStyle = (type: NotificationType) => {
-    switch (type) {
-      case "danger":
-        return {
-          backgroundColor: "#FEE2E2",
-          iconColor: "#DC2626",
-          icon: "speedometer" as const,
-        };
-      case "warning":
-        return {
-          backgroundColor: "#FEF3C7",
-          iconColor: "#D97706",
-          icon: "warning" as const,
-        };
-      case "info":
-        return {
-          backgroundColor: "#DBEAFE",
-          iconColor: "#2563EB",
-          icon: "information-circle" as const,
-        };
-    }
+  const handleOpenNotification = (id: string) => {
+    markAsRead(id);
+    router.push(`/notifications/${id}`);
   };
 
   return (
@@ -150,7 +57,7 @@ export default function NotificationsScreen() {
         {unreadCount > 0 && (
           <TouchableOpacity
             style={styles.markAllButton}
-            onPress={markAllAsRead}
+            onPress={markAllNotificationsRead}
           >
             <Text style={styles.markAllText}>Tandai Dibaca</Text>
           </TouchableOpacity>
@@ -168,7 +75,7 @@ export default function NotificationsScreen() {
               filter === "all" && styles.filterTextActive,
             ]}
           >
-            Semua ({notifications.length})
+            Semua ({orderedNotifications.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -206,7 +113,7 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           filteredNotifications.map((notification) => {
-            const style = getNotificationStyle(notification.type);
+            const style = getNotificationDisplay(notification);
             return (
               <TouchableOpacity
                 key={notification.id}
@@ -214,7 +121,7 @@ export default function NotificationsScreen() {
                   styles.notificationItem,
                   !notification.read && styles.notificationUnread,
                 ]}
-                onPress={() => markAsRead(notification.id)}
+                onPress={() => handleOpenNotification(notification.id)}
               >
                 <View
                   style={[
@@ -235,11 +142,11 @@ export default function NotificationsScreen() {
                     </Text>
                     {!notification.read && <View style={styles.unreadDot} />}
                   </View>
-                  <Text style={styles.notificationMessage}>
+                  <Text style={styles.notificationMessage} numberOfLines={2}>
                     {notification.message}
                   </Text>
                   <Text style={styles.notificationTime}>
-                    {notification.time}
+                    {formatRelativeTime(notification.receivedAt)}
                   </Text>
                 </View>
               </TouchableOpacity>

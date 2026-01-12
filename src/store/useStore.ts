@@ -6,6 +6,7 @@ import type {
   ChatSession,
   IncidentReport,
   LocationData,
+  AppNotification,
   RouteData,
   TrafficData,
 } from "../types";
@@ -50,6 +51,9 @@ interface AppState {
   // Reports
   reports: IncidentReport[];
 
+  // Notifications
+  notifications: AppNotification[];
+
   // Actions
   setLocation: (location: LocationData | null) => void;
   setAddress: (address: string) => void;
@@ -79,6 +83,10 @@ interface AppState {
 
   addReport: (report: IncidentReport) => void;
   deleteReport: (id: string) => void;
+
+  upsertNotification: (notification: AppNotification) => void;
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
 }
 
 export const useStore = create<AppState>()(
@@ -108,6 +116,7 @@ export const useStore = create<AppState>()(
       hasLocationPermission: false,
 
       reports: [],
+      notifications: [],
 
       // Location actions
       setLocation: (location) => set({ location }),
@@ -214,6 +223,40 @@ export const useStore = create<AppState>()(
         set((state) => ({
           reports: state.reports.filter((r) => r.id !== id),
         })),
+
+      upsertNotification: (notification) =>
+        set((state) => {
+          const existingIndex = state.notifications.findIndex(
+            (item) => item.id === notification.id
+          );
+          if (existingIndex >= 0) {
+            const updated = [...state.notifications];
+            const existing = updated[existingIndex];
+            updated[existingIndex] = {
+              ...existing,
+              ...notification,
+              read: existing.read || notification.read,
+              data: { ...existing.data, ...notification.data },
+            };
+            return { notifications: updated };
+          }
+          return {
+            notifications: [notification, ...state.notifications].slice(0, 100),
+          };
+        }),
+      markNotificationRead: (id) =>
+        set((state) => ({
+          notifications: state.notifications.map((item) =>
+            item.id === id ? { ...item, read: true } : item
+          ),
+        })),
+      markAllNotificationsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((item) => ({
+            ...item,
+            read: true,
+          })),
+        })),
     }),
     {
       name: "assistant-storage",
@@ -224,6 +267,7 @@ export const useStore = create<AppState>()(
         reports: state.reports,
         chatSessions: state.chatSessions,
         activeSessionId: state.activeSessionId,
+        notifications: state.notifications,
       }),
     }
   )

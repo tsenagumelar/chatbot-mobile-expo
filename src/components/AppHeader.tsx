@@ -1,7 +1,8 @@
 import { useStore } from "@/src/store/useStore";
+import { formatRelativeTime, getNotificationDisplay } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     Modal,
     ScrollView,
@@ -16,13 +17,26 @@ interface Props {
 }
 
 export const AppHeader: React.FC<Props> = ({ onLogout }) => {
-  const { user } = useStore();
+  const { user, notifications, markNotificationRead } = useStore();
   const [notificationModalVisible, setNotificationModalVisible] =
     useState(false);
+
+  const orderedNotifications = useMemo(
+    () => [...notifications].sort((a, b) => b.receivedAt - a.receivedAt),
+    [notifications]
+  );
+  const unreadCount = orderedNotifications.filter((item) => !item.read).length;
+  const previewNotifications = orderedNotifications.slice(0, 3);
 
   const handleViewAllNotifications = () => {
     setNotificationModalVisible(false);
     router.push("/notifications");
+  };
+
+  const handleOpenNotification = (id: string) => {
+    markNotificationRead(id);
+    setNotificationModalVisible(false);
+    router.push(`/notifications/${id}`);
   };
 
   return (
@@ -39,9 +53,13 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
           style={styles.notificationButton}
         >
           <Ionicons name="notifications-outline" size={18} color="#0C3AC5" />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
+          {unreadCount > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationBadgeText}>
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
           <Ionicons name="log-out-outline" size={18} color="#DC2626" />
@@ -76,67 +94,55 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
             </View>
 
             <ScrollView style={styles.notificationList}>
-              <View style={styles.notificationItem}>
-                <View
-                  style={[
-                    styles.notificationIcon,
-                    { backgroundColor: "#FEE2E2" },
-                  ]}
-                >
-                  <Ionicons name="speedometer" size={20} color="#DC2626" />
-                </View>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationItemTitle}>
-                    Kecepatan Berlebih
+              {previewNotifications.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons
+                    name="notifications-off-outline"
+                    size={36}
+                    color="#9CA3AF"
+                  />
+                  <Text style={styles.emptyStateTitle}>Belum ada notifikasi</Text>
+                  <Text style={styles.emptyStateText}>
+                    Notifikasi terbaru akan muncul di sini.
                   </Text>
-                  <Text style={styles.notificationItemText}>
-                    Kecepatan Anda melebihi batas. Harap kurangi kecepatan.
-                  </Text>
-                  <Text style={styles.notificationTime}>5 menit lalu</Text>
                 </View>
-              </View>
-
-              <View style={styles.notificationItem}>
-                <View
-                  style={[
-                    styles.notificationIcon,
-                    { backgroundColor: "#FEF3C7" },
-                  ]}
-                >
-                  <Ionicons name="warning" size={20} color="#D97706" />
-                </View>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationItemTitle}>
-                    Kecelakaan Terdeteksi
-                  </Text>
-                  <Text style={styles.notificationItemText}>
-                    Terjadi kecelakaan di daerah Anda, jarak 300m dari lokasi
-                    Anda.
-                  </Text>
-                  <Text style={styles.notificationTime}>15 menit lalu</Text>
-                </View>
-              </View>
-
-              <View style={styles.notificationItem}>
-                <View
-                  style={[
-                    styles.notificationIcon,
-                    { backgroundColor: "#DBEAFE" },
-                  ]}
-                >
-                  <Ionicons name="close-circle" size={20} color="#2563EB" />
-                </View>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationItemTitle}>
-                    Penutupan Jalan
-                  </Text>
-                  <Text style={styles.notificationItemText}>
-                    Jarak 500m dari lokasi Anda ada penutupan jalan. Gunakan
-                    rute alternatif.
-                  </Text>
-                  <Text style={styles.notificationTime}>30 menit lalu</Text>
-                </View>
-              </View>
+              ) : (
+                previewNotifications.map((notification) => {
+                  const style = getNotificationDisplay(notification);
+                  return (
+                    <TouchableOpacity
+                      key={notification.id}
+                      style={styles.notificationItem}
+                      onPress={() => handleOpenNotification(notification.id)}
+                    >
+                      <View
+                        style={[
+                          styles.notificationIcon,
+                          { backgroundColor: style.backgroundColor },
+                        ]}
+                      >
+                        <Ionicons
+                          name={style.icon}
+                          size={20}
+                          color={style.iconColor}
+                        />
+                      </View>
+                      <View style={styles.notificationContent}>
+                        <Text style={styles.notificationItemTitle}>
+                          {notification.title}
+                        </Text>
+                        <Text style={styles.notificationItemText} numberOfLines={2}>
+                          {notification.message}
+                        </Text>
+                        <Text style={styles.notificationTime}>
+                          {formatRelativeTime(notification.receivedAt)}
+                        </Text>
+                      </View>
+                      {!notification.read && <View style={styles.unreadDot} />}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
 
             <TouchableOpacity
@@ -256,6 +262,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F3F4F6",
     gap: 12,
   },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#DC2626",
+    alignSelf: "center",
+  },
   notificationIcon: {
     width: 40,
     height: 40,
@@ -282,6 +295,25 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#9CA3AF",
     fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+  },
+  emptyStateTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    marginTop: 12,
+  },
+  emptyStateText: {
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 18,
   },
   viewAllButton: {
     flexDirection: "row",

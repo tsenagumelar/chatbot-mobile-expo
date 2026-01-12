@@ -15,13 +15,17 @@
     "sapaan_ringkas": "Jalur satu arah dari arah berlawanan",
     "icon": "warning",
     "title": "Lawan Arah Terdeteksi",
-    "message": "Waspada ya Sobat! Arah perjalanan kamu terdeteksi berlawanan dengan jalur satu arah di depan. Demi keselamatan, yuk segera ambil tindakan aman.\n👉 Mau saya arahkan putar balik yang paling aman dari posisi kamu sekarang?",
+    "message": "Waspada ya Sobat! Arah perjalanan kamu terdeteksi berlawanan dengan jalur satu arah di depan. Demi keselamatan, yuk segera ambil tindakan aman.\n\ud83d\udc49 Mau saya arahkan putar balik yang paling aman dari posisi kamu sekarang?",
     "cta": {
       "type": "navigate_safe_uturn",
       "label": "Arahkan putar balik aman"
     },
     "color": "#EF4444",
-    "voice_text": "arah kamu berlawanan. segera putar balik dengan aman."
+    "voice_text": "arah kamu berlawanan. segera putar balik dengan aman.",
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    }
   },
   {
     "no": 2,
@@ -38,13 +42,17 @@
     "sapaan_ringkas": "Putar balik di sini rawan",
     "icon": "close-circle",
     "title": "U-turn Terlarang",
-    "message": "Info ya Sobat—kamu sedang berada di area yang melarang putar balik karena rawan konflik kendaraan. Lebih aman lanjut sedikit ke titik U-turn resmi.\n👉 Mau saya tampilkan U-turn resmi terdekat dan arah jalannya?",
+    "message": "Info ya Sobat\u2014kamu sedang berada di area yang melarang putar balik karena rawan konflik kendaraan. Lebih aman lanjut sedikit ke titik U-turn resmi.\n\ud83d\udc49 Mau saya tampilkan U-turn resmi terdekat dan arah jalannya?",
     "cta": {
       "type": "route_to_nearest_uturn",
       "label": "U-turn resmi terdekat"
     },
     "color": "#DC2626",
-    "voice_text": "di sini dilarang putar balik. lanjutkan ke U-turn resmi."
+    "voice_text": "di sini dilarang putar balik. lanjutkan ke U-turn resmi.",
+    "map_offset": {
+      "north": 85,
+      "east": -80
+    }
   },
   {
     "no": 3,
@@ -60,13 +68,17 @@
     "sapaan_ringkas": "Area rawan kecelakaan",
     "icon": "alert-circle",
     "title": "Area Rawan Kecelakaan",
-    "message": "Sobat, kamu memasuki area yang tercatat sering terjadi kecelakaan. Biasanya dipicu kecepatan tinggi dan kurang jaga jarak. Yuk pelan-pelan dan tetap fokus.\n👉 Mau saya aktifkan mode waspada (pengingat jarak aman & batas kecepatan) selama melewati area ini?",
+    "message": "Sobat, kamu memasuki area yang tercatat sering terjadi kecelakaan. Biasanya dipicu kecepatan tinggi dan kurang jaga jarak. Yuk pelan-pelan dan tetap fokus.\n\ud83d\udc49 Mau saya aktifkan mode waspada (pengingat jarak aman & batas kecepatan) selama melewati area ini?",
     "cta": {
       "type": "enable_alert_mode",
       "label": "Aktifkan mode waspada"
     },
     "color": "#F59E0B",
-    "voice_text": "masuk area rawan kecelakaan. kurangi kecepatan dan jaga jarak."
+    "voice_text": "masuk area rawan kecelakaan. kurangi kecepatan dan jaga jarak.",
+    "map_offset": {
+      "north": 110,
+      "east": 80
+    }
   },
   {
     "no": 4,
@@ -83,13 +95,17 @@
     "sapaan_ringkas": "Zona sekolah aktif",
     "icon": "warning",
     "title": "Zona Sekolah",
-    "message": "Halo Sobat! Kamu sedang melintas di zona sekolah pada jam aktif. Biasanya ada anak menyeberang dan kendaraan berhenti mendadak.\n👉 Mau saya ingatkan batas kecepatan aman di area ini dan tampilkan penyeberangan terdekat?",
+    "message": "Halo Sobat! Kamu sedang melintas di zona sekolah pada jam aktif. Biasanya ada anak menyeberang dan kendaraan berhenti mendadak.\n\ud83d\udc49 Mau saya ingatkan batas kecepatan aman di area ini dan tampilkan penyeberangan terdekat?",
     "cta": {
       "type": "show_school_safety",
       "label": "Ingatkan & tampilkan titik aman"
     },
     "color": "#3B82F6",
-    "voice_text": "zona sekolah aktif. pelan dan waspadai penyeberang."
+    "voice_text": "zona sekolah aktif. pelan dan waspadai penyeberang.",
+    "map_offset": {
+      "north": -135,
+      "east": -80
+    }
   },
   {
     "no": 5,
@@ -106,13 +122,17 @@
     "sapaan_ringkas": "Jalan licin terdeteksi",
     "icon": "rainy",
     "title": "Hujan & Jalan Licin",
-    "message": "Sobat, terdeteksi hujan di rute kamu dan ruas ini termasuk rawan selip. Jaga jarak, kurangi kecepatan, dan hindari pengereman mendadak ya.\n👉 Mau saya aktifkan mode aman saat hujan dan sarankan rute yang lebih minim titik rawan?",
+    "message": "Sobat, terdeteksi hujan di rute kamu dan ruas ini termasuk rawan selip. Jaga jarak, kurangi kecepatan, dan hindari pengereman mendadak ya.\n\ud83d\udc49 Mau saya aktifkan mode aman saat hujan dan sarankan rute yang lebih minim titik rawan?",
     "cta": {
       "type": "enable_rain_mode",
       "label": "Mode hujan + rute aman"
     },
     "color": "#0EA5E9",
-    "voice_text": "hujan dan jalan licin. kurangi kecepatan, jaga jarak."
+    "voice_text": "hujan dan jalan licin. kurangi kecepatan, jaga jarak.",
+    "map_offset": {
+      "north": 160,
+      "east": 80
+    }
   },
   {
     "no": 6,
@@ -129,13 +149,17 @@
     "sapaan_ringkas": "Berkendara cukup lama",
     "icon": "bed",
     "title": "Waktunya Istirahat",
-    "message": "Sobat, kamu sudah berkendara cukup lama. Jika mulai mengantuk, jangan dipaksakan ya—lebih baik berhenti sebentar.\n👉 Mau saya carikan rest area terdekat untuk istirahat?",
+    "message": "Sobat, kamu sudah berkendara cukup lama. Jika mulai mengantuk, jangan dipaksakan ya\u2014lebih baik berhenti sebentar.\n\ud83d\udc49 Mau saya carikan rest area terdekat untuk istirahat?",
     "cta": {
       "type": "route_to_rest_area",
       "label": "Rest area terdekat"
     },
     "color": "#8B5CF6",
-    "voice_text": "kamu sudah lama berkendara, silahkan istirhat sejenak."
+    "voice_text": "kamu sudah lama berkendara, silahkan istirhat sejenak.",
+    "map_offset": {
+      "north": 185,
+      "east": -80
+    }
   },
   {
     "no": 7,
@@ -151,13 +175,17 @@
     "sapaan_ringkas": "Jam rawan kecelakaan",
     "icon": "time",
     "title": "Jam Rawan Kecelakaan",
-    "message": "Halo Sobat! Kamu sedang berkendara di jam rawan kecelakaan. Tetap fokus dan jaga jarak aman ya.\n👉 Mau saya aktifkan pengingat keselamatan selama perjalanan ini?",
+    "message": "Halo Sobat! Kamu sedang berkendara di jam rawan kecelakaan. Tetap fokus dan jaga jarak aman ya.\n\ud83d\udc49 Mau saya aktifkan pengingat keselamatan selama perjalanan ini?",
     "cta": {
       "type": "enable_safety_reminder",
       "label": "Aktifkan pengingat"
     },
     "color": "#F59E0B",
-    "voice_text": "ini jam rawan kecelakaan. tetap fokus dan hati-hati."
+    "voice_text": "ini jam rawan kecelakaan. tetap fokus dan hati-hati.",
+    "map_offset": {
+      "north": -60,
+      "east": 115
+    }
   },
   {
     "no": 8,
@@ -174,13 +202,17 @@
     "sapaan_ringkas": "Ada pengaturan lalu lintas",
     "icon": "construct",
     "title": "Operasi Lalu Lintas",
-    "message": "Info ya Sobat—terdeteksi ada operasi lalu lintas aktif di sekitar jalur kamu. Pastikan kelengkapan dan patuhi rambu serta arahan petugas.\n👉 Mau saya arahkan jalur alternatif yang tetap aman dan sesuai kondisi lapangan?",
+    "message": "Info ya Sobat\u2014terdeteksi ada operasi lalu lintas aktif di sekitar jalur kamu. Pastikan kelengkapan dan patuhi rambu serta arahan petugas.\n\ud83d\udc49 Mau saya arahkan jalur alternatif yang tetap aman dan sesuai kondisi lapangan?",
     "cta": {
       "type": "suggest_alternative_route",
       "label": "Cari jalur alternatif"
     },
     "color": "#F59E0B",
-    "voice_text": "ada operasi lalu lintas di sekitar. siapkan kelengkapan."
+    "voice_text": "ada operasi lalu lintas di sekitar. siapkan kelengkapan.",
+    "map_offset": {
+      "north": 85,
+      "east": -115
+    }
   },
   {
     "no": 9,
@@ -198,13 +230,17 @@
     "sapaan_ringkas": "Lalu lintas padat",
     "icon": "time",
     "title": "Lalu Lintas Padat",
-    "message": "Sobat, jalur di depan terdeteksi padat. Biar perjalanan tetap nyaman, jaga emosi dan hindari pindah jalur mendadak ya.\n👉 Mau saya hitungkan rute alternatif tercepat atau tetap di jalur ini dengan estimasi waktu terbaru?",
+    "message": "Sobat, jalur di depan terdeteksi padat. Biar perjalanan tetap nyaman, jaga emosi dan hindari pindah jalur mendadak ya.\n\ud83d\udc49 Mau saya hitungkan rute alternatif tercepat atau tetap di jalur ini dengan estimasi waktu terbaru?",
     "cta": {
       "type": "route_auto_estimation",
       "label": "Rute & estimasi"
     },
     "color": "#F59E0B",
-    "voice_text": "lalu lintas padat. tetap tenang dan jaga jarak."
+    "voice_text": "lalu lintas padat. tetap tenang dan jaga jarak.",
+    "map_offset": {
+      "north": 110,
+      "east": 115
+    }
   },
   {
     "no": 10,
@@ -220,13 +256,17 @@
     "sapaan_ringkas": "Pastikan helm terpasang",
     "icon": "shield-checkmark",
     "title": "Pengingat Helm",
-    "message": "Sedikit pengingat ya Sobat 😊 Helm bukan sekadar aturan, tapi pelindung utama di jalan.\n👉 Mau saya jelaskan risiko kecelakaan tanpa helm?",
+    "message": "Sedikit pengingat ya Sobat \ud83d\ude0a Helm bukan sekadar aturan, tapi pelindung utama di jalan.\n\ud83d\udc49 Mau saya jelaskan risiko kecelakaan tanpa helm?",
     "cta": {
       "type": "show_risk_info",
       "label": "Info risiko"
     },
     "color": "#10B981",
-    "voice_text": "pastikan helm terpasang dengan benar demi keselamatan."
+    "voice_text": "pastikan helm terpasang dengan benar demi keselamatan.",
+    "map_offset": {
+      "north": -135,
+      "east": -115
+    }
   },
   {
     "no": 11,
@@ -242,13 +282,17 @@
     "sapaan_ringkas": "Turunan curam di depan",
     "icon": "warning",
     "title": "Turunan Curam",
-    "message": "Sobat, di depan ada turunan curam. Pastikan kecepatan terkendali dan gunakan pengereman dengan bijak.\n👉 Mau saya berikan tips pengereman aman saat turunan?",
+    "message": "Sobat, di depan ada turunan curam. Pastikan kecepatan terkendali dan gunakan pengereman dengan bijak.\n\ud83d\udc49 Mau saya berikan tips pengereman aman saat turunan?",
     "cta": {
       "type": "show_braking_tips",
       "label": "Tips pengereman"
     },
     "color": "#F59E0B",
-    "voice_text": "turunan curam di depan. kendalikan kecepatan."
+    "voice_text": "turunan curam di depan. kendalikan kecepatan.",
+    "map_offset": {
+      "north": 160,
+      "east": 115
+    }
   },
   {
     "no": 12,
@@ -264,13 +308,17 @@
     "sapaan_ringkas": "Persimpangan besar",
     "icon": "alert-circle",
     "title": "Persimpangan Besar",
-    "message": "Halo Sobat! Kamu akan melewati persimpangan besar. Waspada kendaraan dari berbagai arah dan perhatikan rambu ya.\n👉 Mau saya tampilkan info prioritas arah dan titik aman berhenti?",
+    "message": "Halo Sobat! Kamu akan melewati persimpangan besar. Waspada kendaraan dari berbagai arah dan perhatikan rambu ya.\n\ud83d\udc49 Mau saya tampilkan info prioritas arah dan titik aman berhenti?",
     "cta": {
       "type": "show_intersection_priority",
       "label": "Info prioritas"
     },
     "color": "#F59E0B",
-    "voice_text": "persimpangan besar di depan. perhatikan rambu dan arah."
+    "voice_text": "persimpangan besar di depan. perhatikan rambu dan arah.",
+    "map_offset": {
+      "north": 185,
+      "east": -115
+    }
   },
   {
     "no": 13,
@@ -286,13 +334,17 @@
     "sapaan_ringkas": "Penerangan minim",
     "icon": "alert-circle",
     "title": "Area Minim Penerangan",
-    "message": "Sobat, jalur ini terdeteksi minim penerangan. Kurangi kecepatan dan pastikan lampu kendaraan menyala optimal.\n👉 Mau saya sarankan rute yang lebih terang dan aman?",
+    "message": "Sobat, jalur ini terdeteksi minim penerangan. Kurangi kecepatan dan pastikan lampu kendaraan menyala optimal.\n\ud83d\udc49 Mau saya sarankan rute yang lebih terang dan aman?",
     "cta": {
       "type": "brighter_route",
       "label": "Rute lebih terang"
     },
     "color": "#6366F1",
-    "voice_text": "area minim penerangan. nyalakan lampu dan kurangi kecepatan."
+    "voice_text": "area minim penerangan. nyalakan lampu dan kurangi kecepatan.",
+    "map_offset": {
+      "north": -60,
+      "east": 150
+    }
   },
   {
     "no": 14,
@@ -308,13 +360,17 @@
     "sapaan_ringkas": "Ada pekerjaan jalan",
     "icon": "construct",
     "title": "Proyek Jalan",
-    "message": "Info ya Sobat—ada pekerjaan jalan di jalur kamu. Biasanya terjadi penyempitan lajur dan perubahan arus.\n👉 Mau saya arahkan jalur alternatif yang lebih lancar?",
+    "message": "Info ya Sobat\u2014ada pekerjaan jalan di jalur kamu. Biasanya terjadi penyempitan lajur dan perubahan arus.\n\ud83d\udc49 Mau saya arahkan jalur alternatif yang lebih lancar?",
     "cta": {
       "type": "alternate_roadwork_route",
       "label": "Jalur alternatif"
     },
     "color": "#F59E0B",
-    "voice_text": "ada pekerjaan jalan. pelan dan ikuti rambu."
+    "voice_text": "ada pekerjaan jalan. pelan dan ikuti rambu.",
+    "map_offset": {
+      "north": 85,
+      "east": -150
+    }
   },
   {
     "no": 15,
@@ -330,13 +386,17 @@
     "sapaan_ringkas": "Terima kasih berkendara aman",
     "icon": "happy",
     "title": "Terima Kasih, Sobat!",
-    "message": "Terima kasih sudah tertib berlalu lintas, Sobat! Polantas Menyapa akan mendampingi perjalananmu dan hanya menyapa saat dibutuhkan.\n👉 Mau lihat ringkasan perjalanan kamu hari ini?",
+    "message": "Terima kasih sudah tertib berlalu lintas, Sobat! Polantas Menyapa akan mendampingi perjalananmu dan hanya menyapa saat dibutuhkan.\n\ud83d\udc49 Mau lihat ringkasan perjalanan kamu hari ini?",
     "cta": {
       "type": "show_trip_summary",
       "label": "Lihat ringkasan"
     },
     "color": "#10B981",
-    "voice_text": "terima kasih sudah tertib. perjalanan kamu aman."
+    "voice_text": "terima kasih sudah tertib. perjalanan kamu aman.",
+    "map_offset": {
+      "north": 110,
+      "east": 150
+    }
   },
   {
     "no": 16,
@@ -353,13 +413,17 @@
     "sapaan_ringkas": "Jalur padat kendaraan",
     "icon": "warning",
     "title": "Jalur Kurang Ramah Sepeda",
-    "message": "Sobat, jalur ini terdeteksi padat dan minim jalur sepeda. Demi keselamatan, tetap di sisi kiri dan hindari menyalip dari blind spot.\n👉 Mau saya carikan rute sepeda yang lebih aman?",
+    "message": "Sobat, jalur ini terdeteksi padat dan minim jalur sepeda. Demi keselamatan, tetap di sisi kiri dan hindari menyalip dari blind spot.\n\ud83d\udc49 Mau saya carikan rute sepeda yang lebih aman?",
     "cta": {
       "type": "bike_safe_route",
       "label": "Rute sepeda aman"
     },
     "color": "#3B82F6",
-    "voice_text": "jalur padat untuk sepeda. tetap di sisi kiri."
+    "voice_text": "jalur padat untuk sepeda. tetap di sisi kiri.",
+    "map_offset": {
+      "north": -135,
+      "east": -150
+    }
   },
   {
     "no": 17,
@@ -375,13 +439,17 @@
     "sapaan_ringkas": "Pastikan lampu menyala",
     "icon": "alert-circle",
     "title": "Cek Lampu Sepeda",
-    "message": "Halo Sobat! Sudah malam—pastikan lampu depan/belakang menyala agar terlihat jelas oleh pengendara lain.\n👉 Mau saya kirim tips perlengkapan aman berkendara malam?",
+    "message": "Halo Sobat! Sudah malam\u2014pastikan lampu depan/belakang menyala agar terlihat jelas oleh pengendara lain.\n\ud83d\udc49 Mau saya kirim tips perlengkapan aman berkendara malam?",
     "cta": {
       "type": "night_bike_tips",
       "label": "Tips malam"
     },
     "color": "#6366F1",
-    "voice_text": "malam hari. pastikan lampu sepeda menyala."
+    "voice_text": "malam hari. pastikan lampu sepeda menyala.",
+    "map_offset": {
+      "north": 160,
+      "east": 150
+    }
   },
   {
     "no": 18,
@@ -397,13 +465,17 @@
     "sapaan_ringkas": "Area kurang aman",
     "icon": "warning",
     "title": "Area Rawan Kriminal",
-    "message": "Sobat, kamu memasuki area yang terdata rawan kriminal. Lebih aman tetap di jalur ramai dan hindari berhenti di tempat sepi.\n👉 Mau saya arahkan rute yang lebih aman dan ramai?",
+    "message": "Sobat, kamu memasuki area yang terdata rawan kriminal. Lebih aman tetap di jalur ramai dan hindari berhenti di tempat sepi.\n\ud83d\udc49 Mau saya arahkan rute yang lebih aman dan ramai?",
     "cta": {
       "type": "safe_crowded_route",
       "label": "Rute aman"
     },
     "color": "#EF4444",
-    "voice_text": "area rawan kriminal. tetap di jalur ramai."
+    "voice_text": "area rawan kriminal. tetap di jalur ramai.",
+    "map_offset": {
+      "north": 185,
+      "east": -150
+    }
   },
   {
     "no": 19,
@@ -420,13 +492,17 @@
     "sapaan_ringkas": "Zebra cross terdekat",
     "icon": "warning",
     "title": "Menyeberang dengan Aman",
-    "message": "Sobat, kamu berada dekat jalan besar. Demi keselamatan, sebaiknya menyeberang di zebra cross atau titik aman.\n👉 Mau saya arahkan ke zebra cross terdekat?",
+    "message": "Sobat, kamu berada dekat jalan besar. Demi keselamatan, sebaiknya menyeberang di zebra cross atau titik aman.\n\ud83d\udc49 Mau saya arahkan ke zebra cross terdekat?",
     "cta": {
       "type": "navigate_to_zebra_cross",
       "label": "Zebra cross terdekat"
     },
     "color": "#F59E0B",
-    "voice_text": "menyeberang di zebra cross terdekat ya."
+    "voice_text": "menyeberang di zebra cross terdekat ya.",
+    "map_offset": {
+      "north": -60,
+      "east": 185
+    }
   },
   {
     "no": 20,
@@ -442,13 +518,17 @@
     "sapaan_ringkas": "Trotoar terganggu",
     "icon": "construct",
     "title": "Trotoar Terganggu",
-    "message": "Info ya Sobat—trotoar di depan terdeteksi terganggu (proyek/rusak). Hati-hati jika harus turun ke bahu jalan.\n👉 Mau saya carikan rute jalan kaki yang lebih aman?",
+    "message": "Info ya Sobat\u2014trotoar di depan terdeteksi terganggu (proyek/rusak). Hati-hati jika harus turun ke bahu jalan.\n\ud83d\udc49 Mau saya carikan rute jalan kaki yang lebih aman?",
     "cta": {
       "type": "walk_safe_route",
       "label": "Rute lain"
     },
     "color": "#F59E0B",
-    "voice_text": "trotoar terganggu. hati-hati turun ke bahu jalan."
+    "voice_text": "trotoar terganggu. hati-hati turun ke bahu jalan.",
+    "map_offset": {
+      "north": 85,
+      "east": -185
+    }
   },
   {
     "no": 21,
@@ -465,13 +545,17 @@
     "sapaan_ringkas": "Lokasi turun padat",
     "icon": "alert-circle",
     "title": "Turun di Titik Aman",
-    "message": "Sobat, lokasi turun kamu terdeteksi padat dan rawan terserempet. Lebih aman turun di halte resmi atau titik aman.\n👉 Mau saya arahkan ke halte resmi terdekat?",
+    "message": "Sobat, lokasi turun kamu terdeteksi padat dan rawan terserempet. Lebih aman turun di halte resmi atau titik aman.\n\ud83d\udc49 Mau saya arahkan ke halte resmi terdekat?",
     "cta": {
       "type": "navigate_to_official_stop",
       "label": "Halte resmi"
     },
     "color": "#EF4444",
-    "voice_text": "turun di titik aman atau halte resmi."
+    "voice_text": "turun di titik aman atau halte resmi.",
+    "map_offset": {
+      "north": 110,
+      "east": 185
+    }
   },
   {
     "no": 22,
@@ -487,13 +571,17 @@
     "sapaan_ringkas": "Rute berubah",
     "icon": "construct",
     "title": "Perubahan Rute",
-    "message": "Info ya Sobat—rute angkutan umum terdeteksi berubah untuk sementara. Tenang, kamu tetap bisa lanjut dengan aman.\n👉 Mau saya carikan rute alternatif yang paling dekat dengan tujuan kamu?",
+    "message": "Info ya Sobat\u2014rute angkutan umum terdeteksi berubah untuk sementara. Tenang, kamu tetap bisa lanjut dengan aman.\n\ud83d\udc49 Mau saya carikan rute alternatif yang paling dekat dengan tujuan kamu?",
     "cta": {
       "type": "public_transport_alternative",
       "label": "Alternatif"
     },
     "color": "#F59E0B",
-    "voice_text": "rute angkutan berubah. ikuti jalur alternatif."
+    "voice_text": "rute angkutan berubah. ikuti jalur alternatif.",
+    "map_offset": {
+      "north": -135,
+      "east": -185
+    }
   },
   {
     "no": 23,
@@ -509,13 +597,17 @@
     "sapaan_ringkas": "Ada pengalihan jalan",
     "icon": "warning",
     "title": "Area Event / Demo",
-    "message": "Sobat, terdeteksi ada event/demonstrasi aktif di sekitar jalur kamu. Biasanya ada pengalihan arus dan kepadatan meningkat.\n👉 Mau saya arahkan rute lain yang lebih lancar?",
+    "message": "Sobat, terdeteksi ada event/demonstrasi aktif di sekitar jalur kamu. Biasanya ada pengalihan arus dan kepadatan meningkat.\n\ud83d\udc49 Mau saya arahkan rute lain yang lebih lancar?",
     "cta": {
       "type": "reroute_avoid_event",
       "label": "Rute lain"
     },
     "color": "#F59E0B",
-    "voice_text": "ada event di sekitar. pilih rute lain yang lancar."
+    "voice_text": "ada event di sekitar. pilih rute lain yang lancar.",
+    "map_offset": {
+      "north": 160,
+      "east": 185
+    }
   },
   {
     "no": 24,
@@ -531,12 +623,16 @@
     "sapaan_ringkas": "Hati-hati jalan licin",
     "icon": "rainy",
     "title": "Hujan Turun",
-    "message": "Halo Sobat! Hujan terdeteksi di sekitar lokasi kamu. Jalan bisa licin dan jarak pengereman jadi lebih panjang.\n👉 Mau saya aktifkan tips aman singkat selama hujan?",
+    "message": "Halo Sobat! Hujan terdeteksi di sekitar lokasi kamu. Jalan bisa licin dan jarak pengereman jadi lebih panjang.\n\ud83d\udc49 Mau saya aktifkan tips aman singkat selama hujan?",
     "cta": {
       "type": "rain_safety_tips",
       "label": "Tips aman"
     },
     "color": "#0EA5E9",
-    "voice_text": "hujan turun. jalan licin, kurangi kecepatan."
+    "voice_text": "hujan turun. jalan licin, kurangi kecepatan.",
+    "map_offset": {
+      "north": 185,
+      "east": -185
+    }
   }
 ]

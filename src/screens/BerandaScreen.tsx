@@ -13,6 +13,7 @@ import moment from "moment";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,8 +27,12 @@ import MapView, {
   UrlTile,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { pickSeverityFromColor } from "@/src/utils/notifications";
 
 const LIBRARY_PREVIEW = PDF_LIBRARY.slice(0, 3);
+const NOTIFICATION_CHANNEL_ID = "alerts";
+const NOTIFICATION_SOUND_ANDROID = "notification_bell";
+const NOTIFICATION_SOUND_IOS = "notification_bell.wav";
 
 type NotificationPayload = (typeof notificationData)[number];
 type ScenarioMarker = {
@@ -114,7 +119,7 @@ function getModeForScenario(payload: NotificationPayload) {
   const users = payload.pengguna ?? [];
   if (users.includes("pejalan_kaki")) return "Jalan Kaki";
   if (users.includes("pesepeda")) return "Sepeda";
-  if (users.includes("angkutan_umum")) return "Kereta";
+  if (users.includes("angkutan_umum")) return "Penumpang";
   if (users.includes("motor")) return "Motor";
   if (users.includes("mobil")) return "Mobil";
   return "Mobil";
@@ -217,7 +222,7 @@ export default function HomeScreen() {
   const [lastGeocodeAt, setLastGeocodeAt] = useState<number>(0);
   const [showModePicker, setShowModePicker] = useState(false);
   const [selectedMode, setSelectedMode] = useState<
-    "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Kereta"
+    "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Penumpang"
   >("Mobil");
   const [route, setRoute] = useState<LatLng[] | null>(null);
   const [loadingRoute, setLoadingRoute] = useState(false);
@@ -227,15 +232,18 @@ export default function HomeScreen() {
   );
 
   const transportModes: {
-    label: "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Kereta";
+    label: "Mobil" | "Motor" | "Sepeda" | "Jalan Kaki" | "Penumpang";
     icon: keyof typeof Ionicons.glyphMap;
   }[] = [
     { label: "Mobil", icon: "car" },
     { label: "Motor", icon: "speedometer" },
     { label: "Sepeda", icon: "bicycle" },
     { label: "Jalan Kaki", icon: "walk" },
-    { label: "Kereta", icon: "train" },
+    { label: "Penumpang", icon: "people" },
   ];
+  const selectedModeIcon =
+    transportModes.find((mode) => mode.label === selectedMode)?.icon ??
+    "navigate";
 
   const userCoord = location
     ? { latitude: location.latitude, longitude: location.longitude }
@@ -272,6 +280,15 @@ export default function HomeScreen() {
     };
   }, [userCoord?.latitude, userCoord?.longitude]);
 
+  const uturnPoint = useMemo(() => {
+    if (!userCoord) return null;
+    return {
+      id: "uturn-1",
+      name: "U-turn Aman Terdekat",
+      coord: offsetLatLng(userCoord, +140, -180),
+    };
+  }, [userCoord?.latitude, userCoord?.longitude]);
+
   const schoolArea = useMemo(
     () => areas.find((area) => area.kind === "school") ?? null,
     [areas]
@@ -294,6 +311,7 @@ export default function HomeScreen() {
 
     const icon = getScenarioIcon(activeScenario);
     const color = activeScenario.color ?? "#0B57D0";
+    const mapOffset = activeScenario.map_offset ?? { north: 120, east: 140 };
 
     if (
       [
@@ -322,7 +340,7 @@ export default function HomeScreen() {
         {
           id,
           title: activeScenario.title,
-          coord: offset(120, 140),
+          coord: offset(mapOffset.north, mapOffset.east),
           color,
           icon,
         },
@@ -343,6 +361,13 @@ export default function HomeScreen() {
 
     return [];
   }, [userCoord, activeScenario, restArea]);
+  const schoolRouteTarget = useMemo(() => {
+    if (!schoolArea) return null;
+    if (activeScenarioId === "school_zone_active") {
+      return scenarioMarkers[0]?.coord ?? centroid(schoolArea.coords);
+    }
+    return centroid(schoolArea.coords);
+  }, [activeScenarioId, scenarioMarkers, schoolArea]);
   const safeDestination = useMemo(() => {
     if (!dangerArea) return null;
     const dangerCenter = centroid(dangerArea.coords);
@@ -511,18 +536,33 @@ export default function HomeScreen() {
     const randomIndex = Math.floor(Math.random() * notificationData.length);
     const payload: NotificationPayload =
       activeScenario ?? notificationData[randomIndex];
-    const coords = location
+    const scenarioCoord = scenarioMarkers[0]?.coord;
+    const coords = scenarioCoord
+      ? `${scenarioCoord.latitude.toFixed(6)}, ${scenarioCoord.longitude.toFixed(6)}`
+      : location
       ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
       : "Lokasi tidak tersedia";
 
     try {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync(
+          NOTIFICATION_CHANNEL_ID,
+          {
+            name: "alerts",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#007AFF",
+            sound: NOTIFICATION_SOUND_ANDROID,
+          }
+        );
+      }
       const voiceText = buildVoiceText(payload);
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "Polantas Menyapa Digital",
           subtitle: payload.title,
           body: `${payload.message}\n\nLokasi: ${address}\n${coords}`,
-          sound: "default",
+          sound: Platform.OS === "ios" ? NOTIFICATION_SOUND_IOS : undefined,
           data: {
             id: payload.id,
             kategori: payload.kategori,
@@ -532,9 +572,12 @@ export default function HomeScreen() {
             pengguna: payload.pengguna,
             icon: payload.icon,
             color: payload.color,
+            type: pickSeverityFromColor(payload.color),
             cta: payload.cta,
             address,
             coords,
+            latitude: scenarioCoord?.latitude ?? location?.latitude,
+            longitude: scenarioCoord?.longitude ?? location?.longitude,
             voiceText,
           },
         },
@@ -557,6 +600,10 @@ export default function HomeScreen() {
     setSelectedMode(nextMode);
   }, [activeScenario?.id]);
 
+  useEffect(() => {
+    setRoute(null);
+  }, [activeScenarioId]);
+
   const onPressRestRoute = async () => {
     if (!userCoord || !restArea) return;
     try {
@@ -571,11 +618,10 @@ export default function HomeScreen() {
   };
 
   const onPressSchoolRoute = async () => {
-    if (!userCoord || !schoolArea) return;
+    if (!userCoord || !schoolRouteTarget) return;
     try {
       setLoadingRoute(true);
-      const schoolCenter = centroid(schoolArea.coords);
-      const pts = await fetchRouteOSRM(userCoord, schoolCenter);
+      const pts = await fetchRouteOSRM(userCoord, schoolRouteTarget);
       setRoute(pts);
     } catch (e) {
       console.log(e);
@@ -584,11 +630,12 @@ export default function HomeScreen() {
     }
   };
 
-  const onPressSafeRoute = async () => {
-    if (!userCoord || !safeDestination) return;
+  const onPressScenarioRoute = async () => {
+    const target = scenarioMarkers[0]?.coord;
+    if (!userCoord || !target) return;
     try {
       setLoadingRoute(true);
-      const pts = await fetchRouteOSRM(userCoord, safeDestination);
+      const pts = await fetchRouteOSRM(userCoord, target);
       setRoute(pts);
     } catch (e) {
       console.log(e);
@@ -596,6 +643,139 @@ export default function HomeScreen() {
       setLoadingRoute(false);
     }
   };
+
+  const onPressUturnRoute = async () => {
+    if (!userCoord || !uturnPoint) return;
+    try {
+      setLoadingRoute(true);
+      const pts = await fetchRouteOSRM(userCoord, uturnPoint.coord);
+      setRoute(pts);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingRoute(false);
+    }
+  };
+
+  const restAreaScenarioIds = useMemo(
+    () =>
+      new Set<string>([
+        "fatigue_detected",
+        "traffic_density_high",
+        "traffic_operation_active",
+        "high_risk_hour",
+      ]),
+    []
+  );
+
+  const routeOptions = useMemo(() => {
+    const options: {
+      key: "rest" | "school" | "safe" | "uturn" | "destination";
+      label: string;
+      icon: keyof typeof Ionicons.glyphMap;
+      onPress: () => void;
+    }[] = [];
+
+    const ctaType = activeScenario?.cta?.type ?? "";
+    const ctaLabel = activeScenario?.cta?.label;
+    const isRouteCta =
+      ctaType.includes("route") ||
+      ctaType.includes("navigate") ||
+      ctaType.includes("reroute");
+    const destinationLabel =
+      isRouteCta && ctaLabel ? ctaLabel : "Arahkan ke lokasi";
+
+    const hasSchool = Boolean(userCoord && schoolArea);
+    const hasRest = Boolean(userCoord && restArea);
+    const hasUturn = Boolean(userCoord && uturnPoint);
+    const hasScenarioTarget = Boolean(userCoord && scenarioMarkers[0]?.coord);
+
+    if (activeScenarioId === "school_zone_active") {
+      if (hasSchool) {
+        options.push({
+          key: "school",
+          label: ctaLabel ?? "Rute ke Zona Sekolah",
+          icon: "school",
+          onPress: onPressSchoolRoute,
+        });
+      }
+      return options;
+    }
+
+    if (activeScenarioId === "fatigue_detected") {
+      if (hasRest) {
+        options.push({
+          key: "rest",
+          label:
+            loadingRoute
+              ? "Mencari rute..."
+              : ctaType.includes("rest_area") && ctaLabel
+              ? ctaLabel
+              : "Rest Area Terdekat",
+          icon: "navigate",
+          onPress: onPressRestRoute,
+        });
+      }
+      return options;
+    }
+
+    if (activeScenarioId === "wrong_way_detected" || activeScenarioId === "illegal_uturn_zone") {
+      if (hasUturn) {
+        options.push({
+          key: "uturn",
+          label: ctaLabel
+            ? ctaLabel
+            : activeScenarioId === "illegal_uturn_zone"
+            ? "U-turn Resmi Terdekat"
+            : "Putar Balik Aman",
+          icon: "return-down-back",
+          onPress: onPressUturnRoute,
+        });
+      }
+      return options;
+    }
+
+    if (hasRest && activeScenarioId && restAreaScenarioIds.has(activeScenarioId)) {
+      options.push({
+        key: "rest",
+        label:
+          loadingRoute
+            ? "Mencari rute..."
+            : ctaType.includes("rest_area") && ctaLabel
+            ? ctaLabel
+            : "Rest Area Terdekat",
+        icon: "navigate",
+        onPress: onPressRestRoute,
+      });
+      return options;
+    }
+
+    if (hasScenarioTarget) {
+      options.push({
+        key: "destination",
+        label: loadingRoute ? "Mencari rute..." : destinationLabel,
+        icon: "navigate",
+        onPress: onPressScenarioRoute,
+      });
+    }
+
+    return options;
+  }, [
+    activeScenarioId,
+    activeScenario?.cta?.label,
+    activeScenario?.cta?.type,
+    loadingRoute,
+    onPressScenarioRoute,
+    onPressRestRoute,
+    onPressSchoolRoute,
+    onPressUturnRoute,
+    restArea,
+    safeDestination,
+    schoolArea,
+    scenarioMarkers,
+    uturnPoint,
+    userCoord,
+  ]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -690,7 +870,7 @@ export default function HomeScreen() {
                   style={styles.modeFloatingButton}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="navigate" size={18} color="#FFFFFF" />
+                  <Ionicons name={selectedModeIcon} size={18} color="#FFFFFF" />
                   <Text style={styles.modeFloatingText}>{selectedMode}</Text>
                 </TouchableOpacity>
                 {showModePicker && (
@@ -808,13 +988,23 @@ export default function HomeScreen() {
                   </Marker>
                 ))}
 
-                {restArea && (
+                {restArea && activeScenarioId && restAreaScenarioIds.has(activeScenarioId) && (
                   <Marker coordinate={restArea.coord} title={restArea.name}>
                     <View style={styles.restMarker}>
                       <Text style={styles.restIcon}>🅿️</Text>
                     </View>
                   </Marker>
                 )}
+
+                {uturnPoint &&
+                  (activeScenarioId === "wrong_way_detected" ||
+                    activeScenarioId === "illegal_uturn_zone") && (
+                    <Marker coordinate={uturnPoint.coord} title={uturnPoint.name}>
+                      <View style={styles.uturnMarker}>
+                        <Ionicons name="return-down-back" size={18} color="#DC2626" />
+                      </View>
+                    </Marker>
+                  )}
 
                 {safeDestination && (
                   <Marker coordinate={safeDestination} title="Tujuan Akhir">
@@ -853,42 +1043,30 @@ export default function HomeScreen() {
                 </TouchableOpacity>
                 {showRoutePicker && (
                   <View style={styles.routePicker}>
-                    <TouchableOpacity
-                      style={styles.routeOption}
-                      onPress={() => {
-                        setShowRoutePicker(false);
-                        onPressRestRoute();
-                      }}
-                    >
-                      <Ionicons name="navigate" size={16} color="#1D4ED8" />
-                      <Text style={styles.routeOptionText}>
-                        {loadingRoute ? "Mencari rute..." : "Rest Area Terdekat"}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.routeOption}
-                      onPress={() => {
-                        setShowRoutePicker(false);
-                        onPressSchoolRoute();
-                      }}
-                    >
-                      <Ionicons name="school" size={16} color="#1D4ED8" />
-                      <Text style={styles.routeOptionText}>
-                        Rute ke Zona Sekolah
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.routeOption}
-                      onPress={() => {
-                        setShowRoutePicker(false);
-                        onPressSafeRoute();
-                      }}
-                    >
-                      <Ionicons name="shield" size={16} color="#1D4ED8" />
-                      <Text style={styles.routeOptionText}>
-                        Rute Aman
-                      </Text>
-                    </TouchableOpacity>
+                    {routeOptions.length === 0 ? (
+                      <View style={styles.routeOption}>
+                        <Ionicons name="alert-circle" size={16} color="#9CA3AF" />
+                        <Text style={styles.routeOptionText}>
+                          Rute belum tersedia untuk notifikasi ini
+                        </Text>
+                      </View>
+                    ) : (
+                      routeOptions.map((option) => (
+                        <TouchableOpacity
+                          key={option.key}
+                          style={styles.routeOption}
+                          onPress={() => {
+                            setShowRoutePicker(false);
+                            option.onPress();
+                          }}
+                        >
+                          <Ionicons name={option.icon} size={16} color="#1D4ED8" />
+                          <Text style={styles.routeOptionText}>
+                            {option.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))
+                    )}
                     <TouchableOpacity
                       style={[styles.routeOption, styles.routeOptionDanger]}
                       onPress={() => {
@@ -1354,6 +1532,21 @@ const styles = StyleSheet.create({
   },
   safeIcon: {
     fontSize: 20,
+  },
+  uturnMarker: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#DC2626",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
   },
   modeFloatingContainer: {
     marginLeft: "auto",
