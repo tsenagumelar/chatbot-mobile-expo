@@ -209,6 +209,9 @@ export const useStore = create<AppState>()(
           user: null,
           sessionId: null,
           messages: [],
+          chatSessions: [],
+          activeSessionId: null,
+          notifications: [],
         }),
       setLocationPermission: (granted) =>
         set({

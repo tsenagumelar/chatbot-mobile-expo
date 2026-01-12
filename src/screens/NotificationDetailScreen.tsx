@@ -1,17 +1,24 @@
-import { COLORS, DEFAULT_MAP_TILE } from "@/src/utils/constants";
 import { useStore } from "@/src/store/useStore";
+import { COLORS, DEFAULT_MAP_TILE } from "@/src/utils/constants";
 import { formatRelativeTime, getNotificationDisplay } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, router } from "expo-router";
-import React, { useEffect, useMemo } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+  Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, Polygon, PROVIDER_DEFAULT, UrlTile } from "react-native-maps";
+import MapView, {
+  Marker,
+  Polygon,
+  Polyline,
+  PROVIDER_DEFAULT,
+  UrlTile,
+} from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const FALLBACK_COORDS = {
@@ -57,9 +64,69 @@ function squarePolygon(center: LatLng, halfSizeMeters: number): LatLng[] {
   ];
 }
 
+function decodePolyline(encoded: string): LatLng[] {
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+  const coordinates: LatLng[] = [];
+
+  while (index < encoded.length) {
+    let b;
+    let shift = 0;
+    let result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    coordinates.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+
+  return coordinates;
+}
+
+async function fetchRouteOSRM(from: LatLng, to: LatLng): Promise<LatLng[]> {
+  const url =
+    `https://router.project-osrm.org/route/v1/driving/` +
+    `${from.longitude},${from.latitude};${to.longitude},${to.latitude}` +
+    `?overview=full&geometries=polyline`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Gagal mengambil rute");
+  const json = await res.json();
+
+  const encoded = json?.routes?.[0]?.geometry;
+  if (!encoded) throw new Error("Rute tidak ditemukan");
+  return decodePolyline(encoded);
+}
+
+const TRIP_TYPE_ICONS: { id: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: "motor", icon: "speedometer" },
+  { id: "mobil", icon: "car" },
+  { id: "pesepeda", icon: "bicycle" },
+  { id: "pejalan_kaki", icon: "walk" },
+  { id: "angkutan_umum", icon: "bus" },
+];
+
 export default function NotificationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { notifications, location, markNotificationRead } = useStore();
+  const [route, setRoute] = useState<LatLng[] | null>(null);
+  const [loadingRoute, setLoadingRoute] = useState(false);
+  const [showRoutePicker, setShowRoutePicker] = useState(false);
 
   const notification = useMemo(
     () => notifications.find((item) => item.id === id),
@@ -72,9 +139,12 @@ export default function NotificationDetailScreen() {
     }
   }, [notification, markNotificationRead]);
 
-  const userCoords = location
-    ? { latitude: location.latitude, longitude: location.longitude }
-    : undefined;
+  const userCoords = useMemo(
+    () => location
+      ? { latitude: location.latitude, longitude: location.longitude }
+      : undefined,
+    [location]
+  );
   const scenarioCoords = notification?.data?.coords;
   const mapCenter = scenarioCoords ?? userCoords ?? FALLBACK_COORDS;
   const mapRegion = {
@@ -83,17 +153,50 @@ export default function NotificationDetailScreen() {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   };
-  const scenarioId = notification.data?.scenarioId ?? "";
+  const scenarioId = notification?.data?.scenarioId ?? "";
   const showWrongWay = scenarioId === "wrong_way_detected" && Boolean(scenarioCoords);
   const showSchoolZone = scenarioId === "school_zone_active" && Boolean(scenarioCoords);
   const schoolZoneCoords = scenarioCoords
     ? squarePolygon(scenarioCoords, 90)
     : [];
+  const showDangerZone = scenarioId === "blackspot_enter" && Boolean(scenarioCoords);
+  const dangerZoneCoords = scenarioCoords
+    ? squarePolygon(scenarioCoords, 120)
+    : [];
+  const showRestArea = scenarioId === "fatigue_detected" && Boolean(userCoords);
+  const restAreaCoord = useMemo(() => {
+    if (!userCoords) return null;
+    return offsetLatLng(userCoords, 80, 400);
+  }, [userCoords]);
 
   const displayStyle = notification
     ? getNotificationDisplay(notification)
     : null;
   const markerIcon = getScenarioIconForId(scenarioId, displayStyle?.icon);
+  const tripTypes = notification?.data?.pengguna ?? [];
+  const highlightAll = tripTypes.length === 0 || tripTypes.includes("semua");
+
+  const mapHeight = Math.round(Dimensions.get("window").height * 0.5);
+
+  const routeTarget =
+    showRestArea && restAreaCoord
+      ? { label: "Rest Area Terdekat", coord: restAreaCoord }
+      : scenarioCoords
+      ? { label: "Lokasi Notifikasi", coord: scenarioCoords }
+      : null;
+
+  const handleRouteToTarget = async () => {
+    if (!userCoords || !routeTarget) return;
+    try {
+      setLoadingRoute(true);
+      const pts = await fetchRouteOSRM(userCoords, routeTarget.coord);
+      setRoute(pts);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoadingRoute(false);
+    }
+  };
 
   if (!notification) {
     return (
@@ -130,10 +233,31 @@ export default function NotificationDetailScreen() {
         <Text style={styles.headerTitle}>Detail Notifikasi</Text>
       </View>
 
+      <View style={styles.tripTypeBanner}>
+        {TRIP_TYPE_ICONS.map((item) => {
+          const isActive = highlightAll || tripTypes.includes(item.id);
+          return (
+            <View
+              key={item.id}
+              style={[
+                styles.tripTypeIconBadge,
+                isActive && styles.tripTypeIconBadgeActive,
+              ]}
+            >
+              <Ionicons
+                name={item.icon}
+                size={18}
+                color={isActive ? "#FFFFFF" : "#94A3B8"}
+              />
+            </View>
+          );
+        })}
+      </View>
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.mapCard}>
           <MapView
-            style={styles.map}
+            style={[styles.map, { height: mapHeight }]}
             provider={PROVIDER_DEFAULT}
             region={mapRegion}
             showsUserLocation={Boolean(userCoords)}
@@ -142,6 +266,14 @@ export default function NotificationDetailScreen() {
             showsScale={true}
           >
             <UrlTile urlTemplate={DEFAULT_MAP_TILE} maximumZ={19} />
+            {showDangerZone && (
+              <Polygon
+                coordinates={dangerZoneCoords}
+                strokeColor="#F59E0B"
+                fillColor="rgba(245, 158, 11, 0.2)"
+                strokeWidth={2}
+              />
+            )}
             {showSchoolZone && (
               <Polygon
                 coordinates={schoolZoneCoords}
@@ -150,7 +282,14 @@ export default function NotificationDetailScreen() {
                 strokeWidth={2}
               />
             )}
-            {scenarioCoords && displayStyle && !showWrongWay && (
+            {userCoords && (
+              <Marker coordinate={userCoords} title="Lokasi Anda">
+                <View style={styles.userMarker}>
+                  <Ionicons name="person" size={16} color="#0B57D0" />
+                </View>
+              </Marker>
+            )}
+            {scenarioCoords && displayStyle && !showWrongWay && !showRestArea && (
               <Marker coordinate={scenarioCoords} title={notification.title}>
                 <View
                   style={[
@@ -180,7 +319,68 @@ export default function NotificationDetailScreen() {
                 </View>
               </Marker>
             )}
+            {showRestArea && restAreaCoord && (
+              <Marker coordinate={restAreaCoord} title="Rest Area Terdekat">
+                <View style={[styles.marker, { borderColor: "#34C759" }]}>
+                  <Ionicons name="bed" size={18} color="#34C759" />
+                </View>
+              </Marker>
+            )}
+            {route && (
+              <Polyline
+                coordinates={route}
+                strokeWidth={5}
+                strokeColor="rgba(0,122,255,0.95)"
+              />
+            )}
           </MapView>
+          <View style={styles.routeFloatingContainer}>
+            <TouchableOpacity
+              onPress={() => setShowRoutePicker((prev) => !prev)}
+              style={styles.routeFloatingButton}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="trail-sign" size={18} color="#FFFFFF" />
+              <Text style={styles.routeFloatingText}>Pilih Rute</Text>
+            </TouchableOpacity>
+            {showRoutePicker && (
+              <View style={styles.routePicker}>
+                {routeTarget ? (
+                  <TouchableOpacity
+                    style={styles.routeOption}
+                    onPress={() => {
+                      setShowRoutePicker(false);
+                      handleRouteToTarget();
+                    }}
+                  >
+                    <Ionicons name="navigate" size={16} color="#1D4ED8" />
+                    <Text style={styles.routeOptionText}>
+                      {loadingRoute ? "Mencari rute..." : routeTarget.label}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.routeOption}>
+                    <Ionicons name="alert-circle" size={16} color="#9CA3AF" />
+                    <Text style={styles.routeOptionText}>
+                      Rute belum tersedia untuk notifikasi ini
+                    </Text>
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={[styles.routeOption, styles.routeOptionDanger]}
+                  onPress={() => {
+                    setRoute(null);
+                    setShowRoutePicker(false);
+                  }}
+                >
+                  <Ionicons name="close-circle" size={16} color="#DC2626" />
+                  <Text style={[styles.routeOptionText, styles.routeOptionTextDanger]}>
+                    Hapus Rute
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={styles.infoCard}>
@@ -207,35 +407,6 @@ export default function NotificationDetailScreen() {
             </View>
           </View>
           <Text style={styles.message}>{notification.message}</Text>
-
-          <View style={styles.divider} />
-
-          {notification.data?.kategori && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Kategori</Text>
-              <Text style={styles.detailValue}>{notification.data.kategori}</Text>
-            </View>
-          )}
-          {notification.data?.trigger && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Trigger</Text>
-              <Text style={styles.detailValue}>{notification.data.trigger}</Text>
-            </View>
-          )}
-          {notification.data?.address && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Lokasi</Text>
-              <Text style={styles.detailValue}>{notification.data.address}</Text>
-            </View>
-          )}
-          {scenarioCoords && (
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Koordinat</Text>
-              <Text style={styles.detailValue}>
-                {scenarioCoords.latitude.toFixed(5)}, {scenarioCoords.longitude.toFixed(5)}
-              </Text>
-            </View>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -384,5 +555,107 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 8,
     lineHeight: 20,
+  },
+  tripTypeBanner: {
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 8,
+    backgroundColor: "#EEF2FF",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  tripTypeIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#CBD5F5",
+  },
+  tripTypeIconBadgeActive: {
+    backgroundColor: "#1D4ED8",
+    borderColor: "#1D4ED8",
+  },
+  userMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#0B57D0",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  routeFloatingContainer: {
+    position: "absolute",
+    right: 16,
+    bottom: 16,
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  routeFloatingButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0B57D0",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  routeFloatingText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  routePicker: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 10,
+    minWidth: 210,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
+    gap: 8,
+  },
+  routeOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#F3F4F6",
+  },
+  routeOptionText: {
+    fontSize: 12,
+    color: "#1F2937",
+    fontWeight: "600",
+    flexShrink: 1,
+  },
+  routeOptionDanger: {
+    backgroundColor: "#FEE2E2",
+  },
+  routeOptionTextDanger: {
+    color: "#DC2626",
   },
 });
