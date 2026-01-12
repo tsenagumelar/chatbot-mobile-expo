@@ -30,7 +30,6 @@
         "backgroundColor": "#007AFF"
       },
       "package": "com.policeassistant.app",
-      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",

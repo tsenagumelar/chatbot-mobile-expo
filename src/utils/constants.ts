@@ -1,16 +1,8 @@
 // Auto-detect development mode
 export const API_BASE_URL = "https://chatbotapi.activa.id/api/v1";
 
-// OpenStreetMap Tile Servers (FREE!)
-export const MAP_TILES = {
-  OSM_DEFAULT: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-  CARTO_LIGHT: "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-  CARTO_DARK: "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-  TOPO: "https://a.tile.opentopomap.org/{z}/{x}/{y}.png",
-} as const;
-
-// Default map tile
-export const DEFAULT_MAP_TILE = MAP_TILES.CARTO_LIGHT;
+// Google Maps configuration
+export const GOOGLE_MAPS_API_KEY = "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc";
 
 // Speed limits (km/h)
 export const SPEED_LIMITS = {

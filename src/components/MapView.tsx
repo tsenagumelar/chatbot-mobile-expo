@@ -1,19 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
-import MapView, { Marker, UrlTile } from "react-native-maps";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import type { LocationData } from "../types";
-import { COLORS, DEFAULT_MAP_TILE } from "../utils/constants";
+import { COLORS } from "../utils/constants";
 
 interface MapComponentProps {
   location: LocationData | null;
   onMapReady?: () => void;
-  tileUrl?: string;
 }
 
 export default function MapComponent({
   location,
   onMapReady,
-  tileUrl = DEFAULT_MAP_TILE,
 }: MapComponentProps) {
   const mapRef = useRef<MapView>(null);
 
@@ -54,6 +52,7 @@ export default function MapComponent({
     <MapView
       ref={mapRef}
       style={styles.map}
+      provider={PROVIDER_GOOGLE}
       initialRegion={{
         latitude: location.latitude,
         longitude: location.longitude,
@@ -66,10 +65,8 @@ export default function MapComponent({
       showsScale={true}
       loadingEnabled={true}
       onMapReady={onMapReady}
-      mapType={Platform.OS === "android" ? "none" : "standard"} // Use 'none' to enable custom tiles
+      mapType="standard"
     >
-      {/* OpenStreetMap Tiles - FREE! */}
-      <UrlTile urlTemplate={tileUrl} maximumZ={19} flipY={false} zIndex={-1} />
 
       {/* User location marker */}
       <Marker

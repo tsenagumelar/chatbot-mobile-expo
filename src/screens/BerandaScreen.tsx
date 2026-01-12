@@ -24,8 +24,7 @@ import {
 import MapView, {
   Marker,
   Polyline,
-  PROVIDER_DEFAULT,
-  UrlTile,
+  PROVIDER_GOOGLE,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -954,7 +953,7 @@ export default function HomeScreen() {
               <MapView
                 key={`map-${activeScenarioId ?? "default"}`}
                 style={styles.map}
-                provider={PROVIDER_DEFAULT}
+                provider={PROVIDER_GOOGLE}
                 region={{
                   latitude: location.latitude,
                   longitude: location.longitude,
@@ -967,10 +966,6 @@ export default function HomeScreen() {
                 showsCompass={true}
                 showsScale={true}
               >
-                <UrlTile
-                  urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  maximumZ={19}
-                />
                 {scenarioMarkers.map((marker) => (
                   <Marker
                     key={marker.id}

@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import type {
-  ChatContext,
-  ChatResponse,
-  RouteRequestCoords,
-  RouteResponse,
-  TrafficResponse
+    ChatContext,
+    ChatResponse,
+    RouteRequestCoords,
+    RouteResponse,
+    TrafficResponse
 } from "../types";
 import { API_BASE_URL } from "../utils/constants";
 
@@ -277,27 +277,28 @@ export async function searchLocation(
   query: string
 ): Promise<{ name: string; lat: number; lon: number }[]> {
   try {
-    // Use Nominatim OpenStreetMap API for geocoding
+    // Use Google Geocoding API
+    const GOOGLE_MAPS_API_KEY = "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc";
     const response = await axios.get(
-      "https://nominatim.openstreetmap.org/search",
+      "https://maps.googleapis.com/maps/api/geocode/json",
       {
         params: {
-          q: query,
-          format: "json",
-          limit: 5,
-          countrycodes: "id", // Limit to Indonesia
-        },
-        headers: {
-          "User-Agent": "ChatAssistantApp/1.0",
+          address: query,
+          key: GOOGLE_MAPS_API_KEY,
+          components: "country:ID", // Limit to Indonesia
+          language: "id",
         },
       }
     );
 
-    return response.data.map((item: any) => ({
-      name: item.display_name,
-      lat: parseFloat(item.lat),
-      lon: parseFloat(item.lon),
-    }));
+    if (response.data.status === "OK") {
+      return response.data.results.slice(0, 5).map((item: any) => ({
+        name: item.formatted_address,
+        lat: item.geometry.location.lat,
+        lon: item.geometry.location.lng,
+      }));
+    }
+    return [];
   } catch (error) {
     console.error("❌ Location search error:", error);
     return [];

@@ -1,5 +1,5 @@
 import { useStore } from "@/src/store/useStore";
-import { COLORS, DEFAULT_MAP_TILE } from "@/src/utils/constants";
+import { COLORS } from "@/src/utils/constants";
 import { formatRelativeTime, getNotificationDisplay } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -16,8 +16,7 @@ import MapView, {
   Marker,
   Polygon,
   Polyline,
-  PROVIDER_DEFAULT,
-  UrlTile,
+  PROVIDER_GOOGLE,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -258,14 +257,14 @@ export default function NotificationDetailScreen() {
         <View style={styles.mapCard}>
           <MapView
             style={[styles.map, { height: mapHeight }]}
-            provider={PROVIDER_DEFAULT}
+            provider={PROVIDER_GOOGLE}
+            mapType="standard"
             region={mapRegion}
             showsUserLocation={Boolean(userCoords)}
             showsMyLocationButton={true}
             showsCompass={true}
             showsScale={true}
           >
-            <UrlTile urlTemplate={DEFAULT_MAP_TILE} maximumZ={19} />
             {showDangerZone && (
               <Polygon
                 coordinates={dangerZoneCoords}

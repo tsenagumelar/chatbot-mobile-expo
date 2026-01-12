@@ -9,7 +9,7 @@ AI-powered police assistant untuk pengemudi di Indonesia. Built with React Nativ
 - 💬 **AI Chat Assistant** - Chat dengan AI tentang berkendara
 - 🎤 **Voice Output** - Text-to-speech untuk respons AI
 - 🛣️ **Route Planning** - Cari rute alternatif dengan traffic info
-- 📍 **OpenStreetMap** - Maps gratis tanpa API key
+- 📍 **Google Maps** - Maps dengan Google Maps API
 
 ## Tech Stack 🛠️
 
@@ -20,7 +20,7 @@ AI-powered police assistant untuk pengemudi di Indonesia. Built with React Nativ
 - **React Navigation** - Navigation
 - **expo-location** - GPS tracking
 - **expo-speech** - Text-to-speech
-- **react-native-maps** - Maps dengan OSM tiles
+- **react-native-maps** - Google Maps integration
 
 ## Prerequisites 📋
 
@@ -208,16 +208,17 @@ App menggunakan endpoint berikut:
 
 ## Environment Variables 🔐
 
-Tidak ada API key yang diperlukan!
+Google Maps API key sudah terkonfigurasi di:
+- `app.config.js` - iOS dan Android configuration
+- `src/services/api.ts` - Geocoding service
 
-- ✅ OpenStreetMap tiles - FREE
-- ✅ Backend API - Local/self-hosted
+API Key: AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc
 
 ## Performance Tips 🚀
 
 1. **Location Updates**: Default 2 detik, bisa dikurangi jika butuh real-time
 2. **Traffic Updates**: Default 30 detik, sesuaikan sesuai kebutuhan
-3. **Map Tiles**: Cache otomatis oleh react-native-maps
+3. **Map Rendering**: Google Maps native rendering untuk performa optimal
 4. **Chat History**: Max 50 messages (configurable)
 
 ## Future Improvements 🎯

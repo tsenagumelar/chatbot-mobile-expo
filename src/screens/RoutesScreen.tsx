@@ -1,7 +1,7 @@
 import * as Location from "expo-location";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import MapView, { Marker, Polygon, Polyline, UrlTile } from "react-native-maps";
+import MapView, { Marker, Polygon, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
 type LatLng = { latitude: number; longitude: number };
 
@@ -145,9 +145,10 @@ export default function MapZonesAndRestRoute() {
       <MapView 
         ref={mapRef}
         style={{ flex: 1 }} 
+        provider={PROVIDER_GOOGLE}
+        mapType="standard"
         initialRegion={initialRegion}
       >
-        <UrlTile urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maximumZ={19} />
 
         {/* User location dengan icon khusus (biru) */}
         {userLoc && (
