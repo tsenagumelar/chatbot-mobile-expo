@@ -2,7 +2,7 @@
 export const API_BASE_URL = "https://chatbotapi.activa.id/api/v1";
 
 // Google Maps configuration
-export const GOOGLE_MAPS_API_KEY = "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc";
+export const GOOGLE_MAPS_API_KEY = "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI";
 
 // Speed limits (km/h)
 export const SPEED_LIMITS = {

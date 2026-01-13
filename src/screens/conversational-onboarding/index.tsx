@@ -1,16 +1,12 @@
-import onboardFlow from "@/src/services/onboard.json";
-import { useStore } from "@/src/store/useStore";
-import { sanitizeSpeechText } from "@/src/utils/speech";
-import { router } from "expo-router";
-import * as Speech from "expo-speech";
+import { Ionicons } from "@expo/vector-icons";
 import LottieView from "lottie-react-native";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { requestLocationPermission } from "@/src/services/location";
+import React from "react";
 import {
   Animated,
   Image,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -18,207 +14,43 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useConversationalOnboardingScreen from "./hooks";
 
 type StepOption = {
   label: string;
   value: string;
 };
 
-type StepUserInput =
-  | { type: "action"; options: StepOption[] }
-  | { type: "text"; placeholder?: string; validation?: { min_length?: number } }
-  | { type: "single_choice"; options: StepOption[] }
-  | { type: "multi_choice"; options: StepOption[]; max_select?: number }
-  | { type: "location_or_search"; options: StepOption[] }
-  | { type: "otp"; length: number; resend_timer_seconds?: number };
-
-type Step = {
-  type: "message" | "input" | "choice" | "verification" | "final";
-  assistant: { text: string };
-  user_input: StepUserInput;
-  save_to_profile?: { field: string; value?: unknown };
-  next: string | Record<string, string>;
-};
-
-type OnboardingFlow = {
-  initial_step: string;
-  steps: Record<string, Step>;
-};
-
-const polantasLogo = require("@/assets/images/Polantas Logo.png");
+const polantasLogo = require("@/assets/images/logo-baru.png");
 const voiceAnimation = require("@/src/services/voice.json");
-const flow = onboardFlow as OnboardingFlow;
 
 export default function ConversationalOnboardingScreen() {
   const {
     onboarding,
-    setOnboarding,
-    setLocationPermission,
-    setOnboardingCompleted,
-    setAppMode,
-    login,
-  } = useStore();
-  const [currentStepId, setCurrentStepId] = useState(flow.initial_step);
-  const [typedText, setTypedText] = useState("");
-  const [showInput, setShowInput] = useState(false);
-  const [textInputValue, setTextInputValue] = useState("");
-  const [selectedValues, setSelectedValues] = useState<string[]>([]);
-  const [otpValue, setOtpValue] = useState("");
-  const [resendSeconds, setResendSeconds] = useState(0);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [showLoader, setShowLoader] = useState(false);
-  const inputAnim = useRef(new Animated.Value(0)).current;
-  const voicePulse = useRef(new Animated.Value(0)).current;
-
-  const currentStep = flow.steps[currentStepId];
-
-  const assistantText = useMemo(() => {
-    const name = onboarding.name || "Sobat";
-    return currentStep?.assistant.text.replaceAll("{name}", name);
-  }, [currentStep, onboarding.name]);
-
-  useEffect(() => {
-    if (!currentStep) return;
-
-    setTypedText("");
-    setShowInput(false);
-    inputAnim.setValue(0);
-    setSelectedValues([]);
-    setOtpValue("");
-
-    const field = currentStep.save_to_profile?.field;
-    if (currentStep.user_input.type === "text" && field) {
-      const value = onboarding[field as keyof typeof onboarding];
-      setTextInputValue(typeof value === "string" ? value : "");
-    } else {
-      setTextInputValue("");
-    }
-
-    let index = 0;
-    const interval = setInterval(() => {
-      index += 1;
-      setTypedText(assistantText.slice(0, index));
-      if (index >= assistantText.length) {
-        clearInterval(interval);
-        setShowInput(true);
-        Animated.timing(inputAnim, {
-          toValue: 1,
-          duration: 260,
-          useNativeDriver: true,
-        }).start();
-      }
-    }, 75);
-
-    Speech.stop();
-    setIsSpeaking(true);
-    Speech.speak(sanitizeSpeechText(assistantText), {
-      language: "id-ID",
-      rate: 0.85,
-      pitch: 1.05,
-      onDone: () => setIsSpeaking(false),
-      onStopped: () => setIsSpeaking(false),
-      onError: () => setIsSpeaking(false),
-    });
-
-    return () => clearInterval(interval);
-  }, [assistantText, currentStep, inputAnim, onboarding]);
-
-  useEffect(() => {
-    if (currentStepId !== "ASK_CITY") return;
-    let isActive = true;
-
-    const requestPermission = async () => {
-      const granted = await requestLocationPermission();
-      if (isActive) {
-        setLocationPermission(granted);
-      }
-    };
-
-    requestPermission();
-    return () => {
-      isActive = false;
-    };
-  }, [currentStepId, setLocationPermission]);
-
-  useEffect(() => {
-    if (!showLoader) return;
-    const timer = setTimeout(() => {
-      login({
-        name: onboarding.name || "Sobat",
-        phone: "",
-        email: "",
-      });
-      setAppMode("menyapa");
-      setOnboardingCompleted(true);
-      router.replace("/menyapa");
-    }, 1600);
-
-    return () => clearTimeout(timer);
-  }, [login, onboarding.name, setAppMode, setOnboardingCompleted, showLoader]);
-
-  useEffect(() => {
-    Animated.timing(voicePulse, {
-      toValue: isSpeaking ? 1 : 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [isSpeaking, voicePulse]);
-
-  useEffect(() => {
-    if (!currentStep || currentStep.user_input.type !== "otp") return;
-    if (!currentStep.user_input.resend_timer_seconds) return;
-    setResendSeconds(currentStep.user_input.resend_timer_seconds);
-  }, [currentStep]);
-
-  useEffect(() => {
-    if (resendSeconds <= 0) return;
-    const timer = setInterval(() => {
-      setResendSeconds((prev) => Math.max(prev - 1, 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendSeconds]);
-
-  const saveAnswer = (value: unknown) => {
-    if (!currentStep?.save_to_profile) return;
-    const { field, value: staticValue } = currentStep.save_to_profile;
-    setOnboarding({
-      [field]: staticValue !== undefined ? staticValue : value,
-    });
-  };
-
-  const resolveNextStep = (value?: string) => {
-    if (!currentStep) return null;
-    if (typeof currentStep.next === "string") return currentStep.next;
-    if (!value) return null;
-    return currentStep.next[value] ?? null;
-  };
-
-  const handleAnswer = (value: string | string[], label?: string) => {
-    const payload = Array.isArray(value) ? value : value;
-    saveAnswer(payload);
-
-    const nextStepId = resolveNextStep(Array.isArray(value) ? value[0] : value);
-    if (!nextStepId) return;
-    if (!flow.steps[nextStepId]) {
-      if (nextStepId === "ENTER_APP") {
-        router.replace("/(tabs)");
-      }
-      return;
-    }
-    setCurrentStepId(nextStepId);
-  };
-
-  const animatedStyle = {
-    opacity: inputAnim,
-    transform: [
-      {
-        translateY: inputAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [12, 0],
-        }),
-      },
-    ],
-  };
+    currentStep,
+    assistantText,
+    typedText,
+    showInput,
+    textInputValue,
+    setTextInputValue,
+    selectedValues,
+    setSelectedValues,
+    otpValue,
+    setOtpValue,
+    resendSeconds,
+    placesResults,
+    placesError,
+    stepHistory,
+    showLoader,
+    setShowLoader,
+    voicePulse,
+    animatedStyle,
+    silentMode,
+    setSilentMode,
+    handleAnswer,
+    handleSelectPlace,
+    handleBack,
+  } = useConversationalOnboardingScreen();
 
   const renderOptionButton = (
     option: StepOption,
@@ -234,6 +66,64 @@ export default function ConversationalOnboardingScreen() {
         {option.label}
       </Text>
     </TouchableOpacity>
+  );
+
+  const parseVehicleLabel = (label: string) => {
+    const parts = label.trim().split(/\s+/);
+    if (parts.length < 2) {
+      return { icon: label, text: label };
+    }
+    const [icon, ...rest] = parts;
+    return { icon, text: rest.join(" ") };
+  };
+
+  const renderVehicleCarousel = (options: StepOption[]) => (
+    <Animated.View style={[styles.inputArea, animatedStyle]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.vehicleCarousel}
+        snapToInterval={132}
+        decelerationRate="fast"
+      >
+        {options.map((option) => {
+          const { icon, text } = parseVehicleLabel(option.label);
+          const isSelected = onboarding.primary_vehicle === option.value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={styles.vehicleCard}
+              onPress={() => handleAnswer(option.value, option.label)}
+              activeOpacity={0.85}
+            >
+              <View
+                style={[
+                  styles.vehicleIconWrap,
+                  isSelected && styles.vehicleIconWrapActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.vehicleIcon,
+                    isSelected && styles.vehicleIconActive,
+                  ]}
+                >
+                  {icon}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.vehicleLabel,
+                  isSelected && styles.vehicleLabelActive,
+                ]}
+              >
+                {text}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    </Animated.View>
   );
 
   const renderInput = () => {
@@ -255,6 +145,13 @@ export default function ConversationalOnboardingScreen() {
             ))}
           </Animated.View>
         );
+      }
+
+      if (
+        currentStep.user_input.type === "single_choice" &&
+        currentStep.save_to_profile?.field === "primary_vehicle"
+      ) {
+        return renderVehicleCarousel(currentStep.user_input.options);
       }
 
       return (
@@ -306,7 +203,7 @@ export default function ConversationalOnboardingScreen() {
             value={textInputValue}
             onChangeText={setTextInputValue}
             placeholder={currentStep.user_input.placeholder}
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#D6E4FF"
             style={styles.textInput}
           />
           <TouchableOpacity
@@ -316,6 +213,38 @@ export default function ConversationalOnboardingScreen() {
           >
             <Text style={styles.primaryButtonText}>Lanjut</Text>
           </TouchableOpacity>
+        </Animated.View>
+      );
+    }
+
+    if (inputType === "places_search") {
+      const query = textInputValue.trim();
+      return (
+        <Animated.View style={[styles.inputArea, animatedStyle]}>
+          <TextInput
+            value={textInputValue}
+            onChangeText={setTextInputValue}
+            placeholder={currentStep.user_input.placeholder}
+            placeholderTextColor="#D6E4FF"
+            style={styles.textInput}
+          />
+          {query.length < 3 && (
+            <Text style={styles.placesHint}>Ketik minimal 3 huruf.</Text>
+          )}
+          {placesError ? <Text style={styles.placesHint}>{placesError}</Text> : null}
+          {placesResults.length > 0 && (
+            <View style={styles.placesResults}>
+              {placesResults.map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.placesItem}
+                  onPress={() => handleSelectPlace(item.id)}
+                >
+                  <Text style={styles.placesItemText}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </Animated.View>
       );
     }
@@ -366,9 +295,6 @@ export default function ConversationalOnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <View style={styles.backgroundGlow} />
-      <View style={styles.backgroundOrb} />
-      <View style={styles.backgroundRing} />
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -378,13 +304,20 @@ export default function ConversationalOnboardingScreen() {
             <Image source={polantasLogo} style={styles.logoImage} />
           </View>
           <Text style={styles.brandText}>POLANTAS MENYAPA</Text>
+          <TouchableOpacity
+            style={styles.silentToggle}
+            onPress={() => setSilentMode(!silentMode)}
+            activeOpacity={0.85}
+          >
+            <Ionicons
+              name={silentMode ? "volume-mute" : "volume-high"}
+              size={18}
+              color="#0C3AC5"
+            />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View style={styles.cardDot} />
-            <Text style={styles.assistantLabel}>Polman</Text>
-          </View>
+        <View style={styles.messageArea}>
           <Text style={styles.assistantText}>
             {typedText}
             {typedText.length < assistantText.length ? "▍" : ""}
@@ -393,6 +326,12 @@ export default function ConversationalOnboardingScreen() {
 
         {renderInput()}
       </KeyboardAvoidingView>
+
+      {stepHistory.length > 0 && (
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Text style={styles.backButtonText}>KEMBALI</Text>
+        </TouchableOpacity>
+      )}
 
       <Animated.View
         style={[
@@ -413,12 +352,7 @@ export default function ConversationalOnboardingScreen() {
           },
         ]}
       >
-        <LottieView
-          source={voiceAnimation}
-          autoPlay
-          loop
-          style={styles.voiceAnimation}
-        />
+        <LottieView source={voiceAnimation} autoPlay loop style={styles.voiceAnimation} />
       </Animated.View>
 
       <View style={styles.avatarFloat}>
@@ -444,37 +378,7 @@ export default function ConversationalOnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  backgroundGlow: {
-    position: "absolute",
-    top: -180,
-    left: -160,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: "#D6E4FF",
-    opacity: 0.7,
-  },
-  backgroundOrb: {
-    position: "absolute",
-    bottom: -220,
-    right: -160,
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: "#E9F1FF",
-    opacity: 0.85,
-  },
-  backgroundRing: {
-    position: "absolute",
-    top: 110,
-    right: -120,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    borderWidth: 2,
-    borderColor: "rgba(12, 58, 197, 0.15)",
+    backgroundColor: "#0C3AC5",
   },
   content: {
     flex: 1,
@@ -485,20 +389,13 @@ const styles = StyleSheet.create({
   header: {
     alignItems: "center",
     gap: 14,
+    position: "relative",
   },
   logoFrame: {
     width: 92,
     height: 100,
     borderRadius: 26,
-    backgroundColor: "#FFFFFF",
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0B1E6B",
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -508,47 +405,35 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
   },
   brandText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#0B1E6B",
-    letterSpacing: 2,
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    letterSpacing: 1,
   },
-  card: {
+  silentToggle: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    paddingVertical: 22,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    shadowColor: "#0B1E6B",
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 8,
-  },
-  cardHeader: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
+    justifyContent: "center",
+    shadowColor: "#0B1E6B",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  cardDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#60A5FA",
-  },
-  assistantLabel: {
-    fontSize: 12,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    color: "#64748B",
-    fontWeight: "700",
+  messageArea: {
+    marginTop: 15,
+    paddingHorizontal: 6,
   },
   assistantText: {
-    fontSize: 18,
-    lineHeight: 28,
-    color: "#1A2351",
+    fontSize: 22,
+    lineHeight: 35,
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   inputArea: {
@@ -570,22 +455,70 @@ const styles = StyleSheet.create({
     color: "#1A2351",
     fontWeight: "600",
     fontSize: 15,
+    textTransform: "uppercase",
+    textAlign: "center",
   },
   optionTextActive: {
     color: "#0C3AC5",
   },
-  textInput: {
-    borderWidth: 1,
-    borderColor: "#D9E2FF",
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  vehicleCarousel: {
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    gap: 5,
+  },
+  vehicleCard: {
+    width: 120,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+  },
+  vehicleIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "#FFFFFF",
-    fontSize: 16,
-    color: "#1A2351",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0B1E6B",
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  vehicleIconWrapActive: {
+    transform: [{ scale: 1.15 }],
+  },
+  vehicleIcon: {
+    fontSize: 45,
+  },
+  vehicleIconActive: {
+    fontSize: 50,
+  },
+  vehicleLabel: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  vehicleLabelActive: {
+    color: "#FFFFFF",
+  },
+  textInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#FFFFFF",
+    paddingHorizontal: 0,
+    paddingVertical: 12,
+    backgroundColor: "transparent",
+    fontSize: 20,
+    lineHeight: 30,
+    color: "#FFFFFF",
+    marginBottom: 15,
   },
   primaryButton: {
-    backgroundColor: "#0C3AC5",
+    backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingVertical: 12,
     alignItems: "center",
@@ -594,14 +527,46 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primaryButtonText: {
-    color: "#FFFFFF",
+    color: "#0C3AC5",
     fontWeight: "700",
     fontSize: 15,
+    textTransform: "uppercase",
+    textAlign: "center",
+  },
+  backButton: {
+    position: "absolute",
+    left: 25,
+    bottom: 50,
+  },
+  backButtonText: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "700",
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
   helperText: {
     color: "#6B7280",
     fontSize: 12,
     textAlign: "center",
+  },
+  placesResults: {
+    marginTop: 8,
+    gap: 10,
+  },
+  placesItem: {
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.25)",
+  },
+  placesItemText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "600",
+  },
+  placesHint: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 12,
   },
   avatarFloat: {
     position: "absolute",

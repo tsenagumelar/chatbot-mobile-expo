@@ -1,4 +1,4 @@
-import BerandaScreen from "@/src/screens/BerandaScreen"
+import BerandaScreen from "@/src/screens/beranda"
 
 const BerandaPage = () => {
   return (

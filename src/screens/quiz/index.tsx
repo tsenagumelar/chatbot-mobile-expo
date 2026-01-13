@@ -1,53 +1,18 @@
 import { AppHeader } from "@/src/components/AppHeader";
-import quizData from "@/src/data/quizQuestions.json";
-import { useStore } from "@/src/store/useStore";
 import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
-    Alert,
-    Animated,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface QuizQuestion {
-  id: number;
-  question: string;
-  options: { key: string; text: string }[];
-  correctAnswer: string;
-  explanation: string;
-}
-
-interface QuizResult {
-  totalQuestions: number;
-  correctAnswers: number;
-  totalScore: number;
-  answers: {
-    question: string;
-    userAnswer: string;
-    correctAnswer: string;
-    isCorrect: boolean;
-    timeSpent: number;
-    score: number;
-  }[];
-}
-
-interface LeaderboardEntry {
-  id: string;
-  name: string;
-  score: number;
-  correctAnswers: number;
-  totalQuestions: number;
-  date: string;
-  rewardClaimed: boolean;
-}
+import useQuizScreen from "./hooks";
 
 interface Reward {
   id: string;
@@ -57,145 +22,39 @@ interface Reward {
 }
 
 export default function GameScreen() {
-  const { logout, user } = useStore();
-  const [activeTab, setActiveTab] = useState<"quiz" | "leaderboard">("quiz");
-  const [gameStarted, setGameStarted] = useState(false);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedQuestions, setSelectedQuestions] = useState<QuizQuestion[]>(
-    []
-  );
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [score, setScore] = useState(0);
-  const [answers, setAnswers] = useState<QuizResult["answers"]>([]);
-  const [showResult, setShowResult] = useState(false);
-  const [timerAnimation] = useState(new Animated.Value(1));
-  const [showRewardsModal, setShowRewardsModal] = useState(false);
-  const [showMyRewardsModal, setShowMyRewardsModal] = useState(false);
-  const [userPoints, setUserPoints] = useState(850); // Mock user points
-  const [claimedRewards, setClaimedRewards] = useState<Reward[]>([
-    // Mock claimed rewards
-    { id: "2", name: "Perpanjangan SIM C gratis", points: 300, icon: "card-outline" },
-  ]);
-  
-  // Rewards data
-  const rewards: Reward[] = [
-    { id: "1", name: "Pembuatan SIM C gratis", points: 500, icon: "card" },
-    { id: "2", name: "Perpanjangan SIM C gratis", points: 300, icon: "card-outline" },
-    { id: "3", name: "Pembuatan SIM A gratis", points: 1000, icon: "card" },
-    { id: "4", name: "Perpanjangan SIM A gratis", points: 600, icon: "card-outline" },
-    { id: "5", name: "Perpanjangan TNKB gratis", points: 700, icon: "pricetag" },
-  ];
-  
-  // Leaderboard state (mock data - should come from backend)
-  // Include current user in leaderboard
-  const [leaderboard] = useState<LeaderboardEntry[]>([
-    { id: "1", name: "Ahmad Wijaya", score: 950, correctAnswers: 5, totalQuestions: 5, date: "2026-01-07", rewardClaimed: false },
-    { id: "2", name: user?.name || "Guest", score: 820, correctAnswers: 4, totalQuestions: 5, date: "2026-01-07", rewardClaimed: false },
-    { id: "3", name: "Budi Santoso", score: 800, correctAnswers: 4, totalQuestions: 5, date: "2026-01-07", rewardClaimed: true },
-    { id: "4", name: "Citra Dewi", score: 750, correctAnswers: 4, totalQuestions: 5, date: "2026-01-07", rewardClaimed: false },
-    { id: "5", name: "Diana Putri", score: 700, correctAnswers: 3, totalQuestions: 5, date: "2026-01-07", rewardClaimed: false },
-  ]);
+  const {
+    user,
+    activeTab,
+    setActiveTab,
+    gameStarted,
+    currentQuestionIndex,
+    selectedQuestions,
+    selectedAnswer,
+    timeLeft,
+    score,
+    answers,
+    showResult,
+    showRewardsModal,
+    setShowRewardsModal,
+    showMyRewardsModal,
+    setShowMyRewardsModal,
+    userPoints,
+    claimedRewards,
+    rewards,
+    leaderboard,
+    startGame,
+    handleAnswer,
+    claimReward,
+    handleLogout,
+  } = useQuizScreen();
 
-  // Get 5 random questions
-  const getRandomQuestions = () => {
-    const shuffled = [...quizData].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 5) as QuizQuestion[];
-  };
-
-  // Start game
-  const startGame = () => {
-    const questions = getRandomQuestions();
-    setSelectedQuestions(questions);
-    setGameStarted(true);
-    setCurrentQuestionIndex(0);
-    setScore(0);
-    setAnswers([]);
-    setShowResult(false);
-    setTimeLeft(10);
-    setSelectedAnswer(null);
-  };
-
-  // Timer effect
-  useEffect(() => {
-    if (!gameStarted || showResult) return;
-
-    // Animate timer
-    Animated.timing(timerAnimation, {
-      toValue: 0,
-      duration: 10000,
-      useNativeDriver: false,
-    }).start();
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          handleAnswer(null); // Auto submit when time runs out
-          return 10;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      clearInterval(timer);
-      timerAnimation.setValue(1);
-    };
-  }, [gameStarted, currentQuestionIndex, showResult]);
-
-  // Calculate score based on time (faster = higher score)
-  const calculateScore = (timeSpent: number): number => {
-    const baseScore = 100;
-    const timeBonus = (10 - timeSpent) * 10; // Max 100 bonus points
-    return baseScore + timeBonus;
-  };
-
-  // Handle answer selection
-  const handleAnswer = (answer: string | null) => {
-    if (selectedAnswer !== null) return; // Already answered
-
-    const currentQuestion = selectedQuestions[currentQuestionIndex];
-    const timeSpent = 10 - timeLeft;
-    const isCorrect = answer === currentQuestion.correctAnswer;
-    const questionScore = isCorrect ? calculateScore(timeSpent) : 0;
-
-    // Save answer
-    const answerRecord = {
-      question: currentQuestion.question,
-      userAnswer: answer || "Tidak dijawab",
-      correctAnswer: currentQuestion.correctAnswer,
-      isCorrect,
-      timeSpent,
-      score: questionScore,
-    };
-
-    setAnswers([...answers, answerRecord]);
-    setSelectedAnswer(answer);
-
-    if (isCorrect) {
-      setScore(score + questionScore);
-    }
-
-    // Move to next question or show result
-    setTimeout(() => {
-      if (currentQuestionIndex < selectedQuestions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-        setSelectedAnswer(null);
-        setTimeLeft(10);
-        timerAnimation.setValue(1);
-      } else {
-        setShowResult(true);
-      }
-    }, 2000);
-  };
-
-  // Render start screen
   const renderStartScreen = () => (
     <View style={styles.centerContainer}>
       <Ionicons name="trophy" size={80} color={COLORS.PRIMARY} />
       <Text style={styles.title}>Kuis Harian Polantas Menyapa</Text>
       <Text style={styles.subtitle}>
-        Membangun Budaya Tertib Berlalu Lintas dimulai dari Uji Pengetahuan Kamu Disini
+        Membangun Budaya Tertib Berlalu Lintas dimulai dari Uji Pengetahuan Kamu
+        Disini
       </Text>
 
       <View style={styles.infoCard}>
@@ -213,7 +72,11 @@ export default function GameScreen() {
         </View>
         <View style={styles.infoRow}>
           <Ionicons name="gift" size={24} color={COLORS.PRIMARY} />
-          <Text style={styles.infoText}>Nilai poin kamu dapat ditukarkan menjadi berbagai reward seperti pembuatan SIM gratis, perpanjangan SIM gratis serta reward menarik lainnya dari Korlantas Polri</Text>
+          <Text style={styles.infoText}>
+            Nilai poin kamu dapat ditukarkan menjadi berbagai reward seperti
+            pembuatan SIM gratis, perpanjangan SIM gratis serta reward menarik
+            lainnya dari Korlantas Polri
+          </Text>
         </View>
       </View>
 
@@ -224,15 +87,12 @@ export default function GameScreen() {
     </View>
   );
 
-  // Render question
   const renderQuestion = () => {
     const question = selectedQuestions[currentQuestionIndex];
-    const progress =
-      ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
+    const progress = ((currentQuestionIndex + 1) / selectedQuestions.length) * 100;
 
     return (
       <View style={styles.questionContainer}>
-        {/* Progress bar */}
         <View style={styles.progressContainer}>
           <View style={[styles.progressBar, { width: `${progress}%` }]} />
         </View>
@@ -241,26 +101,17 @@ export default function GameScreen() {
           Pertanyaan {currentQuestionIndex + 1} dari {selectedQuestions.length}
         </Text>
 
-        {/* Timer */}
         <View style={styles.timerContainer}>
-          <Ionicons
-            name="time"
-            size={24}
-            color={timeLeft <= 3 ? "#FF3B30" : COLORS.PRIMARY}
-          />
-          <Text
-            style={[styles.timerText, timeLeft <= 3 && styles.timerTextDanger]}
-          >
+          <Ionicons name="time" size={24} color={timeLeft <= 3 ? "#FF3B30" : COLORS.PRIMARY} />
+          <Text style={[styles.timerText, timeLeft <= 3 && styles.timerTextDanger]}>
             {timeLeft}s
           </Text>
         </View>
 
-        {/* Question */}
         <View style={styles.questionCard}>
           <Text style={styles.questionText}>{question.question}</Text>
         </View>
 
-        {/* Options */}
         <View style={styles.optionsContainer}>
           {question.options.map((option) => {
             let optionStyle = styles.optionButton;
@@ -292,7 +143,6 @@ export default function GameScreen() {
           })}
         </View>
 
-        {/* Show explanation after answer */}
         {selectedAnswer !== null && (
           <View style={styles.explanationCard}>
             <Text style={styles.explanationText}>{question.explanation}</Text>
@@ -302,7 +152,6 @@ export default function GameScreen() {
     );
   };
 
-  // Render result screen
   const renderResult = () => {
     const correctCount = answers.filter((a) => a.isCorrect).length;
     const percentage = (correctCount / selectedQuestions.length) * 100;
@@ -329,9 +178,7 @@ export default function GameScreen() {
       <View style={styles.resultContainer}>
         <View style={styles.resultHeader}>
           <Text style={styles.resultEmoji}>{resultEmoji}</Text>
-          <Text style={[styles.resultTitle, { color: resultColor }]}>
-            {resultText}
-          </Text>
+          <Text style={[styles.resultTitle, { color: resultColor }]}>{resultText}</Text>
 
           <View style={styles.scoreCard}>
             <Text style={styles.scoreLabel}>Total Skor</Text>
@@ -342,7 +189,6 @@ export default function GameScreen() {
           </View>
         </View>
 
-        {/* Answer summary - Scrollable */}
         <ScrollView
           style={styles.summaryScrollView}
           contentContainerStyle={styles.summaryContentContainer}
@@ -370,7 +216,6 @@ export default function GameScreen() {
           ))}
         </ScrollView>
 
-        {/* Fixed button at bottom */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.playAgainButton} onPress={startGame}>
             <Ionicons name="refresh" size={24} color="white" />
@@ -381,35 +226,25 @@ export default function GameScreen() {
     );
   };
 
-  // Render leaderboard
   const renderLeaderboard = () => {
-    const currentUserRank = leaderboard.findIndex(entry => entry.name === user?.name) + 1;
+    const currentUserRank = leaderboard.findIndex((entry) => entry.name === user?.name) + 1;
     const canClaimReward = currentUserRank > 0 && currentUserRank <= 3;
 
-    const handleOpenRewardsModal = () => {
-      setShowRewardsModal(true);
-    };
-
     const handleClaimRewardItem = (reward: Reward) => {
-      if (userPoints >= reward.points) {
-        Alert.alert(
-          "Claim Reward",
-          `Yakin ingin claim "${reward.name}" dengan ${reward.points} poin?`,
-          [
-            { text: "Batal", style: "cancel" },
-            {
-              text: "Claim",
-              onPress: () => {
-                setUserPoints(prev => prev - reward.points);
-                setClaimedRewards(prev => [...prev, reward]);
-                Alert.alert("Berhasil!", `${reward.name} berhasil di-claim!`);
-                setShowRewardsModal(false);
-                // TODO: Implement actual reward claim logic with backend
-              },
+      Alert.alert(
+        "Claim Reward",
+        `Yakin ingin claim "${reward.name}" dengan ${reward.points} poin?`,
+        [
+          { text: "Batal", style: "cancel" },
+          {
+            text: "Claim",
+            onPress: () => {
+              claimReward(reward);
+              setShowRewardsModal(false);
             },
-          ]
-        );
-      }
+          },
+        ]
+      );
     };
 
     return (
@@ -418,18 +253,18 @@ export default function GameScreen() {
           <Ionicons name="trophy" size={32} color="#FFD700" />
           <Text style={styles.leaderboardTitle}>Papan Peringkat</Text>
           <Text style={styles.leaderboardSubtitle}>Top performers hari ini</Text>
-          
+
           <View style={styles.rewardButtonsContainer}>
             {canClaimReward && (
               <TouchableOpacity
                 style={styles.claimRewardButton}
-                onPress={handleOpenRewardsModal}
+                onPress={() => setShowRewardsModal(true)}
               >
                 <Ionicons name="gift" size={20} color="white" />
                 <Text style={styles.claimRewardButtonText}>Claim Reward</Text>
               </TouchableOpacity>
             )}
-            
+
             <TouchableOpacity
               style={styles.myRewardButton}
               onPress={() => setShowMyRewardsModal(true)}
@@ -440,7 +275,7 @@ export default function GameScreen() {
           </View>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.leaderboardList}
           contentContainerStyle={styles.leaderboardContent}
           showsVerticalScrollIndicator={true}
@@ -449,14 +284,11 @@ export default function GameScreen() {
             const isCurrentUser = entry.name === user?.name;
             const medalColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
             const medalColor = medalColors[index] || COLORS.PRIMARY;
-            
+
             return (
-              <View 
-                key={entry.id} 
-                style={[
-                  styles.leaderboardItem,
-                  isCurrentUser && styles.leaderboardItemHighlight
-                ]}
+              <View
+                key={entry.id}
+                style={[styles.leaderboardItem, isCurrentUser && styles.leaderboardItemHighlight]}
               >
                 <View style={styles.leaderboardRank}>
                   {index < 3 ? (
@@ -472,7 +304,8 @@ export default function GameScreen() {
                     {isCurrentUser && " (Anda)"}
                   </Text>
                   <Text style={styles.leaderboardStats}>
-                    {entry.correctAnswers}/{entry.totalQuestions} benar • {new Date(entry.date).toLocaleDateString("id-ID")}
+                    {entry.correctAnswers}/{entry.totalQuestions} benar •{" "}
+                    {new Date(entry.date).toLocaleDateString("id-ID")}
                   </Text>
                 </View>
 
@@ -484,7 +317,6 @@ export default function GameScreen() {
           })}
         </ScrollView>
 
-        {/* Rewards Modal */}
         <Modal
           visible={showRewardsModal}
           animationType="slide"
@@ -514,43 +346,39 @@ export default function GameScreen() {
               <ScrollView style={styles.rewardsList} showsVerticalScrollIndicator={true}>
                 {rewards.map((reward) => {
                   const canClaim = userPoints >= reward.points;
-                  
+
                   return (
                     <TouchableOpacity
                       key={reward.id}
-                      style={[
-                        styles.rewardItem,
-                        !canClaim && styles.rewardItemDisabled,
-                      ]}
+                      style={[styles.rewardItem, !canClaim && styles.rewardItemDisabled]}
                       onPress={() => handleClaimRewardItem(reward)}
                       disabled={!canClaim}
                       activeOpacity={0.7}
                     >
                       <View style={styles.rewardIcon}>
-                        <Ionicons 
-                          name={reward.icon as any} 
-                          size={28} 
-                          color={canClaim ? COLORS.PRIMARY : "#D1D5DB"} 
+                        <Ionicons
+                          name={reward.icon as any}
+                          size={28}
+                          color={canClaim ? COLORS.PRIMARY : "#D1D5DB"}
                         />
                       </View>
 
                       <View style={styles.rewardInfo}>
-                        <Text style={[
-                          styles.rewardName,
-                          !canClaim && styles.rewardNameDisabled,
-                        ]}>
+                        <Text style={[styles.rewardName, !canClaim && styles.rewardNameDisabled]}>
                           {reward.name}
                         </Text>
                         <View style={styles.rewardPoints}>
-                          <Ionicons 
-                            name="star" 
-                            size={14} 
-                            color={canClaim ? "#FFD700" : "#D1D5DB"} 
+                          <Ionicons
+                            name="star"
+                            size={14}
+                            color={canClaim ? "#FFD700" : "#D1D5DB"}
                           />
-                          <Text style={[
-                            styles.rewardPointsText,
-                            !canClaim && styles.rewardPointsTextDisabled,
-                          ]}>
+                          <Text
+                            style={[
+                              styles.rewardPointsText,
+                              !canClaim && styles.rewardPointsTextDisabled,
+                            ]}
+                          >
                             {reward.points} poin
                           </Text>
                         </View>
@@ -571,7 +399,6 @@ export default function GameScreen() {
           </View>
         </Modal>
 
-        {/* My Rewards Modal */}
         <Modal
           visible={showMyRewardsModal}
           animationType="slide"
@@ -598,22 +425,14 @@ export default function GameScreen() {
                   {claimedRewards.map((reward) => (
                     <View key={reward.id} style={styles.myRewardItem}>
                       <View style={styles.myRewardIcon}>
-                        <Ionicons 
-                          name={reward.icon as any} 
-                          size={28} 
-                          color={COLORS.PRIMARY} 
-                        />
+                        <Ionicons name={reward.icon as any} size={28} color={COLORS.PRIMARY} />
                       </View>
 
                       <View style={styles.rewardInfo}>
-                        <Text style={styles.rewardName}>
-                          {reward.name}
-                        </Text>
+                        <Text style={styles.rewardName}>{reward.name}</Text>
                         <View style={styles.rewardPoints}>
                           <Ionicons name="checkmark-circle" size={14} color="#34C759" />
-                          <Text style={styles.myRewardClaimedText}>
-                            Telah diklaim
-                          </Text>
+                          <Text style={styles.myRewardClaimedText}>Telah diklaim</Text>
                         </View>
                       </View>
 
@@ -642,23 +461,17 @@ export default function GameScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
-      <AppHeader
-        onLogout={() => {
-          logout();
-          router.replace("/login");
-        }}
-      />
-      
-      {/* Tab Navigation */}
+      <AppHeader onLogout={handleLogout} />
+
       <View style={styles.tabContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === "quiz" && styles.tabActive]}
           onPress={() => setActiveTab("quiz")}
         >
-          <Ionicons 
-            name="game-controller" 
-            size={20} 
-            color={activeTab === "quiz" ? COLORS.PRIMARY : "#6B7280"} 
+          <Ionicons
+            name="game-controller"
+            size={20}
+            color={activeTab === "quiz" ? COLORS.PRIMARY : "#6B7280"}
           />
           <Text style={[styles.tabText, activeTab === "quiz" && styles.tabTextActive]}>
             Kuis Harian
@@ -669,10 +482,10 @@ export default function GameScreen() {
           style={[styles.tab, activeTab === "leaderboard" && styles.tabActive]}
           onPress={() => setActiveTab("leaderboard")}
         >
-          <Ionicons 
-            name="trophy" 
-            size={20} 
-            color={activeTab === "leaderboard" ? COLORS.PRIMARY : "#6B7280"} 
+          <Ionicons
+            name="trophy"
+            size={20}
+            color={activeTab === "leaderboard" ? COLORS.PRIMARY : "#6B7280"}
           />
           <Text style={[styles.tabText, activeTab === "leaderboard" && styles.tabTextActive]}>
             Leaderboard
@@ -680,16 +493,7 @@ export default function GameScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Tab Content */}
-      {activeTab === "quiz" ? (
-        !gameStarted
-          ? renderStartScreen()
-          : showResult
-          ? renderResult()
-          : renderQuestion()
-      ) : (
-        renderLeaderboard()
-      )}
+      {activeTab === "quiz" ? (!gameStarted ? renderStartScreen() : showResult ? renderResult() : renderQuestion()) : renderLeaderboard()}
     </SafeAreaView>
   );
 }
@@ -900,59 +704,58 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    gap: 12,
+    marginBottom: 12,
   },
   infoText: {
-    fontSize: 16,
-    color: COLORS.TEXT_PRIMARY,
-    fontWeight: "500",
+    fontSize: 14,
+    color: COLORS.TEXT_SECONDARY,
+    marginLeft: 12,
+    flex: 1,
   },
   startButton: {
     flexDirection: "row",
-    backgroundColor: COLORS.PRIMARY,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 12,
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
+    backgroundColor: COLORS.PRIMARY,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    gap: 12,
   },
   startButtonText: {
-    color: "white",
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: "white",
   },
   questionContainer: {
     flex: 1,
-    padding: 16,
+    padding: 24,
   },
   progressContainer: {
-    height: 4,
+    height: 8,
     backgroundColor: "#E5E5EA",
-    borderRadius: 2,
+    borderRadius: 4,
     marginBottom: 16,
   },
   progressBar: {
-    height: 4,
+    height: "100%",
     backgroundColor: COLORS.PRIMARY,
-    borderRadius: 2,
+    borderRadius: 4,
   },
   questionNumber: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
-    marginBottom: 12,
-    textAlign: "center",
+    marginBottom: 8,
   },
   timerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 24,
     gap: 8,
+    marginBottom: 16,
   },
   timerText: {
-    fontSize: 24,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "700",
     color: COLORS.PRIMARY,
   },
   timerTextDanger: {
@@ -960,63 +763,61 @@ const styles = StyleSheet.create({
   },
   questionCard: {
     backgroundColor: COLORS.CARD,
+    padding: 20,
     borderRadius: 16,
-    padding: 24,
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "#E5E5EA",
   },
   questionText: {
     fontSize: 18,
-    color: COLORS.TEXT_PRIMARY,
     fontWeight: "600",
-    lineHeight: 28,
+    color: COLORS.TEXT_PRIMARY,
+    lineHeight: 26,
   },
   optionsContainer: {
     gap: 12,
   },
   optionButton: {
     flexDirection: "row",
-    backgroundColor: COLORS.CARD,
-    borderRadius: 12,
-    padding: 16,
     alignItems: "center",
-    borderWidth: 2,
+    backgroundColor: "#FFFFFF",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: "#E5E5EA",
-    gap: 12,
   },
   optionButtonCorrect: {
     flexDirection: "row",
-    backgroundColor: "#E5F7ED",
-    borderRadius: 12,
-    padding: 16,
     alignItems: "center",
-    borderWidth: 2,
+    backgroundColor: "#D1FAE5",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: "#34C759",
-    gap: 12,
   },
   optionButtonWrong: {
     flexDirection: "row",
-    backgroundColor: "#FFE5E5",
-    borderRadius: 12,
-    padding: 16,
     alignItems: "center",
-    borderWidth: 2,
+    backgroundColor: "#FEE2E2",
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     borderColor: "#FF3B30",
-    gap: 12,
   },
   optionKeyContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.PRIMARY,
-    justifyContent: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E5E5EA",
     alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
   optionKey: {
-    color: "white",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
+    color: COLORS.TEXT_PRIMARY,
   },
   optionText: {
     flex: 1,
@@ -1026,50 +827,48 @@ const styles = StyleSheet.create({
   optionTextCorrect: {
     flex: 1,
     fontSize: 16,
-    color: "#34C759",
-    fontWeight: "600",
+    color: "#059669",
+    fontWeight: "700",
   },
   optionTextWrong: {
     flex: 1,
     fontSize: 16,
-    color: "#FF3B30",
-    fontWeight: "600",
+    color: "#DC2626",
+    fontWeight: "700",
   },
   explanationCard: {
-    backgroundColor: "#E5F7ED",
-    borderRadius: 12,
+    backgroundColor: "#E0F2FE",
     padding: 16,
+    borderRadius: 12,
     marginTop: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: "#34C759",
+    borderWidth: 1,
+    borderColor: "#0EA5E9",
   },
   explanationText: {
     fontSize: 14,
-    color: COLORS.TEXT_PRIMARY,
+    color: "#0369A1",
     lineHeight: 20,
   },
   resultContainer: {
     flex: 1,
   },
   resultHeader: {
+    alignItems: "center",
     padding: 24,
-    paddingBottom: 16,
   },
   resultEmoji: {
     fontSize: 64,
-    textAlign: "center",
-    marginBottom: 12,
   },
   resultTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 20,
+    fontSize: 24,
+    fontWeight: "800",
+    marginTop: 12,
   },
   scoreCard: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: "#FFFFFF",
+    padding: 20,
     borderRadius: 16,
-    padding: 24,
+    marginTop: 16,
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E5E5EA",
@@ -1077,81 +876,77 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
-    marginBottom: 4,
   },
   scoreValue: {
-    fontSize: 40,
-    fontWeight: "bold",
+    fontSize: 36,
+    fontWeight: "800",
     color: COLORS.PRIMARY,
-    marginBottom: 4,
+    marginVertical: 8,
   },
   scoreDetail: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.TEXT_SECONDARY,
   },
   summaryScrollView: {
     flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
   },
   summaryContentContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 16,
+    padding: 16,
   },
   summaryTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: COLORS.TEXT_PRIMARY,
     marginBottom: 16,
-    marginTop: 8,
   },
   summaryItem: {
-    backgroundColor: COLORS.CARD,
+    backgroundColor: "#F9FAFB",
+    padding: 16,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
+    marginBottom: 12,
   },
   summaryHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
+    alignItems: "center",
   },
   summaryQuestion: {
     flex: 1,
     fontSize: 14,
+    fontWeight: "600",
     color: COLORS.TEXT_PRIMARY,
-    fontWeight: "500",
     marginRight: 8,
   },
   summaryDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    marginTop: 8,
   },
   summaryText: {
     fontSize: 12,
     color: COLORS.TEXT_SECONDARY,
   },
   buttonContainer: {
-    padding: 24,
-    paddingTop: 16,
-    backgroundColor: COLORS.BACKGROUND,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 1,
     borderTopColor: "#E5E5EA",
   },
   playAgainButton: {
     flexDirection: "row",
-    backgroundColor: COLORS.PRIMARY,
-    paddingVertical: 16,
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: COLORS.PRIMARY,
+    paddingVertical: 14,
+    borderRadius: 12,
     gap: 8,
   },
   playAgainButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
     color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
@@ -1162,92 +957,80 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    padding: 20,
     maxHeight: "80%",
-    paddingBottom: 20,
   },
   modalHeader: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    alignItems: "center",
+    marginBottom: 16,
   },
   modalHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "700",
     color: COLORS.TEXT_PRIMARY,
   },
   modalCloseButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F3F4F6",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#F3F4F6",
   },
   pointsContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFF7ED",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 12,
-    borderRadius: 10,
     gap: 8,
-    borderWidth: 1,
-    borderColor: "#FFD700",
+    backgroundColor: "#FEF3C7",
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
   },
   pointsText: {
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
     color: "#92400E",
   },
   rewardsList: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    maxHeight: 400,
   },
   rewardItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
     padding: 16,
+    borderRadius: 12,
     marginBottom: 12,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#E5E7EB",
-    gap: 12,
   },
   rewardItemDisabled: {
-    backgroundColor: "#F9FAFB",
-    borderColor: "#E5E7EB",
     opacity: 0.6,
   },
   rewardIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     justifyContent: "center",
+    marginRight: 12,
   },
   rewardInfo: {
     flex: 1,
-    gap: 4,
   },
   rewardName: {
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "600",
     color: COLORS.TEXT_PRIMARY,
+    marginBottom: 4,
   },
   rewardNameDisabled: {
     color: "#9CA3AF",
@@ -1258,12 +1041,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   rewardPointsText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#92400E",
+    fontSize: 12,
+    color: "#6B7280",
   },
   rewardPointsTextDisabled: {
-    color: "#9CA3AF",
+    color: "#D1D5DB",
   },
   lockedBadge: {
     width: 32,
@@ -1276,61 +1058,54 @@ const styles = StyleSheet.create({
   myRewardItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F0FFF4",
-    borderRadius: 12,
+    backgroundColor: "#F0F9FF",
     padding: 16,
+    borderRadius: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#86EFAC",
-    gap: 12,
+    borderColor: "#BAE6FD",
   },
   myRewardIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#DCFCE7",
+    backgroundColor: "#E0F2FE",
     alignItems: "center",
     justifyContent: "center",
-  },
-  myRewardClaimedText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#34C759",
+    marginRight: 12,
   },
   myRewardBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF7ED",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
     gap: 4,
-    borderWidth: 1,
-    borderColor: "#FFD700",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   myRewardPoints: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
     color: "#92400E",
   },
+  myRewardClaimedText: {
+    fontSize: 12,
+    color: "#34C759",
+  },
   emptyMyRewards: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 32,
+    paddingVertical: 32,
   },
   emptyMyRewardsTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#6B7280",
-    marginTop: 16,
-    marginBottom: 8,
+    color: COLORS.TEXT_PRIMARY,
+    marginTop: 12,
   },
   emptyMyRewardsText: {
-    fontSize: 14,
-    color: "#9CA3AF",
+    fontSize: 12,
+    color: COLORS.TEXT_SECONDARY,
     textAlign: "center",
-    lineHeight: 20,
+    marginTop: 4,
   },
 });

@@ -1,30 +1,16 @@
 import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { COLORS } from "@/src/utils/constants";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React from "react";
-import {
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useLibraryScreen from "./hooks";
 
 export default function LibraryScreen() {
-  const handleOpenPdf = (pdfId: string) => {
-    router.push({
-      pathname: "/pdf-viewer",
-      params: { id: pdfId },
-    });
-  };
+  const { handleOpenPdf, handleBack } = useLibraryScreen();
 
   const renderItem = ({ item }: { item: typeof PDF_LIBRARY[0] }) => (
-    <TouchableOpacity
-      style={styles.pdfCard}
-      onPress={() => handleOpenPdf(item.id)}
-    >
+    <TouchableOpacity style={styles.pdfCard} onPress={() => handleOpenPdf(item.id)}>
       <View style={styles.pdfIconContainer}>
         <Ionicons name="document-text" size={32} color="#EF4444" />
       </View>
@@ -39,7 +25,7 @@ export default function LibraryScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={COLORS.TEXT_PRIMARY} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Perpustakaan</Text>

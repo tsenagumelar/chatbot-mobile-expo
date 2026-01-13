@@ -1,25 +1,11 @@
-import { useStore } from "@/src/store/useStore";
-import { router } from "expo-router";
-import { useEffect } from "react";
+import useSplashScreen from "./hooks";
 import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
 export default function SplashScreen() {
-  const { onboardingCompleted, appMode } = useStore();
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (onboardingCompleted) {
-        router.replace(appMode === "menyapa" ? "/menyapa" : "/(tabs)");
-      } else {
-        router.replace("/onboarding");
-      }
-    }, 1400);
-
-    return () => clearTimeout(timer);
-  }, [appMode, onboardingCompleted]);
+  useSplashScreen();
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>

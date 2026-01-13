@@ -1,4 +1,4 @@
-import ReportScreen from "@/src/screens/ReportScreen"
+import ReportScreen from "@/src/screens/report"
 
 const ReportPage = () => {
   return (

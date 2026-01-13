@@ -212,7 +212,7 @@ Google Maps API key sudah terkonfigurasi di:
 - `app.config.js` - iOS dan Android configuration
 - `src/services/api.ts` - Geocoding service
 
-API Key: AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc
+API Key: AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI
 
 ## Performance Tips 🚀
 

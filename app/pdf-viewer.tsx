@@ -1,4 +1,4 @@
-import PdfScreen from "@/src/screens/PdfScreen"
+import PdfScreen from "@/src/screens/pdf"
 
 const PdfPage = () => {
   return (

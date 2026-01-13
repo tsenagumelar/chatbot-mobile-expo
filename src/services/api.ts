@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import type {
-    ChatContext,
-    ChatResponse,
-    RouteRequestCoords,
-    RouteResponse,
-    TrafficResponse
+  ChatContext,
+  ChatResponse,
+  RouteRequestCoords,
+  RouteResponse,
+  TrafficResponse
 } from "../types";
 import { API_BASE_URL } from "../utils/constants";
 
@@ -278,7 +278,7 @@ export async function searchLocation(
 ): Promise<{ name: string; lat: number; lon: number }[]> {
   try {
     // Use Google Geocoding API
-    const GOOGLE_MAPS_API_KEY = "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc";
+    const GOOGLE_MAPS_API_KEY = "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI";
     const response = await axios.get(
       "https://maps.googleapis.com/maps/api/geocode/json",
       {

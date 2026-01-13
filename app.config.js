@@ -29,7 +29,7 @@ export default {
           "Aplikasi membutuhkan akses speech recognition untuk voice input.",
       },
       config: {
-        googleMapsApiKey: "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc",
+        googleMapsApiKey: "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI",
       },
     },
     android: {
@@ -48,7 +48,7 @@ export default {
       usesCleartextTraffic: true,
       config: {
         googleMaps: {
-          apiKey: "AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc",
+          apiKey: "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI",
         },
       },
     },
@@ -75,6 +75,7 @@ export default {
       color: "#FFFFFF",
     },
     extra: {
+      googlePlacesApiKey: "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI",
       eas: {
         projectId: "131af746-61da-4912-a89f-4217f17d8e10",
       },

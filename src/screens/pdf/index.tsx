@@ -1,59 +1,25 @@
-import { PDF_LIBRARY } from "@/src/data/pdfLibrary";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
+import usePdfScreen from "./hooks";
 
 export default function PdfViewerScreen() {
-  const params = useLocalSearchParams();
-  const pdfId = params.id as string;
-  const [pdfUri, setPdfUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const pdfFile = PDF_LIBRARY.find((pdf) => pdf.id === pdfId);
-
-  useEffect(() => {
-    loadPdf();
-  }, []);
-
-  const loadPdf = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      if (!pdfFile) {
-        setError("File tidak ditemukan");
-        return;
-      }
-
-      // Gunakan URL online jika tersedia
-      if (pdfFile.url) {
-        setPdfUri(pdfFile.url);
-      } else {
-        setError("URL PDF belum tersedia. Upload file ke server/cloud storage terlebih dahulu.");
-      }
-    } catch (err) {
-      console.error("Error loading PDF:", err);
-      setError("Gagal memuat PDF");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    pdfFile,
+    pdfUri,
+    loading,
+    error,
+    renderPdfHtml,
+    handleBack,
+    handleWebViewError,
+  } = usePdfScreen();
 
   if (!pdfFile) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>PDF Not Found</Text>
@@ -65,38 +31,10 @@ export default function PdfViewerScreen() {
     );
   }
 
-  // Render HTML with PDF.js
-  const renderPdfHtml = (uri: string) => {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-          <style>
-            body {
-              margin: 0;
-              padding: 0;
-              height: 100vh;
-              overflow: hidden;
-            }
-            iframe {
-              width: 100%;
-              height: 100%;
-              border: none;
-            }
-          </style>
-        </head>
-        <body>
-          <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(uri)}&embedded=true"></iframe>
-        </body>
-      </html>
-    `;
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
@@ -118,15 +56,12 @@ export default function PdfViewerScreen() {
           </Text>
           <View style={styles.instructionBox}>
             <Text style={styles.instructionText}>
-              1. Copy file PDF ke folder assets{'\n'}
-              2. Atau host file di server/cloud{'\n'}
+              1. Copy file PDF ke folder assets{"\n"}
+              2. Atau host file di server/cloud{"\n"}
               3. Update konfigurasi di aplikasi
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.backToHomeButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backToHomeButton} onPress={handleBack}>
             <Text style={styles.backToHomeText}>Kembali</Text>
           </TouchableOpacity>
         </View>
@@ -143,8 +78,8 @@ export default function PdfViewerScreen() {
           )}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
-            console.warn('WebView error: ', nativeEvent);
-            setError("Gagal memuat PDF di WebView");
+            console.warn("WebView error: ", nativeEvent);
+            handleWebViewError();
           }}
         />
       )}
@@ -198,17 +133,16 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#EF4444",
     fontWeight: "600",
-    marginTop: 16,
+    color: "#374151",
     textAlign: "center",
+    marginTop: 12,
   },
   errorSubtext: {
     fontSize: 14,
     color: "#6B7280",
-    marginTop: 12,
-    marginBottom: 8,
     textAlign: "center",
+    marginTop: 8,
   },
   instructionBox: {
     backgroundColor: "#fff",
@@ -216,23 +150,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 12,
     width: "100%",
-    maxWidth: 300,
+    maxWidth: 320,
   },
   instructionText: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#374151",
     lineHeight: 20,
   },
   backToHomeButton: {
-    marginTop: 24,
+    marginTop: 20,
     backgroundColor: "#0C3AC5",
+    paddingHorizontal: 24,
     paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: 8,
   },
   backToHomeText: {
-    fontSize: 15,
-    fontWeight: "700",
     color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

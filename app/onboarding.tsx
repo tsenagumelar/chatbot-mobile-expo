@@ -1,4 +1,4 @@
-import ConversationalOnboardingScreen from "@/src/screens/ConversationalOnboardingScreen";
+import ConversationalOnboardingScreen from "@/src/screens/conversational-onboarding";
 
 const OnboardingPage = () => {
   return <ConversationalOnboardingScreen />;

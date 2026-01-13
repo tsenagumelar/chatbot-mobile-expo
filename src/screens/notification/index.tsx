@@ -1,64 +1,34 @@
 import { COLORS } from "@/src/utils/constants";
-import { useStore } from "@/src/store/useStore";
 import { formatRelativeTime, getNotificationDisplay } from "@/src/utils/notifications";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-} from "react-native";
+import React from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useNotificationScreen from "./hooks";
 
 export default function NotificationsScreen() {
   const {
-    notifications,
-    markNotificationRead,
+    filter,
+    setFilter,
+    orderedNotifications,
+    filteredNotifications,
+    unreadCount,
     markAllNotificationsRead,
-  } = useStore();
-  const [filter, setFilter] = useState<"all" | "unread">("all");
-
-  const orderedNotifications = useMemo(
-    () => [...notifications].sort((a, b) => b.receivedAt - a.receivedAt),
-    [notifications]
-  );
-
-  const filteredNotifications =
-    filter === "all"
-      ? orderedNotifications
-      : orderedNotifications.filter((n) => !n.read);
-
-  const unreadCount = orderedNotifications.filter((n) => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    markNotificationRead(id);
-  };
-
-  const handleOpenNotification = (id: string) => {
-    markAsRead(id);
-    router.push(`/notifications/${id}`);
-  };
+    handleOpenNotification,
+    handleBack,
+  } = useNotificationScreen();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Ionicons name="chevron-back" size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifikasi</Text>
         </View>
         {unreadCount > 0 && (
-          <TouchableOpacity
-            style={styles.markAllButton}
-            onPress={markAllNotificationsRead}
-          >
+          <TouchableOpacity style={styles.markAllButton} onPress={markAllNotificationsRead}>
             <Text style={styles.markAllText}>Tandai Dibaca</Text>
           </TouchableOpacity>
         )}
@@ -79,10 +49,7 @@ export default function NotificationsScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.filterButton,
-            filter === "unread" && styles.filterActive,
-          ]}
+          style={[styles.filterButton, filter === "unread" && styles.filterActive]}
           onPress={() => setFilter("unread")}
         >
           <Text
@@ -99,11 +66,7 @@ export default function NotificationsScreen() {
       <ScrollView style={styles.list}>
         {filteredNotifications.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons
-              name="notifications-off-outline"
-              size={64}
-              color="#9CA3AF"
-            />
+            <Ionicons name="notifications-off-outline" size={64} color="#9CA3AF" />
             <Text style={styles.emptyTitle}>Tidak Ada Notifikasi</Text>
             <Text style={styles.emptyText}>
               {filter === "unread"
@@ -129,11 +92,7 @@ export default function NotificationsScreen() {
                     { backgroundColor: style.backgroundColor },
                   ]}
                 >
-                  <Ionicons
-                    name={style.icon}
-                    size={24}
-                    color={style.iconColor}
-                  />
+                  <Ionicons name={style.icon} size={24} color={style.iconColor} />
                 </View>
                 <View style={styles.notificationContent}>
                   <View style={styles.notificationHeader}>
@@ -244,32 +203,25 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#111827",
     marginTop: 16,
-    marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
     color: "#6B7280",
     textAlign: "center",
+    marginTop: 8,
     lineHeight: 20,
   },
   notificationItem: {
     flexDirection: "row",
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    backgroundColor: COLORS.CARD,
-    borderRadius: 16,
+    alignItems: "flex-start",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
   },
   notificationUnread: {
-    backgroundColor: "#F0F9FF",
-    borderWidth: 1,
-    borderColor: "#BAE6FD",
+    backgroundColor: "#F8FAFF",
   },
   notificationIcon: {
     width: 48,
@@ -283,31 +235,32 @@ const styles = StyleSheet.create({
   },
   notificationHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 6,
+    gap: 10,
   },
   notificationTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
     color: "#111827",
     flex: 1,
+  },
+  notificationMessage: {
+    fontSize: 13,
+    color: "#374151",
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    marginTop: 6,
+    fontWeight: "600",
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#0C3AC5",
-  },
-  notificationMessage: {
-    fontSize: 14,
-    color: "#6B7280",
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontWeight: "600",
+    backgroundColor: "#F97316",
   },
 });

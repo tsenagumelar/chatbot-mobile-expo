@@ -1,4 +1,4 @@
-import ChatScreen from "@/src/screens/ChatScreen"
+import ChatScreen from "@/src/screens/chat"
 
 const ChatPage = () => {
   return (

@@ -1,4 +1,4 @@
-import QuizScreen from "@/src/screens/QuizScreen"
+import QuizScreen from "@/src/screens/quiz"
 
 const QuizPage = () => {
   return (

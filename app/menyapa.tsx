@@ -1,4 +1,4 @@
-import MenyapaScreen from "@/src/screens/MenyapaScreen";
+import MenyapaScreen from "@/src/screens/menyapa";
 
 const MenyapaPage = () => {
   return <MenyapaScreen />;

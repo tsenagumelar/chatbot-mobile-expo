@@ -4,7 +4,7 @@ MapView telah di-disable sementara untuk mencegah crash di APK. Ikuti langkah in
 
 ## Status Saat Ini
 
-✅ **Google Maps API Key sudah ada**: `AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc` di [app.json:40](app.json:40)
+✅ **Google Maps API Key sudah ada**: `AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI` di [app.json:40](app.json:40)
 
 ❌ **Maps SDK for Android belum enabled** di Google Cloud Console
 
@@ -24,7 +24,7 @@ MapView telah di-disable sementara untuk mencegah crash di APK. Ikuti langkah in
 Test API key sudah berfungsi:
 
 ```bash
-./scripts/test-maps-key.sh AIzaSyDFmkTTk0jbtExDEE3EuN1HA9AWQu2ZYnc
+./scripts/test-maps-key.sh AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI
 ```
 
 Harus menampilkan:

@@ -1,4 +1,4 @@
-import InfoScreen from "@/src/screens/InfoScreen"
+import InfoScreen from "@/src/screens/info"
 
 const InfoPage = () => {
   return (

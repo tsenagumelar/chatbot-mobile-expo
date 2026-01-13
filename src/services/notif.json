@@ -1,294 +1,226 @@
 [
   {
-    "no": 2,
-    "id": "overspeed_dense_area",
+    "no": 1,
+    "id": "fatigue_time_to_rest",
     "pengguna": ["motor"],
-    "kategori": "Kecepatan tinggi",
-    "trigger": "Kecepatan > ambang & area padat",
-    "data_utama": ["gps", "kecepatan", "kepadatan_lalu_lintas"],
-    "sapaan_ringkas": "Kecepatan terlalu tinggi",
+    "kategori": "Kelelahan berkendara",
+    "trigger": "Durasi berkendara > ambang atau jam rawan mengantuk",
+    "data_utama": ["durasi_berkendara", "waktu", "gps"],
+    "sapaan_ringkas": "Saatnya istirahat",
     "icon": "warning",
-    "title": "Kurangi Kecepatan",
-    "message": "Kecepatan kamu terlalu tinggi untuk area padat. Risiko rem mendadak dan tabrakan samping meningkat. Lepas gas dan jaga jarak aman.",
-    "cta": {
-      "type": "slow_down",
-      "label": "Kurangi kecepatan"
-    },
-    "color": "#F59E0B",
-    "voice_text": "Perhatian. Kecepatan terlalu tinggi di area padat. Kurangi kecepatan sekarang.",
-    "map_offset": {
-      "north": -60,
-      "east": 80
-    }
+    "title": "Waspada Kelelahan",
+    "message": "Kamu sudah berkendara cukup lama. Kelelahan dan microsleep meningkatkan risiko kecelakaan. Disarankan berhenti dan istirahat sejenak.",
+    "cta": { "type": "find_rest_spot", "label": "Cari tempat istirahat" },
+    "color": "#F97316",
+    "voice_text": "Perhatian. Kamu sudah lama berkendara. Segera istirahat di tempat aman.",
+    "map_offset": { "north": -60, "east": 80 }
+  },
+  {
+    "no": 2,
+    "id": "fatigue_time_to_rest",
+    "pengguna": ["mobil"],
+    "kategori": "Kelelahan mengemudi",
+    "trigger": "Durasi mengemudi > ambang atau jam rawan mengantuk",
+    "data_utama": ["durasi_berkendara", "waktu", "gps"],
+    "sapaan_ringkas": "Waktu istirahat",
+    "icon": "warning",
+    "title": "Risiko Kelelahan",
+    "message": "Kamu sudah mengemudi terlalu lama tanpa jeda. Fokus dan refleks menurun. Disarankan berhenti di rest area terdekat.",
+    "cta": { "type": "find_rest_area", "label": "Cari rest area" },
+    "color": "#F97316",
+    "voice_text": "Risiko kelelahan terdeteksi. Cari rest area dan beristirahat.",
+    "map_offset": { "north": -60, "east": 80 }
   },
   {
     "no": 3,
-    "id": "overspeed_dense_area",
-    "pengguna": ["mobil"],
-    "kategori": "Kecepatan tinggi",
-    "trigger": "Kecepatan > ambang & area padat",
-    "data_utama": ["gps", "kecepatan", "kepadatan_lalu_lintas"],
-    "sapaan_ringkas": "Kecepatan tidak sesuai kondisi",
+    "id": "weather_risk",
+    "pengguna": ["motor"],
+    "kategori": "Risiko cuaca",
+    "trigger": "Cuaca ekstrem di lokasi pengguna",
+    "data_utama": ["cuaca", "gps"],
+    "sapaan_ringkas": "Cuaca berisiko",
     "icon": "warning",
-    "title": "Kecepatan Tidak Aman",
-    "message": "Kecepatan kamu terlalu tinggi untuk kondisi lalu lintas padat. Banyak persimpangan dan kendaraan keluar-masuk. Kurangi kecepatan dan tetap fokus.",
-    "cta": {
-      "type": "slow_down",
-      "label": "Kurangi kecepatan"
-    },
-    "color": "#F59E0B",
-    "voice_text": "Kecepatan tidak aman untuk area padat. Kurangi kecepatan dan tetap waspada.",
-    "map_offset": {
-      "north": -60,
-      "east": 80
-    }
+    "title": "Risiko Cuaca Buruk",
+    "message": "Cuaca buruk terdeteksi di rute kamu. Jalan licin dan jarak pandang berkurang. Kurangi kecepatan dan hindari manuver tajam.",
+    "cta": { "type": "slow_down", "label": "Kurangi kecepatan" },
+    "color": "#3B82F6",
+    "voice_text": "Perhatian. Cuaca buruk. Kurangi kecepatan dan tetap waspada.",
+    "map_offset": { "north": -60, "east": 80 }
   },
   {
-  "no": 4,
-  "id": "blackspot_nearby",
-  "pengguna": [
-    "motor"
-  ],
-  "kategori": "Area rawan kecelakaan",
-  "trigger": "Masuk radius blackspot",
-  "data_utama": [
-    "gps",
-    "data_blackspot"
-  ],
-  "sapaan_ringkas": "Area rawan kecelakaan",
-  "icon": "warning",
-  "title": "Waspada Area Rawan",
-  "message": "Kamu memasuki area rawan kecelakaan motor. Banyak pengereman mendadak dan konflik lajur. Jaga jarak dan tetap fokus.",
-  "cta": {
-    "type": "increase_alertness",
-    "label": "Tetap waspada"
+    "no": 4,
+    "id": "weather_risk",
+    "pengguna": ["mobil"],
+    "kategori": "Risiko cuaca",
+    "trigger": "Cuaca ekstrem di sekitar rute",
+    "data_utama": ["cuaca", "gps"],
+    "sapaan_ringkas": "Kondisi cuaca berisiko",
+    "icon": "warning",
+    "title": "Waspada Cuaca",
+    "message": "Hujan lebat atau kabut terdeteksi. Jarak pengereman bertambah dan visibilitas menurun. Jaga jarak aman.",
+    "cta": { "type": "increase_distance", "label": "Jaga jarak aman" },
+    "color": "#3B82F6",
+    "voice_text": "Cuaca buruk terdeteksi. Jaga jarak dan kurangi kecepatan.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#EF4444",
-  "voice_text": "Perhatian. Area rawan kecelakaan motor. Jaga jarak dan fokus.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 5,
-  "id": "blackspot_nearby",
-  "pengguna": [
-    "mobil"
-  ],
-  "kategori": "Area rawan kecelakaan",
-  "trigger": "Masuk radius blackspot",
-  "data_utama": [
-    "gps",
-    "data_blackspot"
-  ],
-  "sapaan_ringkas": "Zona rawan kecelakaan",
-  "icon": "warning",
-  "title": "Zona Rawan Kecelakaan",
-  "message": "Kamu memasuki zona rawan kecelakaan. Banyak persimpangan dan kendaraan berhenti mendadak. Kurangi kecepatan dan jaga jarak aman.",
-  "cta": {
-    "type": "slow_down",
-    "label": "Kurangi kecepatan"
+  {
+    "no": 5,
+    "id": "road_hazard",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Gangguan jalan",
+    "trigger": "Gangguan jalan terverifikasi di rute",
+    "data_utama": ["gps", "laporan_masyarakat"],
+    "sapaan_ringkas": "Gangguan jalan",
+    "icon": "warning",
+    "title": "Gangguan Jalan di Depan",
+    "message": "Terdapat gangguan jalan seperti lubang atau pekerjaan jalan. Kurangi kecepatan dan siapkan manuver aman.",
+    "cta": { "type": "increase_alertness", "label": "Tetap waspada" },
+    "color": "#EF4444",
+    "voice_text": "Perhatian. Gangguan jalan di depan. Tetap waspada.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#EF4444",
-  "voice_text": "Zona rawan kecelakaan. Kurangi kecepatan dan jaga jarak aman.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 6,
-  "id": "long_ride_no_break",
-  "pengguna": [
-    "motor"
-  ],
-  "kategori": "Kelelahan berkendara",
-  "trigger": "Durasi berkendara tanpa henti > ambang",
-  "data_utama": [
-    "durasi_berkendara",
-    "gps"
-  ],
-  "sapaan_ringkas": "Waktu berkendara terlalu lama",
-  "icon": "warning",
-  "title": "Waspada Kelelahan",
-  "message": "Kamu sudah berkendara cukup lama tanpa jeda. Refleks dan fokus bisa menurun. Cari tempat aman untuk berhenti sejenak.",
-  "cta": {
-    "type": "find_rest_spot",
-    "label": "Cari tempat istirahat"
+  {
+    "no": 6,
+    "id": "school_zone_active",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Zona sekolah",
+    "trigger": "Masuk zona sekolah pada jam aktif",
+    "data_utama": ["gps", "zona_sekolah", "waktu"],
+    "sapaan_ringkas": "Zona sekolah",
+    "icon": "warning",
+    "title": "Waspada Zona Sekolah",
+    "message": "Kamu memasuki zona sekolah. Banyak anak menyeberang dan aktivitas mendadak. Kurangi kecepatan.",
+    "cta": { "type": "slow_down", "label": "Kurangi kecepatan" },
+    "color": "#F59E0B",
+    "voice_text": "Zona sekolah aktif. Kurangi kecepatan.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#F97316",
-  "voice_text": "Perhatian. Kamu sudah lama berkendara. Hentikan sebentar dan istirahat di tempat aman.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 7,
-  "id": "long_drive_no_break",
-  "pengguna": [
-    "mobil"
-  ],
-  "kategori": "Kelelahan berkendara",
-  "trigger": "Durasi berkendara tanpa henti > ambang",
-  "data_utama": [
-    "durasi_berkendara",
-    "gps"
-  ],
-  "sapaan_ringkas": "Waktu mengemudi terlalu lama",
-  "icon": "warning",
-  "title": "Risiko Kelelahan",
-  "message": "Kamu sudah mengemudi cukup lama tanpa berhenti. Konsentrasi dan waktu reaksi bisa menurun. Disarankan berhenti dan istirahat sejenak.",
-  "cta": {
-    "type": "find_rest_area",
-    "label": "Cari rest area"
+  {
+    "no": 7,
+    "id": "helmet_seatbelt",
+    "pengguna": ["motor"],
+    "kategori": "Keselamatan pribadi",
+    "trigger": "Mode edukasi atau kampanye keselamatan",
+    "data_utama": ["waktu"],
+    "sapaan_ringkas": "Gunakan helm",
+    "icon": "warning",
+    "title": "Helm Menyelamatkan Hidup",
+    "message": "Helm melindungi kepala dari cedera fatal. Pastikan helm terpasang dengan benar setiap perjalanan.",
+    "cta": { "type": "confirm_compliance", "label": "Saya sudah pakai helm" },
+    "color": "#22C55E",
+    "voice_text": "Pastikan helm terpasang dengan benar sebelum melanjutkan perjalanan.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#F97316",
-  "voice_text": "Kamu sudah lama mengemudi. Konsentrasi menurun. Cari rest area dan beristirahat.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 8,
-  "id": "rain_slippery_road",
-  "pengguna": [
-    "motor"
-  ],
-  "kategori": "Cuaca & kondisi jalan",
-  "trigger": "Hujan aktif & permukaan licin",
-  "data_utama": [
-    "cuaca",
-    "kondisi_jalan",
-    "gps"
-  ],
-  "sapaan_ringkas": "Jalan licin",
-  "icon": "warning",
-  "title": "Jalan Licin",
-  "message": "Hujan terdeteksi dan jalan licin. Hindari rem mendadak dan manuver tajam. Kurangi kecepatan dan jaga keseimbangan.",
-  "cta": {
-    "type": "slow_down",
-    "label": "Kurangi kecepatan"
+  {
+    "no": 8,
+    "id": "seatbelt_reminder",
+    "pengguna": ["mobil"],
+    "kategori": "Keselamatan pribadi",
+    "trigger": "Mode edukasi atau kampanye keselamatan",
+    "data_utama": ["waktu"],
+    "sapaan_ringkas": "Gunakan sabuk",
+    "icon": "warning",
+    "title": "Pasang Sabuk Keselamatan",
+    "message": "Sabuk keselamatan mengurangi risiko cedera fatal saat kecelakaan. Pastikan sabuk terpasang.",
+    "cta": { "type": "confirm_compliance", "label": "Sabuk terpasang" },
+    "color": "#22C55E",
+    "voice_text": "Pastikan sabuk keselamatan terpasang.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#3B82F6",
-  "voice_text": "Perhatian. Jalan licin. Kurangi kecepatan dan hindari rem mendadak.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 9,
-  "id": "rain_slippery_road",
-  "pengguna": [
-    "mobil"
-  ],
-  "kategori": "Cuaca & kondisi jalan",
-  "trigger": "Hujan aktif & permukaan licin",
-  "data_utama": [
-    "cuaca",
-    "kondisi_jalan",
-    "gps"
-  ],
-  "sapaan_ringkas": "Kondisi jalan licin",
-  "icon": "warning",
-  "title": "Risiko Jalan Licin",
-  "message": "Hujan membuat permukaan jalan licin. Jarak pengereman bertambah dan risiko selip meningkat. Kurangi kecepatan dan jaga jarak aman.",
-  "cta": {
-    "type": "increase_distance",
-    "label": "Jaga jarak aman"
+  {
+    "no": 9,
+    "id": "ev_charger_info",
+    "pengguna": ["mobil_listrik", "mobil"],
+    "kategori": "Energi kendaraan",
+    "trigger": "Baterai rendah atau dekat SPKLU",
+    "data_utama": ["gps", "level_baterai", "data_spklu"],
+    "sapaan_ringkas": "SPKLU terdekat",
+    "icon": "battery",
+    "title": "Informasi Pengisian Daya",
+    "message": "Baterai kendaraan mulai menurun. Tersedia SPKLU di sekitar rute kamu.",
+    "cta": { "type": "navigate_spklu", "label": "Arahkan ke SPKLU" },
+    "color": "#22C55E",
+    "voice_text": "Baterai rendah. SPKLU tersedia di sekitar.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#3B82F6",
-  "voice_text": "Jalan licin akibat hujan. Kurangi kecepatan dan jaga jarak aman.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 10,
-  "id": "bicycle_fast_lane_detected",
-  "pengguna": [
-    "sepeda"
-  ],
-  "kategori": "Posisi jalur tidak aman",
-  "trigger": "Sepeda masuk jalur kendaraan cepat",
-  "data_utama": [
-    "gps",
-    "tipe_jalur",
-    "kecepatan_lalu_lintas"
-  ],
-  "sapaan_ringkas": "Masuk jalur cepat",
-  "icon": "warning",
-  "title": "Jalur Tidak Aman untuk Sepeda",
-  "message": "Kamu masuk jalur kendaraan cepat. Risiko terserempet kendaraan besar tinggi. Tetap di sisi kiri dan jaga jarak aman.",
-  "cta": {
-    "type": "navigate_safe_lane",
-    "label": "Arahkan ke jalur aman"
+  {
+    "no": 10,
+    "id": "safe_speed_dynamic",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Kecepatan aman",
+    "trigger": "Jenis jalan dan kondisi berubah",
+    "data_utama": ["gps", "tipe_jalan", "cuaca"],
+    "sapaan_ringkas": "Kecepatan aman",
+    "icon": "warning",
+    "title": "Batas Aman Dinamis",
+    "message": "Batas kecepatan aman di ruas ini lebih rendah karena kondisi jalan dan lingkungan sekitar.",
+    "cta": { "type": "slow_down", "label": "Sesuaikan kecepatan" },
+    "color": "#F59E0B",
+    "voice_text": "Sesuaikan kecepatan dengan kondisi jalan.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#F97316",
-  "voice_text": "Perhatian. Kamu masuk jalur kendaraan cepat. Tetap di sisi kiri dan jaga jarak aman.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 11,
-  "id": "bicycle_overspeed_dense_area",
-  "pengguna": [
-    "sepeda"
-  ],
-  "kategori": "Kecepatan tidak sesuai kondisi",
-  "trigger": "Kecepatan sepeda tinggi & area padat",
-  "data_utama": [
-    "gps",
-    "kecepatan",
-    "kepadatan_lalu_lintas"
-  ],
-  "sapaan_ringkas": "Kecepatan terlalu tinggi",
-  "icon": "warning",
-  "title": "Kurangi Kecepatan",
-  "message": "Kecepatan kamu terlalu tinggi untuk area padat. Banyak persimpangan dan pergerakan kendaraan. Kurangi kecepatan dan antisipasi berhenti mendadak.",
-  "cta": {
-    "type": "slow_down",
-    "label": "Kurangi kecepatan"
+  {
+    "no": 11,
+    "id": "event_crowd",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Keramaian & event",
+    "trigger": "Event besar di sekitar rute",
+    "data_utama": ["gps", "data_event"],
+    "sapaan_ringkas": "Keramaian",
+    "icon": "traffic",
+    "title": "Keramaian di Sekitar Rute",
+    "message": "Terdapat kegiatan besar yang berpotensi menyebabkan kepadatan lalu lintas.",
+    "cta": { "type": "navigate_alternative_route", "label": "Gunakan rute alternatif" },
+    "color": "#3B82F6",
+    "voice_text": "Keramaian terdeteksi. Gunakan rute alternatif.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#F59E0B",
-  "voice_text": "Perhatian. Kecepatan terlalu tinggi di area padat. Kurangi kecepatan dan tetap waspada.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
-  }
-},
-{
-  "no": 12,
-  "id": "public_transport_traffic_jam",
-  "pengguna": [
-    "angkutan_umum"
-  ],
-  "kategori": "Kemacetan lalu lintas",
-  "trigger": "Kemacetan terdeteksi di rute aktif",
-  "data_utama": [
-    "gps",
-    "kondisi_lalu_lintas",
-    "rute_aktif"
-  ],
-  "sapaan_ringkas": "Rute padat",
-  "icon": "traffic",
-  "title": "Kemacetan di Depan",
-  "message": "Kemacetan terdeteksi di rute saat ini. Potensi keterlambatan tinggi. Disarankan beralih ke jalur alternatif yang lebih lancar.",
-  "cta": {
-    "type": "navigate_alternative_route",
-    "label": "Gunakan rute alternatif"
+  {
+    "no": 12,
+    "id": "incident_notification",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Insiden lalu lintas",
+    "trigger": "Insiden terdeteksi di rute",
+    "data_utama": ["gps", "data_command_center"],
+    "sapaan_ringkas": "Insiden di depan",
+    "icon": "warning",
+    "title": "Insiden Lalu Lintas",
+    "message": "Terjadi insiden di depan rute kamu. Kurangi kecepatan dan ikuti arahan lalu lintas.",
+    "cta": { "type": "navigate_alternative_route", "label": "Cari rute alternatif" },
+    "color": "#EF4444",
+    "voice_text": "Insiden di depan. Kurangi kecepatan.",
+    "map_offset": { "north": -60, "east": 80 }
   },
-  "color": "#3B82F6",
-  "voice_text": "Rute di depan macet. Disarankan gunakan jalur alternatif untuk menghindari keterlambatan.",
-  "map_offset": {
-    "north": -60,
-    "east": 80
+  {
+    "no": 13,
+    "id": "compliance_reminder",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Kepatuhan administrasi",
+    "trigger": "Jatuh tempo SIM, STNK, atau pajak",
+    "data_utama": ["data_administrasi", "waktu"],
+    "sapaan_ringkas": "Masa berlaku hampir habis",
+    "icon": "info",
+    "title": "Pengingat Kepatuhan",
+    "message": "Masa berlaku SIM, STNK, atau pajak kendaraan akan segera berakhir.",
+    "cta": { "type": "open_official_link", "label": "Lihat layanan resmi" },
+    "color": "#3B82F6",
+    "voice_text": "Pengingat. Masa berlaku dokumen kendaraan hampir habis.",
+    "map_offset": { "north": -60, "east": 80 }
+  },
+  {
+    "no": 14,
+    "id": "demonstration_activity",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Kegiatan masyarakat",
+    "trigger": "Informasi aksi massa dari petugas",
+    "data_utama": ["gps", "data_command_center"],
+    "sapaan_ringkas": "Aktivitas masyarakat",
+    "icon": "warning",
+    "title": "Aktivitas di Sekitar Rute",
+    "message": "Terdapat kegiatan masyarakat di sekitar rute kamu yang berpotensi menimbulkan kepadatan lalu lintas.",
+    "cta": { "type": "navigate_alternative_route", "label": "Hindari area" },
+    "color": "#3B82F6",
+    "voice_text": "Aktivitas masyarakat di sekitar rute. Gunakan jalur alternatif.",
+    "map_offset": { "north": -60, "east": 80 }
   }
-}
 ]

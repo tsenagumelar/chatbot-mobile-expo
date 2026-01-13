@@ -23,6 +23,8 @@ interface OnboardingData {
   name?: string;
   primary_vehicle?: string;
   city?: string;
+  destination_latitude?: number;
+  destination_longitude?: number;
   main_goals?: string[];
   auth_method?: string;
   phone_verified?: boolean;
@@ -70,6 +72,7 @@ interface AppState {
   // Notifications
   notifications: AppNotification[];
   notificationIntervalSeconds: number;
+  silentMode: boolean;
 
   // Actions
   setLocation: (location: LocationData | null) => void;
@@ -109,6 +112,7 @@ interface AppState {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   setNotificationIntervalSeconds: (seconds: number) => void;
+  setSilentMode: (silent: boolean) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -144,6 +148,7 @@ export const useStore = create<AppState>()(
       reports: [],
       notifications: [],
       notificationIntervalSeconds: 30,
+      silentMode: false,
 
       // Location actions
       setLocation: (location) => set({ location }),
@@ -304,6 +309,7 @@ export const useStore = create<AppState>()(
         set({
           notificationIntervalSeconds: Math.max(30, Math.min(120, seconds)),
         }),
+      setSilentMode: (silent) => set({ silentMode: silent }),
     }),
     {
       name: "assistant-storage",
@@ -319,6 +325,7 @@ export const useStore = create<AppState>()(
         activeSessionId: state.activeSessionId,
         notifications: state.notifications,
         notificationIntervalSeconds: state.notificationIntervalSeconds,
+        silentMode: state.silentMode,
       }),
     }
   )

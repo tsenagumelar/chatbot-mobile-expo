@@ -1,4 +1,4 @@
-import SplashScreen from "@/src/screens/SplashScreen"
+import SplashScreen from "@/src/screens/splash"
 
 const SplashPage = () => {
   return (

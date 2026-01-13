@@ -1,4 +1,4 @@
-import NotificationDetailScreen from "@/src/screens/NotificationDetailScreen";
+import NotificationDetailScreen from "@/src/screens/notification-detail";
 
 const NotificationDetailPage = () => {
   return <NotificationDetailScreen />;

@@ -1,154 +1,46 @@
-import { requestLocationPermission } from "@/src/services/location";
-import { useStore } from "@/src/store/useStore";
-import { COLORS } from "@/src/utils/constants";
-import DateTimePicker, {
-    DateTimePickerAndroid,
-    DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import React from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { COLORS } from "@/src/utils/constants";
+import useLoginScreen from "./hooks";
 
 const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
-const formatDate = (date: Date) => {
-  const day = `${date.getDate()}`.padStart(2, "0");
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
-
-const parseDob = (value?: string) => {
-  if (!value) return null;
-  const parts = value.split(/[-/]/).map((part) => parseInt(part, 10));
-  if (parts.length === 3) {
-    const [d, m, y] = parts;
-    const parsed = new Date(y, m - 1, d);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  const fallback = new Date(value);
-  return Number.isNaN(fallback.getTime()) ? null : fallback;
-};
-
 export default function LoginScreen() {
-  const { user, hasLocationPermission, login, setLocationPermission } =
-    useStore();
-
-  const [name, setName] = useState(user?.name ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
-  const [dob, setDob] = useState(user?.dob ?? "");
-  const [gender, setGender] = useState(user?.gender ?? "");
-  const [dobDate, setDobDate] = useState<Date | null>(
-    user?.dob ? parseDob(user.dob) : null
-  );
-  const [showDobPicker, setShowDobPicker] = useState(false);
-  const [checkingLocation, setCheckingLocation] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const handleDateChange = (_: DateTimePickerEvent, selected?: Date) => {
-    if (!selected) return;
-    setDobDate(selected);
-    setDob(formatDate(selected));
-    if (Platform.OS === "ios") {
-      setShowDobPicker(false);
-    }
-  };
-
-  const handleOpenDatePicker = () => {
-    if (Platform.OS === "android") {
-      DateTimePickerAndroid.open({
-        value: dobDate || new Date(),
-        onChange: handleDateChange,
-        mode: "date",
-        maximumDate: new Date(),
-      });
-    } else {
-      setShowDobPicker(true);
-    }
-  };
-
-  useEffect(() => {
-    if (user && hasLocationPermission) {
-      router.replace("/(tabs)");
-    }
-  }, [user, hasLocationPermission]);
-
-  useEffect(() => {
-    if (!hasLocationPermission) {
-      handleRequestLocation();
-    }
-  }, []);
-
-  const handleRequestLocation = async (): Promise<boolean> => {
-    setCheckingLocation(true);
-    try {
-      const granted = await requestLocationPermission();
-      setLocationPermission(granted);
-
-      if (!granted) {
-        Alert.alert(
-          "Izin lokasi dibutuhkan",
-          "Aktifkan izin lokasi untuk bisa masuk ke aplikasi."
-        );
-      }
-
-      return granted;
-    } finally {
-      setCheckingLocation(false);
-    }
-  };
-
-  const validateForm = () => {
-    if (!name.trim() || !phone.trim() || !dob.trim() || !gender.trim()) {
-      setError("Semua field wajib diisi.");
-      return false;
-    }
-
-    setError(null);
-    return true;
-  };
-
-  const handleLogin = async () => {
-    if (!hasLocationPermission) {
-      const granted = await handleRequestLocation();
-      if (!granted) {
-        Alert.alert("Izin lokasi dibutuhkan", "Izinkan lokasi untuk melanjutkan.");
-        return;
-      }
-    }
-
-    if (!validateForm()) return;
-
-    login({
-      name: name.trim(),
-      phone: phone.trim(),
-      email: "",
-      dob: dob.trim(),
-      gender: gender.trim(),
-    });
-
-    router.replace("/(tabs)");
-    setShowForm(false);
-  };
-
-  const openForm = () => {
-    setShowForm(true);
-  };
+  const {
+    hasLocationPermission,
+    name,
+    setName,
+    phone,
+    setPhone,
+    dob,
+    gender,
+    setGender,
+    dobDate,
+    showDobPicker,
+    checkingLocation,
+    error,
+    showForm,
+    setShowForm,
+    handleDateChange,
+    handleOpenDatePicker,
+    handleRequestLocation,
+    handleLogin,
+    openForm,
+  } = useLoginScreen();
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
@@ -219,7 +111,6 @@ export default function LoginScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Modal form */}
       <Modal
         visible={showForm}
         transparent
@@ -519,74 +410,69 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     alignItems: "center",
-    marginTop: 4,
-    borderWidth: 1,
-    borderColor: "#DCE1FF",
   },
   loginButtonDisabled: {
     opacity: 0.6,
   },
   loginButtonText: {
-    color: "#1339C5",
-    fontSize: 16,
+    color: "#0C3AC5",
     fontWeight: "800",
+    fontSize: 16,
   },
   storageNote: {
-    marginTop: 8,
-    color: "#4A5AB7",
-    fontSize: 13,
+    fontSize: 12,
+    color: "#64748B",
     lineHeight: 18,
-    textAlign: "center",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
     justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
   },
   modalCard: {
-    width: "100%",
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
-    padding: 16,
-    gap: 10,
+    padding: 20,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0B1E6B",
+    color: "#1E266D",
   },
   modalSubtitle: {
-    color: COLORS.TEXT_SECONDARY,
-    marginBottom: 4,
+    fontSize: 13,
+    color: "#64748B",
+    marginTop: 6,
+    marginBottom: 12,
+    lineHeight: 18,
   },
   modalActions: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 8,
+    justifyContent: "space-between",
+    marginTop: 10,
+    gap: 12,
   },
   secondaryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F9FAFB",
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#EEF2FF",
+    alignItems: "center",
   },
   secondaryText: {
-    color: "#6B7280",
-    fontWeight: "700",
+    color: "#1D4ED8",
+    fontWeight: "800",
   },
   primaryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: COLORS.PRIMARY,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#0C3AC5",
+    alignItems: "center",
   },
   primaryText: {
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "800",
   },
 });

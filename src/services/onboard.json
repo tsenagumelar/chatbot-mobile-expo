@@ -6,7 +6,7 @@
     "WELCOME": {
       "type": "message",
       "assistant": {
-        "text": "Halo Sobat Lantas 👋\nAku Polman, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
+        "text": "Halo Sobat Lantas 👋.\n\nAku Polman, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
       },
       "user_input": {
         "type": "action",
@@ -30,7 +30,7 @@
       },
       "user_input": {
         "type": "text",
-        "placeholder": "Contoh: Michael",
+        "placeholder": "Silahkan isi nama kamu",
         "validation": {
           "min_length": 2
         }
@@ -43,7 +43,7 @@
     "ASK_VEHICLE": {
       "type": "choice",
       "assistant": {
-        "text": "Oke, {name} 👍\nKamu paling sering berkendara pakai apa?"
+        "text": "Oke, {name} 👍.\n\nKamu berkendara pakai apa?"
       },
       "user_input": {
         "type": "single_choice",
@@ -64,16 +64,35 @@
     "ASK_CITY": {
       "type": "choice",
       "assistant": {
-        "text": "Biasanya kamu berkendara di wilayah mana?"
+        "text": "Kamu ingin berkendara ke daerah mana?"
       },
       "user_input": {
-        "type": "location_or_search",
+        "type": "single_choice",
         "options": [
           {
-            "label": "📍 Gunakan lokasi saya",
-            "value": "USE_GPS"
+            "label": "Masukan alamat",
+            "value": "INPUT_ADDRESS"
+          },
+          {
+            "label": "Free ride",
+            "value": "FREE_RIDE"
           }
         ]
+      },
+      "next": {
+        "INPUT_ADDRESS": "SEARCH_DESTINATION",
+        "FREE_RIDE": "DONE"
+      }
+    },
+
+    "SEARCH_DESTINATION": {
+      "type": "input",
+      "assistant": {
+        "text": "Tulis tujuan kamu, nanti aku bantu cari lokasinya."
+      },
+      "user_input": {
+        "type": "places_search",
+        "placeholder": "Cari lokasi tujuan..."
       },
       "save_to_profile": {
         "field": "city"
@@ -84,7 +103,7 @@
     "DONE": {
       "type": "final",
       "assistant": {
-        "text": "Selamat datang, {name} 👋\nMulai sekarang aku siap nemenin perjalananmu.\n\nKalau kamu butuh bantuan, langsung chat aku ya."
+        "text": "Selamat datang, {name} 👋.\n\nMulai sekarang aku siap nemenin perjalananmu.\n\nKalau kamu butuh bantuan, langsung chat aku ya."
       },
       "user_input": {
         "type": "action",
