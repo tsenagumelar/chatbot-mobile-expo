@@ -1,0 +1,101 @@
+{
+  "flow_name": "POLANTAS_MENYAPA_ONBOARDING",
+  "version": "1.0.0",
+  "initial_step": "WELCOME",
+  "steps": {
+    "WELCOME": {
+      "type": "message",
+      "assistant": {
+        "text": "Halo Sobat Lantas 👋\nAku Polman, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
+      },
+      "user_input": {
+        "type": "action",
+        "options": [
+          {
+            "label": "Mulai",
+            "value": "START"
+          }
+        ]
+      },
+      "next": {
+        "START": "ASK_NAME",
+        "SKIP": "DONE"
+      }
+    },
+
+    "ASK_NAME": {
+      "type": "input",
+      "assistant": {
+        "text": "Aku panggil kamu siapa?\nBiar ngobrolnya lebih enak 😊"
+      },
+      "user_input": {
+        "type": "text",
+        "placeholder": "Contoh: Taufan",
+        "validation": {
+          "min_length": 2
+        }
+      },
+      "save_to_profile": {
+        "field": "name"
+      },
+      "next": "ASK_VEHICLE"
+    },
+    "ASK_VEHICLE": {
+      "type": "choice",
+      "assistant": {
+        "text": "Oke, {name} 👍\nKamu paling sering berkendara pakai apa?"
+      },
+      "user_input": {
+        "type": "single_choice",
+        "options": [
+          { "label": "🛵 Motor", "value": "motor" },
+          { "label": "🚗 Mobil", "value": "mobil" },
+          { "label": "🚲 Sepeda", "value": "sepeda" },
+          { "label": "🚌 Angkutan umum", "value": "public" },
+          { "label": "🚶 Jalan kaki", "value": "walk" }
+        ]
+      },
+      "save_to_profile": {
+        "field": "primary_vehicle"
+      },
+      "next": "ASK_CITY"
+    },
+
+    "ASK_CITY": {
+      "type": "choice",
+      "assistant": {
+        "text": "Biasanya kamu berkendara di wilayah mana?"
+      },
+      "user_input": {
+        "type": "location_or_search",
+        "options": [
+          {
+            "label": "📍 Gunakan lokasi saya",
+            "value": "USE_GPS"
+          }
+        ]
+      },
+      "save_to_profile": {
+        "field": "city"
+      },
+      "next": "DONE"
+    },
+
+    "DONE": {
+      "type": "final",
+      "assistant": {
+        "text": "Selamat datang, {name} 👋\nMulai sekarang aku siap nemenin perjalananmu.\n\nKalau kamu butuh bantuan, langsung chat aku ya."
+      },
+      "user_input": {
+        "type": "action",
+        "options": [
+          {
+            "label": "Mulai Perjalanan",
+            "value": "ENTER_APP"
+          }
+        ]
+      },
+      "next": "ENTER_APP"
+    }
+  }
+}

@@ -19,6 +19,17 @@ interface UserProfile {
   gender?: string;
 }
 
+interface OnboardingData {
+  name?: string;
+  primary_vehicle?: string;
+  city?: string;
+  main_goals?: string[];
+  auth_method?: string;
+  phone_verified?: boolean;
+}
+
+type AppMode = "normal" | "menyapa";
+
 interface AppState {
   // Location
   location: LocationData | null;
@@ -48,11 +59,17 @@ interface AppState {
   user: UserProfile | null;
   hasLocationPermission: boolean;
 
+  // Onboarding
+  onboarding: OnboardingData;
+  onboardingCompleted: boolean;
+  appMode: AppMode;
+
   // Reports
   reports: IncidentReport[];
 
   // Notifications
   notifications: AppNotification[];
+  notificationIntervalSeconds: number;
 
   // Actions
   setLocation: (location: LocationData | null) => void;
@@ -81,12 +98,17 @@ interface AppState {
   logout: () => void;
   setLocationPermission: (granted: boolean) => void;
 
+  setOnboarding: (data: Partial<OnboardingData>) => void;
+  setOnboardingCompleted: (completed: boolean) => void;
+  setAppMode: (mode: AppMode) => void;
+
   addReport: (report: IncidentReport) => void;
   deleteReport: (id: string) => void;
 
   upsertNotification: (notification: AppNotification) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  setNotificationIntervalSeconds: (seconds: number) => void;
 }
 
 export const useStore = create<AppState>()(
@@ -115,8 +137,13 @@ export const useStore = create<AppState>()(
       user: null,
       hasLocationPermission: false,
 
+      onboarding: {},
+      onboardingCompleted: false,
+      appMode: "menyapa",
+
       reports: [],
       notifications: [],
+      notificationIntervalSeconds: 30,
 
       // Location actions
       setLocation: (location) => set({ location }),
@@ -207,16 +234,29 @@ export const useStore = create<AppState>()(
       logout: () =>
         set({
           user: null,
+          hasLocationPermission: false,
           sessionId: null,
           messages: [],
           chatSessions: [],
           activeSessionId: null,
           notifications: [],
+          onboarding: {},
+          onboardingCompleted: false,
         }),
       setLocationPermission: (granted) =>
         set({
           hasLocationPermission: granted,
         }),
+
+      setOnboarding: (data) =>
+        set((state) => ({
+          onboarding: {
+            ...state.onboarding,
+            ...data,
+          },
+        })),
+      setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+      setAppMode: (mode) => set({ appMode: mode }),
 
       addReport: (report) =>
         set((state) => ({
@@ -260,6 +300,10 @@ export const useStore = create<AppState>()(
             read: true,
           })),
         })),
+      setNotificationIntervalSeconds: (seconds) =>
+        set({
+          notificationIntervalSeconds: Math.max(30, Math.min(120, seconds)),
+        }),
     }),
     {
       name: "assistant-storage",
@@ -267,10 +311,14 @@ export const useStore = create<AppState>()(
       partialize: (state) => ({
         user: state.user,
         hasLocationPermission: state.hasLocationPermission,
+        onboarding: state.onboarding,
+        onboardingCompleted: state.onboardingCompleted,
+        appMode: state.appMode,
         reports: state.reports,
         chatSessions: state.chatSessions,
         activeSessionId: state.activeSessionId,
         notifications: state.notifications,
+        notificationIntervalSeconds: state.notificationIntervalSeconds,
       }),
     }
   )

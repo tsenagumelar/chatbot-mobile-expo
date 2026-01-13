@@ -10,6 +10,7 @@ import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import * as Speech from "expo-speech";
+import { sanitizeSpeechText } from "@/src/utils/speech";
 import moment from "moment";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -583,7 +584,7 @@ export default function HomeScreen() {
         trigger: null,
       });
       Speech.stop();
-      Speech.speak(voiceText, {
+      Speech.speak(sanitizeSpeechText(voiceText), {
         language: "id-ID",
         rate: 0.9,
         pitch: 1.1,

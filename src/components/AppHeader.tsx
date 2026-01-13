@@ -8,6 +8,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -17,9 +18,20 @@ interface Props {
 }
 
 export const AppHeader: React.FC<Props> = ({ onLogout }) => {
-  const { user, notifications, markNotificationRead } = useStore();
+  const {
+    user,
+    notifications,
+    markNotificationRead,
+    appMode,
+    setAppMode,
+    notificationIntervalSeconds,
+    setNotificationIntervalSeconds,
+  } = useStore();
   const [notificationModalVisible, setNotificationModalVisible] =
     useState(false);
+  const [intervalInput, setIntervalInput] = useState(
+    String(notificationIntervalSeconds)
+  );
 
   const orderedNotifications = useMemo(
     () => [...notifications].sort((a, b) => b.receivedAt - a.receivedAt),
@@ -39,6 +51,27 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
     router.push(`/notifications/${id}`);
   };
 
+  const handleSaveInterval = () => {
+    const parsed = Number.parseInt(intervalInput, 10);
+    if (Number.isNaN(parsed)) return;
+    setNotificationIntervalSeconds(parsed);
+  };
+
+  const handleOpenNotificationPanel = () => {
+    setIntervalInput(String(notificationIntervalSeconds));
+    setNotificationModalVisible(true);
+  };
+
+  const handleToggleMode = () => {
+    const nextMode = appMode === "menyapa" ? "normal" : "menyapa";
+    setAppMode(nextMode);
+    if (nextMode === "menyapa") {
+      router.replace("/menyapa");
+    } else {
+      router.replace("/(tabs)");
+    }
+  };
+
   return (
     <>
     <View style={styles.container}>
@@ -49,7 +82,13 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
       </View>
       <View style={styles.actions}>
         <TouchableOpacity
-          onPress={() => setNotificationModalVisible(true)}
+          onPress={handleToggleMode}
+          style={styles.modeButton}
+        >
+          <Ionicons name="swap-horizontal" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleOpenNotificationPanel}
           style={styles.notificationButton}
         >
           <Ionicons name="notifications-outline" size={18} color="#0C3AC5" />
@@ -91,6 +130,30 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
               >
                 <Ionicons name="close" size={24} color="#111827" />
               </TouchableOpacity>
+            </View>
+            <View style={styles.notificationConfig}>
+              <Text style={styles.notificationConfigLabel}>
+                Interval notifikasi (detik)
+              </Text>
+              <View style={styles.notificationConfigRow}>
+                <TextInput
+                  value={intervalInput}
+                  onChangeText={setIntervalInput}
+                  keyboardType="number-pad"
+                  placeholder="10"
+                  placeholderTextColor="#9CA3AF"
+                  style={styles.notificationConfigInput}
+                />
+                <TouchableOpacity
+                  style={styles.notificationConfigButton}
+                  onPress={handleSaveInterval}
+                >
+                  <Text style={styles.notificationConfigButtonText}>Simpan</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.notificationConfigHint}>
+                Minimal 30 detik, maksimal 120 detik.
+              </Text>
             </View>
 
             <ScrollView style={styles.notificationList}>
@@ -155,6 +218,7 @@ export const AppHeader: React.FC<Props> = ({ onLogout }) => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
     </>
   );
 };
@@ -181,6 +245,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  modeButton: {
+    height: 40,
+    borderRadius: 999,
+    width: 40,
+    backgroundColor: "#0C3AC5",
+    alignItems: "center",
+    justifyContent: "center",
   },
   notificationButton: {
     width: 40,
@@ -246,6 +318,48 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#F3F4F6",
+  },
+  notificationConfig: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  notificationConfigLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  notificationConfigRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  notificationConfigInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    color: "#111827",
+    backgroundColor: "#FFFFFF",
+  },
+  notificationConfigButton: {
+    backgroundColor: "#0C3AC5",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  notificationConfigButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  notificationConfigHint: {
+    fontSize: 11,
+    color: "#6B7280",
   },
   notificationTitle: {
     fontSize: 18,

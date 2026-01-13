@@ -11,6 +11,7 @@ import { registerForPushNotificationsAsync } from "@/src/services/notifications"
 import { useStore } from "@/src/store/useStore";
 import type { AppNotification, NotificationCTA, NotificationSeverity } from "@/src/types";
 import { pickSeverityFromColor } from "@/src/utils/notifications";
+import { sanitizeSpeechText } from "@/src/utils/speech";
 
 export const unstable_settings = {
   initialRouteName: 'index',
@@ -121,8 +122,9 @@ export default function RootLayout() {
           notification.request.content.title ??
           "";
         if (voiceText) {
+          const sanitized = sanitizeSpeechText(voiceText);
           Speech.stop();
-          Speech.speak(voiceText, {
+          Speech.speak(sanitized, {
             language: "id-ID",
             rate: 0.9,
             pitch: 1.1,
@@ -160,6 +162,8 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" options={{ headerShown: false }} />
         <Stack.Screen name="notifications/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="library" options={{ headerShown: false }} />
+        <Stack.Screen name="menyapa" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
         <Stack.Screen name="pdf-viewer" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />

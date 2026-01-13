@@ -10,7 +10,7 @@ export default {
     splash: {
       image: "./assets/images/Polantas Logo.png",
       resizeMode: "contain",
-      backgroundColor: "#007AFF",
+      backgroundColor: "#FFFFFF",
     },
     assetBundlePatterns: ["**/*"],
     ios: {
@@ -35,7 +35,7 @@ export default {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/Polantas Logo.png",
-        backgroundColor: "#007AFF",
+        backgroundColor: "#FFFFFF",
       },
       package: "com.policeassistant.app",
       permissions: [
@@ -72,7 +72,7 @@ export default {
     },
     notification: {
       icon: "./assets/images/Polantas Logo.png",
-      color: "#007AFF",
+      color: "#FFFFFF",
     },
     extra: {
       eas: {

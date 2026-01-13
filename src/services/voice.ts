@@ -1,4 +1,5 @@
 import * as Speech from "expo-speech";
+import { sanitizeSpeechText } from "@/src/utils/speech";
 
 /**
  * Speak text using Text-to-Speech
@@ -8,10 +9,11 @@ export async function speak(text: string): Promise<void> {
     // Stop any ongoing speech first
     await Speech.stop();
 
-    console.log("🔊 Speaking:", text.substring(0, 50) + "...");
+    const sanitized = sanitizeSpeechText(text);
+    console.log("🔊 Speaking:", sanitized.substring(0, 50) + "...");
 
     // Speak the text in Indonesian
-    Speech.speak(text, {
+    Speech.speak(sanitized, {
       language: "id-ID", // Indonesian
       pitch: 1.0,
       rate: 0.85, // Slightly slower for clarity

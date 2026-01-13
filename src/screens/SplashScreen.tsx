@@ -7,19 +7,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const polantasLogo = require("@/assets/images/Polantas Logo.png");
 
 export default function SplashScreen() {
-  const { user, hasLocationPermission } = useStore();
+  const { onboardingCompleted, appMode } = useStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (user && hasLocationPermission) {
-        router.replace("/(tabs)");
+      if (onboardingCompleted) {
+        router.replace(appMode === "menyapa" ? "/menyapa" : "/(tabs)");
       } else {
-        router.replace("/login");
+        router.replace("/onboarding");
       }
     }, 1400);
 
     return () => clearTimeout(timer);
-  }, [user, hasLocationPermission]);
+  }, [appMode, onboardingCompleted]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
