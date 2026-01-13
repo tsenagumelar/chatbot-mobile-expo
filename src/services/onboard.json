@@ -30,7 +30,7 @@
       },
       "user_input": {
         "type": "text",
-        "placeholder": "Contoh: Taufan",
+        "placeholder": "Contoh: Michael",
         "validation": {
           "min_length": 2
         }

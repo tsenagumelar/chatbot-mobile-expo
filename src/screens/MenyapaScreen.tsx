@@ -5,8 +5,8 @@ import { useStore } from "@/src/store/useStore";
 import { sanitizeSpeechText } from "@/src/utils/speech";
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
-import * as Speech from "expo-speech";
 import { router } from "expo-router";
+import * as Speech from "expo-speech";
 import LottieView from "lottie-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -204,12 +204,33 @@ export default function MenyapaScreen() {
         setOverlayText(notifItem.message);
         setShowOverlay(true);
 
+        const baseLocation =
+          latestLocationRef.current ?? {
+            latitude: -6.914744,
+            longitude: 107.60981,
+          };
+        const isRestCta =
+          notifItem.cta?.type === "find_rest_spot" ||
+          notifItem.cta?.type === "find_rest_area";
+        const targetCoords = isRestCta
+          ? {
+              latitude: baseLocation.latitude + 0.0024,
+              longitude: baseLocation.longitude + 0.0018,
+            }
+          : {
+              latitude: baseLocation.latitude + (Math.random() - 0.5) * 0.0015,
+              longitude: baseLocation.longitude + (Math.random() - 0.5) * 0.0015,
+            };
+        const targetAddress = isRestCta
+          ? "Rest Area terdekat (simulasi)"
+          : "Lokasi kejadian (simulasi)";
+
         Notifications.scheduleNotificationAsync({
           content: {
             title: notifItem.title,
             subtitle: notifItem.kategori,
             body: notifItem.message,
-              data: {
+            data: {
               id: notifItem.id,
               kategori: notifItem.kategori,
               trigger: notifItem.trigger,
@@ -219,6 +240,11 @@ export default function MenyapaScreen() {
               color: notifItem.color,
               cta: notifItem.cta,
               voiceText: notifItem.message,
+              address: targetAddress,
+              latitude: targetCoords.latitude,
+              longitude: targetCoords.longitude,
+              user_latitude: baseLocation.latitude,
+              user_longitude: baseLocation.longitude,
             },
           },
           trigger: null,
@@ -279,7 +305,7 @@ export default function MenyapaScreen() {
             latitudeDelta: zoomDelta,
             longitudeDelta: zoomDelta,
           }}
-          showsUserLocation={Boolean(location)}
+          // showsUserLocation={Boolean(location)}
           showsMyLocationButton={Boolean(location)}
           showsCompass={true}
           showsScale={true}

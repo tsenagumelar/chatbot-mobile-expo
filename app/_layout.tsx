@@ -95,6 +95,14 @@ export default function RootLayout() {
         address: typeof rawData.address === "string" ? rawData.address : undefined,
         coords,
         cta,
+        user_latitude:
+          typeof rawData.user_latitude === "number"
+            ? rawData.user_latitude
+            : undefined,
+        user_longitude:
+          typeof rawData.user_longitude === "number"
+            ? rawData.user_longitude
+            : undefined,
       },
     };
   };

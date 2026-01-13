@@ -138,14 +138,19 @@ export default function NotificationDetailScreen() {
     }
   }, [notification, markNotificationRead]);
 
-  const userCoords = useMemo(
-    () => location
-      ? { latitude: location.latitude, longitude: location.longitude }
-      : undefined,
-    [location]
+  const [staticUserCoords, setStaticUserCoords] = useState<LatLng | undefined>(
+    undefined
   );
+
+  useEffect(() => {
+    const storedLat = notification?.data?.user_latitude;
+    const storedLng = notification?.data?.user_longitude;
+    if (typeof storedLat === "number" && typeof storedLng === "number") {
+      setStaticUserCoords({ latitude: storedLat, longitude: storedLng });
+    }
+  }, [notification?.data?.user_latitude, notification?.data?.user_longitude]);
   const scenarioCoords = notification?.data?.coords;
-  const mapCenter = scenarioCoords ?? userCoords ?? FALLBACK_COORDS;
+  const mapCenter = scenarioCoords ?? staticUserCoords ?? FALLBACK_COORDS;
   const mapRegion = {
     latitude: mapCenter.latitude,
     longitude: mapCenter.longitude,
@@ -162,11 +167,12 @@ export default function NotificationDetailScreen() {
   const dangerZoneCoords = scenarioCoords
     ? squarePolygon(scenarioCoords, 120)
     : [];
-  const showRestArea = scenarioId === "fatigue_detected" && Boolean(userCoords);
+  const showRestArea =
+    scenarioId === "fatigue_detected" && Boolean(staticUserCoords);
   const restAreaCoord = useMemo(() => {
-    if (!userCoords) return null;
-    return offsetLatLng(userCoords, 80, 400);
-  }, [userCoords]);
+    if (!staticUserCoords) return null;
+    return offsetLatLng(staticUserCoords, 80, 400);
+  }, [staticUserCoords]);
 
   const displayStyle = notification
     ? getNotificationDisplay(notification)
@@ -185,10 +191,10 @@ export default function NotificationDetailScreen() {
       : null;
 
   const handleRouteToTarget = async () => {
-    if (!userCoords || !routeTarget) return;
+    if (!staticUserCoords || !routeTarget) return;
     try {
       setLoadingRoute(true);
-      const pts = await fetchRouteOSRM(userCoords, routeTarget.coord);
+      const pts = await fetchRouteOSRM(staticUserCoords, routeTarget.coord);
       setRoute(pts);
     } catch (e) {
       console.log(e);
@@ -260,8 +266,8 @@ export default function NotificationDetailScreen() {
             provider={PROVIDER_GOOGLE}
             mapType="standard"
             region={mapRegion}
-            showsUserLocation={Boolean(userCoords)}
-            showsMyLocationButton={true}
+            showsUserLocation={false}
+            showsMyLocationButton={false}
             showsCompass={true}
             showsScale={true}
           >
@@ -281,8 +287,8 @@ export default function NotificationDetailScreen() {
                 strokeWidth={2}
               />
             )}
-            {userCoords && (
-              <Marker coordinate={userCoords} title="Lokasi Anda">
+            {staticUserCoords && (
+              <Marker coordinate={staticUserCoords} title="Lokasi Anda">
                 <View style={styles.userMarker}>
                   <Ionicons name="person" size={16} color="#0B57D0" />
                 </View>

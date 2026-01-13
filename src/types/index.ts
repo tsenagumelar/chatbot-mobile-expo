@@ -167,6 +167,8 @@ export interface NotificationDataPayload {
     longitude: number;
   };
   cta?: NotificationCTA;
+  user_latitude?: number;
+  user_longitude?: number;
 }
 
 export interface AppNotification {
