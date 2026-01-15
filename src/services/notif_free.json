@@ -1,0 +1,211 @@
+[
+  {
+    "no": 1,
+    "id": "sim_expiry_reminder",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Administrasi kendaraan",
+    "trigger": "H-30 / H-7 / H-1 masa berlaku SIM",
+    "data_utama": ["data_sim", "waktu"],
+    "sapaan_ringkas": "SIM hampir habis",
+    "icon": "info",
+    "title": "Masa Berlaku SIM",
+    "message": "Masa berlaku SIM kamu akan segera berakhir. Segera lakukan perpanjangan melalui layanan resmi untuk menghindari sanksi.",
+    "cta": {
+      "type": "open_official_link",
+      "label": "Lihat layanan SIM"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Pengingat. Masa berlaku SIM kamu akan segera berakhir.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 2,
+    "id": "stnk_expiry_reminder",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Administrasi kendaraan",
+    "trigger": "H-30 / H-7 / H-1 masa berlaku STNK",
+    "data_utama": ["data_stnk", "waktu"],
+    "sapaan_ringkas": "STNK hampir habis",
+    "icon": "info",
+    "title": "Masa Berlaku STNK",
+    "message": "STNK kendaraan kamu akan segera habis masa berlakunya. Pastikan melakukan pengesahan atau perpanjangan tepat waktu.",
+    "cta": {
+      "type": "open_official_link",
+      "label": "Cek layanan STNK"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Pengingat. Masa berlaku STNK akan segera berakhir.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 3,
+    "id": "tax_payment_reminder",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Pajak kendaraan",
+    "trigger": "Jatuh tempo pajak kendaraan",
+    "data_utama": ["data_pajak", "waktu"],
+    "sapaan_ringkas": "Pajak kendaraan",
+    "icon": "info",
+    "title": "Bayar Pajak Kendaraan",
+    "message": "Pajak kendaraan kamu telah mendekati jatuh tempo. Bayar tepat waktu untuk menghindari denda.",
+    "cta": {
+      "type": "open_official_link",
+      "label": "Bayar pajak"
+    },
+    "color": "#22C55E",
+    "voice_text": "Pengingat pembayaran pajak kendaraan.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 4,
+    "id": "official_letter_confirmation",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Layanan kepolisian",
+    "trigger": "Pengiriman surat atau dokumen konfirmasi",
+    "data_utama": ["data_surat"],
+    "sapaan_ringkas": "Surat konfirmasi",
+    "icon": "info",
+    "title": "Surat Konfirmasi Dikirim",
+    "message": "Surat atau dokumen konfirmasi dari kepolisian telah dikirim. Silakan cek detail dan status pengiriman.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat detail"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Surat konfirmasi telah dikirim.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 5,
+    "id": "demonstration_info",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Informasi lalu lintas",
+    "trigger": "Informasi unjuk rasa dari petugas atau command center",
+    "data_utama": ["data_command_center", "wilayah"],
+    "sapaan_ringkas": "Info kegiatan masyarakat",
+    "icon": "warning",
+    "title": "Informasi Kegiatan Masyarakat",
+    "message": "Akan terdapat kegiatan masyarakat di beberapa titik yang berpotensi memengaruhi arus lalu lintas.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat area terdampak"
+    },
+    "color": "#F59E0B",
+    "voice_text": "Informasi kegiatan masyarakat yang dapat memengaruhi lalu lintas.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 6,
+    "id": "puncak_route_open_close",
+    "pengguna": ["mobil"],
+    "kategori": "Rekayasa lalu lintas",
+    "trigger": "Status buka tutup jalur Puncak",
+    "data_utama": ["status_jalur", "waktu"],
+    "sapaan_ringkas": "Info jalur Puncak",
+    "icon": "traffic",
+    "title": "Buka Tutup Jalur Puncak",
+    "message": "Terdapat pengaturan buka tutup jalur di kawasan Puncak. Rencanakan perjalanan sebelum berangkat.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat jadwal"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Informasi buka tutup jalur Puncak.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 7,
+    "id": "toll_contraflow_morning",
+    "pengguna": ["mobil"],
+    "kategori": "Rekayasa lalu lintas",
+    "trigger": "Penerapan contraflow tol pagi hari",
+    "data_utama": ["data_tol", "waktu"],
+    "sapaan_ringkas": "Contraflow tol",
+    "icon": "traffic",
+    "title": "Contraflow Tol Pagi",
+    "message": "Penerapan contraflow di ruas tol tertentu pada pagi hari untuk mengurai kepadatan.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat ruas tol"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Informasi contraflow tol pagi hari.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 8,
+    "id": "weather_general_info",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Informasi cuaca",
+    "trigger": "Peringatan cuaca wilayah",
+    "data_utama": ["cuaca", "wilayah"],
+    "sapaan_ringkas": "Info cuaca",
+    "icon": "info",
+    "title": "Informasi Cuaca",
+    "message": "Prakiraan cuaca menunjukkan potensi hujan atau kondisi ekstrem. Persiapkan perjalanan dengan baik.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat prakiraan"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Informasi cuaca terbaru.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 9,
+    "id": "disaster_alert",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Bencana alam",
+    "trigger": "Peringatan bencana dari instansi terkait",
+    "data_utama": ["data_bencana", "wilayah"],
+    "sapaan_ringkas": "Peringatan bencana",
+    "icon": "warning",
+    "title": "Informasi Bencana Alam",
+    "message": "Terdapat peringatan bencana alam di wilayah tertentu. Utamakan keselamatan dan ikuti arahan resmi.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat informasi"
+    },
+    "color": "#EF4444",
+    "voice_text": "Peringatan bencana alam. Tetap waspada.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 10,
+    "id": "general_safety_info",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Edukasi keselamatan",
+    "trigger": "Kampanye keselamatan berkala",
+    "data_utama": ["waktu"],
+    "sapaan_ringkas": "Tips keselamatan",
+    "icon": "info",
+    "title": "Pengingat Keselamatan",
+    "message": "Gunakan helm SNI, sabuk keselamatan, dan patuhi aturan lalu lintas demi keselamatan bersama.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Pelajari lebih lanjut"
+    },
+    "color": "#22C55E",
+    "voice_text": "Pengingat keselamatan berkendara.",
+    "map_offset": { "north": 0, "east": 0 }
+  },
+  {
+    "no": 11,
+    "id": "police_operation_info",
+    "pengguna": ["motor", "mobil"],
+    "kategori": "Operasi kepolisian",
+    "trigger": "Pelaksanaan operasi kepolisian",
+    "data_utama": ["data_operasi", "wilayah", "periode"],
+    "sapaan_ringkas": "Info operasi kepolisian",
+    "icon": "info",
+    "title": "Pelaksanaan Operasi Kepolisian",
+    "message": "Sedang berlangsung operasi kepolisian di wilayah tertentu. Pastikan kelengkapan dan patuhi aturan lalu lintas.",
+    "cta": {
+      "type": "open_detail",
+      "label": "Lihat detail operasi"
+    },
+    "color": "#3B82F6",
+    "voice_text": "Informasi pelaksanaan operasi kepolisian.",
+    "map_offset": { "north": 0, "east": 0 }
+  }
+]

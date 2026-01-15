@@ -50,6 +50,8 @@ export default function MenyapaScreen() {
     setIsTravelActive,
     silentMode,
     setSilentMode,
+    isFreeRide,
+    setRideMode,
   } = useMenyapaScreen();
 
   return (
@@ -234,6 +236,28 @@ export default function MenyapaScreen() {
           </TouchableOpacity>
         </View>
         <View style={styles.floatingStack}>
+          <TouchableOpacity
+            style={[
+              styles.modeButton,
+              !isFreeRide && styles.modeButtonActive,
+            ]}
+            onPress={() => {
+              if (isFreeRide) {
+                setRideMode("normal");
+                setShowDestinationPicker(true);
+              } else {
+                handleClearDestination();
+                setRideMode("free");
+              }
+            }}
+            activeOpacity={0.9}
+          >
+            <Ionicons
+              name={isFreeRide ? "infinite" : "navigate"}
+              size={18}
+              color={isFreeRide ? "#0B1E6B" : "#FFFFFF"}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.silentButton}
             onPress={() => setSilentMode(!silentMode)}
@@ -454,6 +478,25 @@ const styles = StyleSheet.create({
     bottom: 24,
     alignItems: "center",
     gap: 10,
+  },
+  modeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  modeButtonActive: {
+    backgroundColor: "#0C3AC5",
+    borderColor: "#0C3AC5",
   },
   silentButton: {
     width: 44,

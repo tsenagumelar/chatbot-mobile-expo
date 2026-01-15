@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { startLocationTracking, stopLocationTracking } from "@/src/services/location";
 import notifData from "@/src/services/notif.json";
+import notifFreeData from "@/src/services/notif_free.json";
 import { useStore } from "@/src/store/useStore";
 import { sanitizeSpeechText } from "@/src/utils/speech";
 import Constants from "expo-constants";
@@ -90,6 +91,7 @@ export default function useMenyapaScreen() {
   const [zoomDelta, setZoomDelta] = useState(0.01);
   const [showVehiclePicker, setShowVehiclePicker] = useState(false);
   const [isTravelActive, setIsTravelActive] = useState(false);
+  const [rideMode, setRideMode] = useState<"normal" | "free">("normal");
   const [hotspotCenter, setHotspotCenter] = useState<LatLng | null>(null);
   const [hotspotRadius, setHotspotRadius] = useState(120);
   const [isLocationReady, setIsLocationReady] = useState(false);
@@ -128,6 +130,7 @@ export default function useMenyapaScreen() {
   const arrivedNotifiedRef = useRef(false);
   const locationUpdateCountRef = useRef(0);
   const isTravelActiveRef = useRef(false);
+  const freeRideNotifIndexRef = useRef(0);
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayText, setOverlayText] = useState("");
   const [typedOverlayText, setTypedOverlayText] = useState("");
@@ -188,6 +191,7 @@ export default function useMenyapaScreen() {
     vehicleOptions.find((option) => option.value === onboarding.primary_vehicle) ??
     vehicleOptions[0];
   const isMotorMode = activeVehicle.value === "motor";
+  const isFreeRide = rideMode === "free" || !selectedDestination;
   const placesApiKey =
     Constants.expoConfig?.extra?.googlePlacesApiKey ??
     (Constants as any).manifest?.extra?.googlePlacesApiKey ??
@@ -237,6 +241,7 @@ export default function useMenyapaScreen() {
     triggeredZoneIdsRef.current = new Set();
     arrivedNotifiedRef.current = false;
     setIsTravelActive(false);
+    freeRideNotifIndexRef.current = 0;
     if (routeOrigin || routePoints.length) {
       const startPoint = routeOrigin ?? routePoints[0];
       if (startPoint) {
@@ -398,6 +403,10 @@ export default function useMenyapaScreen() {
       arrivedNotifiedRef.current = false;
       return;
     }
+    if (isFreeRide) {
+      setRouteZones([]);
+      return;
+    }
     const validRoutePoints = routePoints.filter(isValidLatLng);
     if (!validRoutePoints.length) {
       setRouteZones([]);
@@ -534,6 +543,7 @@ export default function useMenyapaScreen() {
     onboarding.primary_vehicle,
     routeOrigin,
     selectedDestination,
+    isFreeRide,
   ]);
 
   const handleSelectDestination = async (placeId: string) => {
@@ -575,6 +585,7 @@ export default function useMenyapaScreen() {
         destination_latitude: coords.lat,
         destination_longitude: coords.lng,
       });
+      setRideMode("normal");
       setDestinationResults([]);
       setShowDestinationPicker(false);
       await requestRoute(nextDestination, originPoint);
@@ -598,12 +609,19 @@ export default function useMenyapaScreen() {
       destination_latitude: undefined,
       destination_longitude: undefined,
     });
+    setRideMode("free");
   };
 
   useEffect(() => {
     if (!selectedDestination) return;
     requestRoute(selectedDestination);
   }, [routeOrigin, selectedDestination?.latitude, selectedDestination?.longitude]);
+
+  useEffect(() => {
+    if (!selectedDestination) {
+      setRideMode("free");
+    }
+  }, [selectedDestination]);
 
   useEffect(() => {
     if (!showOverlay) {
@@ -883,7 +901,7 @@ export default function useMenyapaScreen() {
   }, [silentMode]);
 
   useEffect(() => {
-    if (!location || !routeZones.length) return;
+    if (!location || !routeZones.length || isFreeRide) return;
     if (showOverlay) return;
     const nextZone = routeZones.find(
       (zone) =>
@@ -924,10 +942,10 @@ export default function useMenyapaScreen() {
       },
       trigger: null,
     }).catch(() => null);
-  }, [location, routeZones, showOverlay]);
+  }, [location, routeZones, showOverlay, isFreeRide]);
 
   useEffect(() => {
-    if (routePoints.length < 2) return;
+    if (routePoints.length < 2 || isFreeRide) return;
     travelIndexRef.current = 0;
     arrivedNotifiedRef.current = false;
     const interval = setInterval(() => {
@@ -988,7 +1006,100 @@ export default function useMenyapaScreen() {
     }, 1200);
 
     return () => clearInterval(interval);
-  }, [routePoints, setLocation]);
+  }, [isFreeRide, routePoints, setLocation]);
+
+  useEffect(() => {
+    if (!isFreeRide) return;
+    const interval = setInterval(() => {
+      if (!isTravelActiveRef.current) return;
+      const base =
+        simulatedLocationRef.current ??
+        latestLocationRef.current ?? {
+          latitude: -6.914744,
+          longitude: 107.60981,
+          accuracy: 10,
+          heading: 0,
+          speed: 0,
+          timestamp: Date.now(),
+        };
+      const deltaLat = (Math.random() - 0.5) * 0.0006;
+      const deltaLng = (Math.random() - 0.5) * 0.0006;
+      const nextLocation = {
+        ...base,
+        latitude: base.latitude + deltaLat,
+        longitude: base.longitude + deltaLng,
+        timestamp: Date.now(),
+      };
+      simulatedLocationRef.current = nextLocation;
+      setLocation(nextLocation);
+      setIsLocationReady(true);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isFreeRide, setLocation]);
+
+  useEffect(() => {
+    if (!isFreeRide) return;
+    const interval = setInterval(() => {
+      if (!isTravelActiveRef.current) return;
+      const rawVehicle = activeVehicleRef.current ?? "motor";
+      const vehicle = rawVehicle === "public" ? "angkutan_umum" : rawVehicle;
+      const candidates = (notifFreeData as any[])
+        .filter(
+          (item) => Array.isArray(item.pengguna) && item.pengguna.includes(vehicle)
+        )
+        .sort((a, b) => {
+          const na = Number(a?.no ?? 0);
+          const nb = Number(b?.no ?? 0);
+          if (Number.isFinite(na) && Number.isFinite(nb)) {
+            return na - nb;
+          }
+          return 0;
+        });
+      if (!candidates.length) return;
+      const nextIndex = freeRideNotifIndexRef.current % candidates.length;
+      const notifItem = candidates[nextIndex];
+      freeRideNotifIndexRef.current = nextIndex + 1;
+
+      triggerOverlay({
+        text: getOverlaySpeechText(notifItem),
+        title: notifItem.title ?? "Notifikasi",
+        category: notifItem.kategori ?? "",
+        ctaLabel: notifItem.cta?.label ?? "",
+      });
+
+      const baseLocation =
+        latestLocationRef.current ?? {
+          latitude: -6.914744,
+          longitude: 107.60981,
+        };
+      Notifications.scheduleNotificationAsync({
+        content: {
+          title: notifItem.title,
+          subtitle: notifItem.kategori,
+          body: notifItem.message,
+          data: {
+            id: notifItem.id,
+            kategori: notifItem.kategori,
+            trigger: notifItem.trigger,
+            data_utama: notifItem.data_utama,
+            pengguna: notifItem.pengguna,
+            icon: notifItem.icon,
+            color: notifItem.color,
+            cta: notifItem.cta,
+            voiceText: notifItem.message,
+            latitude: baseLocation.latitude,
+            longitude: baseLocation.longitude,
+            user_latitude: baseLocation.latitude,
+            user_longitude: baseLocation.longitude,
+          },
+        },
+        trigger: null,
+      }).catch(() => null);
+    }, 30_000);
+
+    return () => clearInterval(interval);
+  }, [isFreeRide]);
 
   const handleZoom = (direction: "in" | "out") => {
     const nextDelta =
@@ -1029,6 +1140,9 @@ export default function useMenyapaScreen() {
     location,
     zoomDelta,
     isMotorMode,
+    isFreeRide,
+    rideMode,
+    setRideMode,
     isTravelActive,
     setIsTravelActive,
     showDestinationPicker,

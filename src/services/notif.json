@@ -193,22 +193,6 @@
   },
   {
     "no": 13,
-    "id": "compliance_reminder",
-    "pengguna": ["motor", "mobil"],
-    "kategori": "Kepatuhan administrasi",
-    "trigger": "Jatuh tempo SIM, STNK, atau pajak",
-    "data_utama": ["data_administrasi", "waktu"],
-    "sapaan_ringkas": "Masa berlaku hampir habis",
-    "icon": "info",
-    "title": "Pengingat Kepatuhan",
-    "message": "Masa berlaku SIM, STNK, atau pajak kendaraan akan segera berakhir.",
-    "cta": { "type": "open_official_link", "label": "Lihat layanan resmi" },
-    "color": "#3B82F6",
-    "voice_text": "Pengingat. Masa berlaku dokumen kendaraan hampir habis.",
-    "map_offset": { "north": -60, "east": 80 }
-  },
-  {
-    "no": 14,
     "id": "demonstration_activity",
     "pengguna": ["motor", "mobil"],
     "kategori": "Kegiatan masyarakat",
