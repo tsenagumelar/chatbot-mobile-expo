@@ -2,15 +2,30 @@
   {
     "no": 1,
     "id": "fatigue_time_to_rest",
-    "pengguna": ["motor"],
+    "pengguna": [
+      "motor"
+    ],
     "kategori": "Kelelahan berkendara",
     "trigger": "Durasi berkendara > ambang atau jam rawan mengantuk",
-    "data_utama": ["durasi_berkendara", "waktu", "gps"],
+    "data_utama": [
+      "durasi_berkendara",
+      "waktu",
+      "gps"
+    ],
     "sapaan_ringkas": "Saatnya istirahat",
     "icon": "warning",
     "title": "Waspada Kelelahan",
     "message": "Sobat Lantas, kamu sudah berkendara lebih dari 4 jam. Terdapat tempat istirahat 1,5 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "cta": { "type": "find_rest_spot", "label": "Cari tempat istirahat" },
+    "keywords": [
+      "lelah motor",
+      "capek berkendara",
+      "istirahat motor",
+      "ngantuk naik motor"
+    ],
+    "cta": {
+      "type": "find_rest_spot",
+      "label": "Cari tempat istirahat"
+    },
     "action": {
       "type": "offer_rest_area",
       "target": "rest_area",
@@ -20,20 +35,32 @@
     },
     "color": "#F97316",
     "voice_text": "Sobat Lantas, kamu sudah berkendara lebih dari 4 jam. Terdapat tempat istirahat 1,5 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    }
   },
   {
     "no": 2,
     "id": "fatigue_time_to_rest",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Kelelahan mengemudi",
     "trigger": "Durasi mengemudi > ambang atau jam rawan mengantuk",
-    "data_utama": ["durasi_berkendara", "waktu", "gps"],
+    "data_utama": [
+      "durasi_berkendara",
+      "waktu",
+      "gps"
+    ],
     "sapaan_ringkas": "Waktu istirahat",
     "icon": "warning",
     "title": "Risiko Kelelahan",
     "message": "Sobat Lantas, kamu sudah mengemudi lebih dari 4 jam. Terdapat rest area 1,8 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "cta": { "type": "find_rest_area", "label": "Cari rest area" },
+    "cta": {
+      "type": "find_rest_area",
+      "label": "Cari rest area"
+    },
     "action": {
       "type": "offer_rest_area",
       "target": "rest_area",
@@ -43,116 +70,237 @@
     },
     "color": "#F97316",
     "voice_text": "Sobat Lantas, kamu sudah mengemudi lebih dari 4 jam. Terdapat rest area 1,8 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "lelah mengemudi",
+      "capek nyetir",
+      "istirahat mobil",
+      "ngantuk mengemudi"
+    ]
   },
   {
     "no": 3,
     "id": "weather_risk",
-    "pengguna": ["motor"],
+    "pengguna": [
+      "motor"
+    ],
     "kategori": "Risiko cuaca",
     "trigger": "Cuaca ekstrem di lokasi pengguna",
-    "data_utama": ["cuaca", "gps"],
+    "data_utama": [
+      "cuaca",
+      "gps"
+    ],
     "sapaan_ringkas": "Cuaca berisiko",
     "icon": "warning",
     "title": "Risiko Cuaca Buruk",
     "message": "Cuaca buruk terdeteksi di rute kamu. Jalan licin dan jarak pandang berkurang. Kurangi kecepatan dan hindari manuver tajam.",
-    "cta": { "type": "slow_down", "label": "Kurangi kecepatan" },
+    "cta": {
+      "type": "slow_down",
+      "label": "Kurangi kecepatan"
+    },
     "color": "#3B82F6",
     "voice_text": "Perhatian. Cuaca buruk. Kurangi kecepatan dan tetap waspada.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "cuaca buruk motor",
+      "hujan motor",
+      "jalan licin motor"
+    ]
   },
   {
     "no": 4,
     "id": "weather_risk",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Risiko cuaca",
     "trigger": "Cuaca ekstrem di sekitar rute",
-    "data_utama": ["cuaca", "gps"],
+    "data_utama": [
+      "cuaca",
+      "gps"
+    ],
     "sapaan_ringkas": "Kondisi cuaca berisiko",
     "icon": "warning",
     "title": "Waspada Cuaca",
     "message": "Hujan lebat atau kabut terdeteksi. Jarak pengereman bertambah dan visibilitas menurun. Jaga jarak aman.",
-    "cta": { "type": "increase_distance", "label": "Jaga jarak aman" },
+    "cta": {
+      "type": "increase_distance",
+      "label": "Jaga jarak aman"
+    },
     "color": "#3B82F6",
     "voice_text": "Cuaca buruk terdeteksi. Jaga jarak dan kurangi kecepatan.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "cuaca buruk mobil",
+      "hujan mobil",
+      "kabut tebal",
+      "jalan licin mobil"
+    ]
   },
   {
     "no": 5,
     "id": "road_hazard",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Gangguan jalan",
     "trigger": "Gangguan jalan terverifikasi di rute",
-    "data_utama": ["gps", "laporan_masyarakat"],
+    "data_utama": [
+      "gps",
+      "laporan_masyarakat"
+    ],
     "sapaan_ringkas": "Gangguan jalan",
     "icon": "warning",
     "title": "Gangguan Jalan di Depan",
     "message": "Terdapat gangguan jalan seperti lubang atau pekerjaan jalan. Kurangi kecepatan dan siapkan manuver aman.",
-    "cta": { "type": "increase_alertness", "label": "Tetap waspada" },
+    "cta": {
+      "type": "increase_alertness",
+      "label": "Tetap waspada"
+    },
     "color": "#EF4444",
     "voice_text": "Perhatian. Gangguan jalan di depan. Tetap waspada.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "lubang jalan",
+      "gangguan jalan",
+      "kerusakan jalan",
+      "jalan rusak"
+    ]
   },
   {
     "no": 6,
     "id": "school_zone_active",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Zona sekolah",
     "trigger": "Masuk zona sekolah pada jam aktif",
-    "data_utama": ["gps", "zona_sekolah", "waktu"],
+    "data_utama": [
+      "gps",
+      "zona_sekolah",
+      "waktu"
+    ],
     "sapaan_ringkas": "Zona sekolah",
     "icon": "warning",
     "title": "Waspada Zona Sekolah",
     "message": "Kamu memasuki zona sekolah. Banyak anak menyeberang dan aktivitas mendadak. Kurangi kecepatan.",
-    "cta": { "type": "slow_down", "label": "Kurangi kecepatan" },
+    "cta": {
+      "type": "slow_down",
+      "label": "Kurangi kecepatan"
+    },
     "color": "#F59E0B",
     "voice_text": "Zona sekolah aktif. Kurangi kecepatan.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "zona sekolah",
+      "area sekolah",
+      "dekat sekolah",
+      "kawasan sekolah"
+    ]
   },
   {
     "no": 7,
     "id": "helmet_seatbelt",
-    "pengguna": ["motor"],
+    "pengguna": [
+      "motor"
+    ],
     "kategori": "Keselamatan pribadi",
     "trigger": "Mode edukasi atau kampanye keselamatan",
-    "data_utama": ["waktu"],
+    "data_utama": [
+      "waktu"
+    ],
     "sapaan_ringkas": "Gunakan helm",
     "icon": "warning",
     "title": "Helm Menyelamatkan Hidup",
     "message": "Helm melindungi kepala dari cedera fatal. Pastikan helm terpasang dengan benar setiap perjalanan.",
-    "cta": { "type": "confirm_compliance", "label": "Saya sudah pakai helm" },
+    "cta": {
+      "type": "confirm_compliance",
+      "label": "Saya sudah pakai helm"
+    },
     "color": "#22C55E",
     "voice_text": "Pastikan helm terpasang dengan benar sebelum melanjutkan perjalanan.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "helm",
+      "helm motor",
+      "pengingat helm",
+      "keselamatan helm"
+    ]
   },
   {
     "no": 8,
     "id": "seatbelt_reminder",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Keselamatan pribadi",
     "trigger": "Mode edukasi atau kampanye keselamatan",
-    "data_utama": ["waktu"],
+    "data_utama": [
+      "waktu"
+    ],
     "sapaan_ringkas": "Gunakan sabuk",
     "icon": "warning",
     "title": "Pasang Sabuk Keselamatan",
     "message": "Sabuk keselamatan mengurangi risiko cedera fatal saat kecelakaan. Pastikan sabuk terpasang.",
-    "cta": { "type": "confirm_compliance", "label": "Sabuk terpasang" },
+    "cta": {
+      "type": "confirm_compliance",
+      "label": "Sabuk terpasang"
+    },
     "color": "#22C55E",
     "voice_text": "Pastikan sabuk keselamatan terpasang.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "sabuk pengaman",
+      "sabuk keselamatan",
+      "seatbelt",
+      "pengingat sabuk"
+    ]
   },
   {
     "no": 9,
     "id": "ev_charger_info",
-    "pengguna": ["mobil_listrik", "mobil"],
+    "pengguna": [
+      "mobil_listrik",
+      "mobil"
+    ],
     "kategori": "Energi kendaraan",
     "trigger": "Baterai rendah atau dekat SPKLU",
-    "data_utama": ["gps", "level_baterai", "data_spklu"],
+    "data_utama": [
+      "gps",
+      "level_baterai",
+      "data_spklu"
+    ],
     "sapaan_ringkas": "SPKLU terdekat",
     "icon": "battery",
     "title": "Informasi Pengisian Daya",
     "message": "Sobat Lantas, terdapat fasilitas pengisian kendaraan listrik 3 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "cta": { "type": "navigate_spklu", "label": "Arahkan ke SPKLU" },
+    "cta": {
+      "type": "navigate_spklu",
+      "label": "Arahkan ke SPKLU"
+    },
     "action": {
       "type": "offer_charger",
       "target": "charger",
@@ -162,84 +310,174 @@
     },
     "color": "#22C55E",
     "voice_text": "Sobat Lantas, terdapat fasilitas pengisian kendaraan listrik 3 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "charging mobil",
+      "isi daya listrik",
+      "spklu",
+      "stasiun pengisian"
+    ]
   },
   {
     "no": 10,
     "id": "safe_speed_dynamic",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Kecepatan aman",
     "trigger": "Jenis jalan dan kondisi berubah",
-    "data_utama": ["gps", "tipe_jalan", "cuaca"],
+    "data_utama": [
+      "gps",
+      "tipe_jalan",
+      "cuaca"
+    ],
     "sapaan_ringkas": "Kecepatan aman",
     "icon": "warning",
     "title": "Batas Aman Dinamis",
     "message": "Batas kecepatan aman di ruas ini lebih rendah karena kondisi jalan dan lingkungan sekitar.",
-    "cta": { "type": "slow_down", "label": "Sesuaikan kecepatan" },
+    "cta": {
+      "type": "slow_down",
+      "label": "Sesuaikan kecepatan"
+    },
     "color": "#F59E0B",
     "voice_text": "Sesuaikan kecepatan dengan kondisi jalan.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "kecepatan aman",
+      "batas kecepatan",
+      "kurangi kecepatan",
+      "pelan pelan"
+    ]
   },
   {
     "no": 11,
     "id": "event_crowd",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Keramaian & event",
     "trigger": "Event besar di sekitar rute",
-    "data_utama": ["gps", "data_event"],
+    "data_utama": [
+      "gps",
+      "data_event"
+    ],
     "sapaan_ringkas": "Keramaian",
     "icon": "traffic",
     "title": "Keramaian di Sekitar Rute",
     "message": "Terdapat kegiatan besar yang berpotensi menyebabkan kepadatan lalu lintas.",
-    "cta": { "type": "navigate_alternative_route", "label": "Gunakan rute alternatif" },
+    "cta": {
+      "type": "navigate_alternative_route",
+      "label": "Gunakan rute alternatif"
+    },
     "color": "#3B82F6",
     "voice_text": "Keramaian terdeteksi. Gunakan rute alternatif.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "keramaian",
+      "event besar",
+      "acara ramai",
+      "banyak orang"
+    ]
   },
   {
     "no": 12,
     "id": "incident_notification",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Insiden lalu lintas",
     "trigger": "Insiden terdeteksi di rute",
-    "data_utama": ["gps", "data_command_center"],
+    "data_utama": [
+      "gps",
+      "data_command_center"
+    ],
     "sapaan_ringkas": "Insiden di depan",
     "icon": "warning",
     "title": "Insiden Lalu Lintas",
     "message": "Terjadi insiden di depan rute kamu. Kurangi kecepatan dan ikuti arahan lalu lintas.",
-    "cta": { "type": "navigate_alternative_route", "label": "Cari rute alternatif" },
+    "cta": {
+      "type": "navigate_alternative_route",
+      "label": "Cari rute alternatif"
+    },
     "color": "#EF4444",
     "voice_text": "Insiden di depan. Kurangi kecepatan.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "insiden",
+      "kecelakaan",
+      "tabrakan",
+      "kejadian lalu lintas"
+    ]
   },
   {
     "no": 13,
     "id": "demonstration_activity",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Kegiatan masyarakat",
     "trigger": "Informasi aksi massa dari petugas",
-    "data_utama": ["gps", "data_command_center"],
+    "data_utama": [
+      "gps",
+      "data_command_center"
+    ],
     "sapaan_ringkas": "Aktivitas masyarakat",
     "icon": "warning",
     "title": "Aktivitas di Sekitar Rute",
     "message": "Terdapat kegiatan masyarakat di sekitar rute kamu yang berpotensi menimbulkan kepadatan lalu lintas.",
-    "cta": { "type": "navigate_alternative_route", "label": "Hindari area" },
+    "cta": {
+      "type": "navigate_alternative_route",
+      "label": "Hindari area"
+    },
     "color": "#3B82F6",
     "voice_text": "Aktivitas masyarakat di sekitar rute. Gunakan jalur alternatif.",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "demo",
+      "unjuk rasa",
+      "aksi massa",
+      "kegiatan masyarakat"
+    ]
   },
   {
     "no": 14,
     "id": "rest_area_info",
-    "pengguna": ["motor"],
+    "pengguna": [
+      "motor"
+    ],
     "kategori": "Info rest area",
     "trigger": "Rest area terdekat terdeteksi",
-    "data_utama": ["gps", "data_rest_area"],
+    "data_utama": [
+      "gps",
+      "data_rest_area"
+    ],
     "sapaan_ringkas": "Rest area terdekat",
     "icon": "info",
     "title": "Info Rest Area",
     "message": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "cta": { "type": "find_rest_spot", "label": "Arahkan ke rest area" },
+    "cta": {
+      "type": "find_rest_spot",
+      "label": "Arahkan ke rest area"
+    },
     "action": {
       "type": "offer_rest_area",
       "target": "rest_area",
@@ -249,20 +487,36 @@
     },
     "color": "#38BDF8",
     "voice_text": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "rest area motor",
+      "tempat istirahat motor",
+      "area istirahat motor"
+    ]
   },
   {
     "no": 15,
     "id": "rest_area_info",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Info rest area",
     "trigger": "Rest area terdekat terdeteksi",
-    "data_utama": ["gps", "data_rest_area"],
+    "data_utama": [
+      "gps",
+      "data_rest_area"
+    ],
     "sapaan_ringkas": "Rest area terdekat",
     "icon": "info",
     "title": "Info Rest Area",
     "message": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "cta": { "type": "find_rest_area", "label": "Arahkan ke rest area" },
+    "cta": {
+      "type": "find_rest_area",
+      "label": "Arahkan ke rest area"
+    },
     "action": {
       "type": "offer_rest_area",
       "target": "rest_area",
@@ -272,6 +526,14 @@
     },
     "color": "#38BDF8",
     "voice_text": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
-    "map_offset": { "north": -60, "east": 80 }
+    "map_offset": {
+      "north": -60,
+      "east": 80
+    },
+    "keywords": [
+      "rest area mobil",
+      "tempat istirahat mobil",
+      "area istirahat mobil"
+    ]
   }
 ]

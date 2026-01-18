@@ -58,10 +58,15 @@ class SpeechRecognizerModule(
     shouldRestart = continuous
 
     mainHandler.post {
-      if (speechRecognizer == null) {
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(reactContext)
-        speechRecognizer?.setRecognitionListener(this)
+      // Destroy and recreate recognizer for clean state
+      try {
+        speechRecognizer?.destroy()
+      } catch (e: Exception) {
+        Log.w(logTag, "Error destroying previous recognizer: ${e.message}")
       }
+      
+      speechRecognizer = SpeechRecognizer.createSpeechRecognizer(reactContext)
+      speechRecognizer?.setRecognitionListener(this)
 
       try {
         Log.d(
@@ -82,10 +87,15 @@ class SpeechRecognizerModule(
   fun stopListening(promise: Promise) {
     shouldRestart = false
     isListening = false
-    Log.d(logTag, "stopListening")
+    Log.d(logTag, "stopListening - shouldRestart=$shouldRestart")
     mainHandler.post {
-      speechRecognizer?.stopListening()
-      promise.resolve(null)
+      try {
+        speechRecognizer?.stopListening()
+        promise.resolve(null)
+      } catch (e: Exception) {
+        Log.w(logTag, "stopListening error: ${e.message}")
+        promise.resolve(null) // Resolve anyway
+      }
     }
   }
 
@@ -177,22 +187,41 @@ class SpeechRecognizerModule(
   }
 
   override fun onError(error: Int) {
-    Log.e(logTag, "onError code=$error")
+    Log.e(logTag, "onError code=$error message=${errorMessage(error)}")
+    
+    // Ignore common "errors" that are actually normal - user didn't speak or paused
+    if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
+      Log.d(logTag, "Ignoring expected error: ${errorMessage(error)} - NOT restarting")
+      // Don't emit error, don't restart - just stay quiet and wait for user to speak
+      return
+    }
+    
+    // Only emit and restart for real errors
     emitError(error)
+    
     if (shouldRestart && isListening) {
+      Log.d(logTag, "Restarting recognizer after error...")
       mainHandler.postDelayed({ startRecognizer() }, 400)
     }
   }
 
   override fun onResults(results: Bundle?) {
-    Log.d(logTag, "onResults")
+    Log.d(logTag, "onResults continuous=$shouldRestart")
     val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
     val text = matches?.firstOrNull()
     if (!text.isNullOrBlank()) {
+      Log.d(logTag, "Result text: $text")
       emitResult(text, true)
+    } else {
+      Log.d(logTag, "No text in results")
     }
+    
+    // Only restart if continuous mode is enabled
     if (shouldRestart && isListening) {
-      startRecognizer()
+      Log.d(logTag, "Continuous mode - restarting recognizer")
+      mainHandler.postDelayed({ startRecognizer() }, 300)
+    } else {
+      Log.d(logTag, "One-shot mode - not restarting")
     }
   }
 

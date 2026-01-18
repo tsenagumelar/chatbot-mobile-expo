@@ -379,11 +379,10 @@ export default function useMenyapaScreen() {
     };
   }, []);
 
+  // Cleanup only on unmount, not on isListening change
   useEffect(() => {
     return () => {
-      if (isListening) {
-        stopListening();
-      }
+      stopListening();
       if (voiceTimeoutRef.current) {
         clearTimeout(voiceTimeoutRef.current);
         voiceTimeoutRef.current = null;
@@ -393,7 +392,7 @@ export default function useMenyapaScreen() {
         voiceTextTimeoutRef.current = null;
       }
     };
-  }, [isListening]);
+  }, []);
 
   useEffect(() => {
     if (!location) return;
@@ -1518,18 +1517,110 @@ export default function useMenyapaScreen() {
 
     const startVoiceTimeout = () => {
       clearVoiceTimeout();
+      console.log("⏱️ Starting voice timeout (7s)");
       voiceTimeoutRef.current = setTimeout(async () => {
+        console.log("⏱️ Voice timeout reached - stopping");
         await stopListening();
         setIsListening(false);
       }, 7000);
     };
 
     const handleVoiceResult = async (text: string, isFinal?: boolean) => {
+      console.log(
+        `📥 Voice result received - isFinal: ${isFinal}, text: "${text}"`,
+      );
       startVoiceTimeout();
       if (isFinal) {
         setVoiceCaptureText(text);
         scheduleVoiceTextClear();
         const normalized = text.toLowerCase();
+
+        // Debug log - tampilkan apa yang diucapkan
+        console.log("🎤 Voice Input:", text);
+        console.log("📝 Normalized:", normalized);
+        console.log("🚗 Vehicle Mode:", activeVehicle.value);
+
+        // Check for keyword-triggered notifications (priority check)
+        const vehicleMode =
+          activeVehicle.value === "public"
+            ? "angkutan_umum"
+            : activeVehicle.value;
+
+        // Search in route-based notifications (notifData)
+        const routeNotif = (notifData as any[]).find(
+          (item) =>
+            item.pengguna?.includes(vehicleMode) &&
+            item.keywords?.some((keyword: string) =>
+              normalized.includes(keyword.toLowerCase()),
+            ),
+        );
+
+        if (routeNotif) {
+          console.log("✅ Match found (route):", routeNotif.title);
+          const baseLocation = latestLocationRef.current ??
+            location ?? {
+              latitude: -6.914744,
+              longitude: 107.60981,
+            };
+
+          triggerOverlay({
+            text: getOverlaySpeechText(routeNotif) || routeNotif.message,
+            title: routeNotif.title ?? "Notifikasi",
+            category: routeNotif.kategori ?? "",
+            ctaLabel: routeNotif.cta?.label ?? "",
+            action: buildOverlayAction(routeNotif, baseLocation),
+          });
+
+          // Track as shown
+          if (routeNotif.id) {
+            shownNotificationIdsRef.current.add(routeNotif.id);
+          }
+
+          clearVoiceTimeout();
+          await stopListening();
+          setIsListening(false);
+          return;
+        }
+
+        // Search in free ride notifications (notifFreeData)
+        const freeNotif = (notifFreeData as any[]).find(
+          (item) =>
+            item.pengguna?.includes(vehicleMode) &&
+            item.keywords?.some((keyword: string) =>
+              normalized.includes(keyword.toLowerCase()),
+            ),
+        );
+
+        if (freeNotif) {
+          console.log("✅ Match found (free):", freeNotif.title);
+          const baseLocation = latestLocationRef.current ??
+            location ?? {
+              latitude: -6.914744,
+              longitude: 107.60981,
+            };
+
+          triggerOverlay({
+            text: getOverlaySpeechText(freeNotif) || freeNotif.message,
+            title: freeNotif.title ?? "Notifikasi",
+            category: freeNotif.kategori ?? "",
+            ctaLabel: freeNotif.cta?.label ?? "",
+            action: buildOverlayAction(freeNotif, baseLocation),
+          });
+
+          // Track as shown
+          if (freeNotif.id) {
+            shownNotificationIdsRef.current.add(freeNotif.id);
+          }
+
+          clearVoiceTimeout();
+          await stopListening();
+          setIsListening(false);
+          return;
+        }
+
+        // Tidak ada match dengan keywords
+        console.log("❌ No keyword match found");
+
         if (overlayAction && overlayTypingDone) {
           const isYes =
             normalized.includes("ya") ||
@@ -1571,29 +1662,49 @@ export default function useMenyapaScreen() {
     };
 
     const handleVoiceError = (error: string) => {
+      console.log("🔴 Voice Error:", error);
       clearVoiceTimeout();
       clearVoiceTextTimeout();
-      setVoiceInputError(error);
-      scheduleVoiceTextClear();
+
+      // Don't show "No match" error, just silently restart
+      if (error.includes("No match")) {
+        console.log("⚠️ No match - ignoring error");
+      } else {
+        setVoiceInputError(error);
+        scheduleVoiceTextClear();
+      }
+
       stopListening();
       setIsListening(false);
     };
 
     if (isListening) {
+      console.log("🛑 Stopping voice input...");
       clearVoiceTimeout();
       clearVoiceTextTimeout();
-      await stopListening();
       setIsListening(false);
+      await stopListening();
+      console.log("✅ Voice stopped");
       return;
     }
 
+    console.log("🎙️ Starting voice input...");
     setVoiceInputError("");
     setVoiceCaptureText("");
     setVoiceTextVisible(false);
     clearVoiceTextTimeout();
-    setIsListening(true);
-    startVoiceTimeout();
-    await startListening(handleVoiceResult, handleVoiceError, false);
+
+    try {
+      setIsListening(true);
+      startVoiceTimeout();
+      await startListening(handleVoiceResult, handleVoiceError, false);
+      console.log("✅ Voice listening started");
+    } catch (error) {
+      console.log("🔴 Failed to start listening:", error);
+      setIsListening(false);
+      setVoiceInputError("Gagal memulai voice input");
+      scheduleVoiceTextClear();
+    }
   };
 
   return {

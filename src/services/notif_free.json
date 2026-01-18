@@ -2,10 +2,16 @@
   {
     "no": 1,
     "id": "sim_expiry_reminder",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Administrasi kendaraan",
     "trigger": "H-30 / H-7 / H-1 masa berlaku SIM",
-    "data_utama": ["data_sim", "waktu"],
+    "data_utama": [
+      "data_sim",
+      "waktu"
+    ],
     "sapaan_ringkas": "SIM hampir habis",
     "icon": "info",
     "title": "Masa Berlaku SIM",
@@ -16,15 +22,30 @@
     },
     "color": "#3B82F6",
     "voice_text": "Pengingat. Masa berlaku SIM kamu akan segera berakhir.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "sim habis",
+      "perpanjang sim",
+      "masa sim",
+      "sim expired"
+    ]
   },
   {
     "no": 2,
     "id": "stnk_expiry_reminder",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Administrasi kendaraan",
     "trigger": "H-30 / H-7 / H-1 masa berlaku STNK",
-    "data_utama": ["data_stnk", "waktu"],
+    "data_utama": [
+      "data_stnk",
+      "waktu"
+    ],
     "sapaan_ringkas": "STNK hampir habis",
     "icon": "info",
     "title": "Masa Berlaku STNK",
@@ -35,15 +56,30 @@
     },
     "color": "#3B82F6",
     "voice_text": "Pengingat. Masa berlaku STNK akan segera berakhir.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "stnk habis",
+      "perpanjang stnk",
+      "masa stnk",
+      "stnk expired"
+    ]
   },
   {
     "no": 3,
     "id": "tax_payment_reminder",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Pajak kendaraan",
     "trigger": "Jatuh tempo pajak kendaraan",
-    "data_utama": ["data_pajak", "waktu"],
+    "data_utama": [
+      "data_pajak",
+      "waktu"
+    ],
     "sapaan_ringkas": "Pajak kendaraan",
     "icon": "info",
     "title": "Bayar Pajak Kendaraan",
@@ -54,15 +90,29 @@
     },
     "color": "#22C55E",
     "voice_text": "Pengingat pembayaran pajak kendaraan.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "bayar pajak",
+      "pajak kendaraan",
+      "pajak motor",
+      "pajak mobil"
+    ]
   },
   {
     "no": 4,
     "id": "official_letter_confirmation",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Layanan kepolisian",
     "trigger": "Pengiriman surat atau dokumen konfirmasi",
-    "data_utama": ["data_surat"],
+    "data_utama": [
+      "data_surat"
+    ],
     "sapaan_ringkas": "Surat konfirmasi",
     "icon": "info",
     "title": "Surat Konfirmasi Dikirim",
@@ -73,15 +123,30 @@
     },
     "color": "#3B82F6",
     "voice_text": "Surat konfirmasi telah dikirim.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "surat polisi",
+      "dokumen polisi",
+      "konfirmasi surat",
+      "surat resmi"
+    ]
   },
   {
     "no": 5,
     "id": "demonstration_info",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Informasi lalu lintas",
     "trigger": "Informasi unjuk rasa dari petugas atau command center",
-    "data_utama": ["data_command_center", "wilayah"],
+    "data_utama": [
+      "data_command_center",
+      "wilayah"
+    ],
     "sapaan_ringkas": "Info kegiatan masyarakat",
     "icon": "warning",
     "title": "Informasi Kegiatan Masyarakat",
@@ -92,15 +157,28 @@
     },
     "color": "#F59E0B",
     "voice_text": "Informasi kegiatan masyarakat yang dapat memengaruhi lalu lintas.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "info demo",
+      "kegiatan masyarakat",
+      "unjuk rasa hari ini"
+    ]
   },
   {
     "no": 6,
     "id": "puncak_route_open_close",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Rekayasa lalu lintas",
     "trigger": "Status buka tutup jalur Puncak",
-    "data_utama": ["status_jalur", "waktu"],
+    "data_utama": [
+      "status_jalur",
+      "waktu"
+    ],
     "sapaan_ringkas": "Info jalur Puncak",
     "icon": "traffic",
     "title": "Buka Tutup Jalur Puncak",
@@ -111,15 +189,29 @@
     },
     "color": "#3B82F6",
     "voice_text": "Informasi buka tutup jalur Puncak.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "jalur puncak",
+      "buka tutup puncak",
+      "rute puncak",
+      "akses puncak"
+    ]
   },
   {
     "no": 7,
     "id": "toll_contraflow_morning",
-    "pengguna": ["mobil"],
+    "pengguna": [
+      "mobil"
+    ],
     "kategori": "Rekayasa lalu lintas",
     "trigger": "Penerapan contraflow tol pagi hari",
-    "data_utama": ["data_tol", "waktu"],
+    "data_utama": [
+      "data_tol",
+      "waktu"
+    ],
     "sapaan_ringkas": "Contraflow tol",
     "icon": "traffic",
     "title": "Contraflow Tol Pagi",
@@ -130,15 +222,29 @@
     },
     "color": "#3B82F6",
     "voice_text": "Informasi contraflow tol pagi hari.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "contraflow tol",
+      "jalur tol berlawanan",
+      "tol pagi"
+    ]
   },
   {
     "no": 8,
     "id": "weather_general_info",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Informasi cuaca",
     "trigger": "Peringatan cuaca wilayah",
-    "data_utama": ["cuaca", "wilayah"],
+    "data_utama": [
+      "cuaca",
+      "wilayah"
+    ],
     "sapaan_ringkas": "Info cuaca",
     "icon": "info",
     "title": "Informasi Cuaca",
@@ -149,15 +255,30 @@
     },
     "color": "#3B82F6",
     "voice_text": "Informasi cuaca terbaru.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "info cuaca",
+      "prakiraan cuaca",
+      "cuaca hari ini",
+      "ramalan cuaca"
+    ]
   },
   {
     "no": 9,
     "id": "disaster_alert",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Bencana alam",
     "trigger": "Peringatan bencana dari instansi terkait",
-    "data_utama": ["data_bencana", "wilayah"],
+    "data_utama": [
+      "data_bencana",
+      "wilayah"
+    ],
     "sapaan_ringkas": "Peringatan bencana",
     "icon": "warning",
     "title": "Informasi Bencana Alam",
@@ -168,15 +289,29 @@
     },
     "color": "#EF4444",
     "voice_text": "Peringatan bencana alam. Tetap waspada.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "tempat parkir",
+      "area parkir",
+      "parkir terdekat",
+      "cari parkir"
+    ]
   },
   {
     "no": 10,
     "id": "general_safety_info",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Edukasi keselamatan",
     "trigger": "Kampanye keselamatan berkala",
-    "data_utama": ["waktu"],
+    "data_utama": [
+      "waktu"
+    ],
     "sapaan_ringkas": "Tips keselamatan",
     "icon": "info",
     "title": "Pengingat Keselamatan",
@@ -187,15 +322,31 @@
     },
     "color": "#22C55E",
     "voice_text": "Pengingat keselamatan berkendara.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "tips keselamatan",
+      "edukasi berkendara",
+      "safety tips",
+      "cara aman"
+    ]
   },
   {
     "no": 11,
     "id": "police_operation_info",
-    "pengguna": ["motor", "mobil"],
+    "pengguna": [
+      "motor",
+      "mobil"
+    ],
     "kategori": "Operasi kepolisian",
     "trigger": "Pelaksanaan operasi kepolisian",
-    "data_utama": ["data_operasi", "wilayah", "periode"],
+    "data_utama": [
+      "data_operasi",
+      "wilayah",
+      "periode"
+    ],
     "sapaan_ringkas": "Info operasi kepolisian",
     "icon": "info",
     "title": "Pelaksanaan Operasi Kepolisian",
@@ -206,6 +357,15 @@
     },
     "color": "#3B82F6",
     "voice_text": "Informasi pelaksanaan operasi kepolisian.",
-    "map_offset": { "north": 0, "east": 0 }
+    "map_offset": {
+      "north": 0,
+      "east": 0
+    },
+    "keywords": [
+      "rumah sakit terdekat",
+      "rs terdekat",
+      "fasilitas kesehatan",
+      "hospital"
+    ]
   }
 ]
