@@ -12,7 +12,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Circle, Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, {
+  Circle,
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+} from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
 import useMenyapaScreen from "./hooks";
 
@@ -62,6 +67,12 @@ export default function MenyapaScreen() {
     showResumePrompt,
     setShowResumePrompt,
     handleResumePrompt,
+    speechAvailable,
+    isListening,
+    voiceInputError,
+    voiceCaptureText,
+    voiceTextVisible,
+    toggleVoiceInput,
   } = useMenyapaScreen();
 
   return (
@@ -71,64 +82,65 @@ export default function MenyapaScreen() {
       </View>
       <View style={styles.mapWrapper}>
         {/* {isMotorMode && ( */}
-          <View style={styles.destinationBox}>
-            <View style={styles.destinationInput}>
-              <Ionicons name="navigate" size={16} color="#0B1E6B" />
-              <TextInput
-                ref={destinationInputRef}
-                style={styles.destinationSearchInput}
-                value={destinationQuery}
-                onChangeText={(text) => {
-                  setDestinationQuery(text);
-                  if (!showDestinationPicker) {
-                    setShowDestinationPicker(true);
-                  }
+        <View style={styles.destinationBox}>
+          <View style={styles.destinationInput}>
+            <Ionicons name="navigate" size={16} color="#0B1E6B" />
+            <TextInput
+              ref={destinationInputRef}
+              style={styles.destinationSearchInput}
+              value={destinationQuery}
+              onChangeText={(text) => {
+                setDestinationQuery(text);
+                if (!showDestinationPicker) {
+                  setShowDestinationPicker(true);
+                }
+              }}
+              placeholder="Cari lokasi tujuan..."
+              placeholderTextColor="#94A3B8"
+              autoCorrect={false}
+              autoCapitalize="none"
+              returnKeyType="search"
+              onFocus={() => setShowDestinationPicker(true)}
+            />
+            {destinationQuery.length > 0 || selectedDestination ? (
+              <TouchableOpacity
+                style={styles.destinationClearButton}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  handleClearDestination();
                 }}
-                placeholder="Cari lokasi tujuan..."
-                placeholderTextColor="#94A3B8"
-                autoCorrect={false}
-                autoCapitalize="none"
-                returnKeyType="search"
-                onFocus={() => setShowDestinationPicker(true)}
-              />
-              {destinationQuery.length > 0 || selectedDestination ? (
-                <TouchableOpacity
-                  style={styles.destinationClearButton}
-                  onPress={(event) => {
-                    event.stopPropagation();
-                    handleClearDestination();
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="close-circle" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-              ) : null}
-            </View>
-            {showDestinationPicker && (
-              <View style={styles.destinationList}>
-                <View style={styles.destinationResults}>
-                  {destinationResults.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.destinationItem}
-                      onPress={() => {
-                        Keyboard.dismiss();
-                        destinationInputRef.current?.blur();
-                        handleSelectDestination(item.id);
-                      }}
-                    >
-                      <Text style={styles.destinationItemText}>{item.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                  {destinationResults.length === 0 && destinationQuery.length >= 3 && (
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close-circle" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {showDestinationPicker && (
+            <View style={styles.destinationList}>
+              <View style={styles.destinationResults}>
+                {destinationResults.map((item) => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.destinationItem}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      destinationInputRef.current?.blur();
+                      handleSelectDestination(item.id);
+                    }}
+                  >
+                    <Text style={styles.destinationItemText}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+                {destinationResults.length === 0 &&
+                  destinationQuery.length >= 3 && (
                     <Text style={styles.destinationEmpty}>
                       {destinationError || "Tidak ada hasil."}
                     </Text>
                   )}
-                </View>
               </View>
-            )}
-          </View>
+            </View>
+          )}
+        </View>
         {/* )} */}
         <MapView
           ref={mapRef}
@@ -145,7 +157,11 @@ export default function MenyapaScreen() {
           showsScale={true}
         >
           {routeOrigin && (
-            <Marker coordinate={routeOrigin} title="Titik Start">
+            <Marker
+              coordinate={routeOrigin}
+              title="Titik Start"
+              tracksViewChanges={false}
+            >
               <View style={styles.routeMarkerStart}>
                 <Ionicons name="flag" size={14} color="#FFFFFF" />
               </View>
@@ -161,20 +177,25 @@ export default function MenyapaScreen() {
             />
           )}
           {routePoints.length > 1 && (
-            <Polyline coordinates={routePoints} strokeWidth={4} strokeColor="#0C3AC5" />
+            <Polyline
+              coordinates={routePoints}
+              strokeWidth={4}
+              strokeColor="#0C3AC5"
+            />
           )}
-          {routeZones.map((zone, index) => (
+          {routeZones.slice(0, 5).map((zone, index) => (
             <Marker
               key={`route-zone-marker-${index}`}
               coordinate={zone.center}
               title={zone.title}
+              tracksViewChanges={false}
             >
               <View style={styles.routeMarkerZone}>
                 <Ionicons name={zone.icon as any} size={12} color="#FFFFFF" />
               </View>
             </Marker>
           ))}
-          {routeZones.map((zone, index) => (
+          {routeZones.slice(0, 5).map((zone, index) => (
             <Circle
               key={`route-zone-${index}`}
               center={zone.center}
@@ -191,6 +212,7 @@ export default function MenyapaScreen() {
                 longitude: selectedDestination.longitude,
               }}
               title={selectedDestination.label}
+              tracksViewChanges={false}
             >
               <View
                 style={[
@@ -201,18 +223,22 @@ export default function MenyapaScreen() {
                     styles.routeMarkerFinishCharger,
                 ]}
               >
-                <Ionicons name={destinationIcon as any} size={14} color="#FFFFFF" />
+                <Ionicons
+                  name={destinationIcon as any}
+                  size={14}
+                  color="#FFFFFF"
+                />
               </View>
             </Marker>
           )}
           {location && (
             <Marker
+              key={`user-${location.latitude}-${location.longitude}`}
               coordinate={{
                 latitude: location.latitude,
                 longitude: location.longitude,
               }}
               title="Lokasi Anda"
-              tracksViewChanges={true}
               anchor={{ x: 0.5, y: 0.5 }}
               zIndex={10}
             >
@@ -247,10 +273,7 @@ export default function MenyapaScreen() {
         </View>
         <View style={styles.floatingStack}>
           <TouchableOpacity
-            style={[
-              styles.modeButton,
-              !isFreeRide && styles.modeButtonActive,
-            ]}
+            style={[styles.modeButton, !isFreeRide && styles.modeButtonActive]}
             onPress={() => {
               if (isFreeRide) {
                 setRideMode("normal");
@@ -293,6 +316,19 @@ export default function MenyapaScreen() {
               color={isTravelActive ? "#FFFFFF" : "#0B1E6B"}
             />
           </TouchableOpacity>
+          {speechAvailable && (
+            <TouchableOpacity
+              style={[styles.micButton, isListening && styles.micButtonActive]}
+              onPress={toggleVoiceInput}
+              activeOpacity={0.9}
+            >
+              <Ionicons
+                name={isListening ? "mic" : "mic-outline"}
+                size={18}
+                color={isListening ? "#FFFFFF" : "#0B1E6B"}
+              />
+            </TouchableOpacity>
+          )}
           {showVehiclePicker && (
             <View style={styles.vehiclePicker}>
               {vehicleOptions.map((option) => (
@@ -300,7 +336,8 @@ export default function MenyapaScreen() {
                   key={option.value}
                   style={[
                     styles.vehicleOption,
-                    option.value === activeVehicle.value && styles.vehicleOptionActive,
+                    option.value === activeVehicle.value &&
+                      styles.vehicleOptionActive,
                   ]}
                   onPress={() => {
                     setOnboarding({ primary_vehicle: option.value });
@@ -310,7 +347,8 @@ export default function MenyapaScreen() {
                   <Text
                     style={[
                       styles.vehicleEmoji,
-                      option.value === activeVehicle.value && styles.vehicleEmojiActive,
+                      option.value === activeVehicle.value &&
+                        styles.vehicleEmojiActive,
                     ]}
                   >
                     {option.emoji}
@@ -343,6 +381,20 @@ export default function MenyapaScreen() {
             </View>
           </View>
         )}
+        {speechAvailable &&
+          voiceTextVisible &&
+          (voiceCaptureText || voiceInputError) && (
+            <View style={styles.voiceFloatingText}>
+              <Text
+                style={[
+                  styles.voiceFloatingTextValue,
+                  voiceInputError && styles.voiceFloatingTextError,
+                ]}
+              >
+                {voiceInputError || voiceCaptureText}
+              </Text>
+            </View>
+          )}
       </View>
 
       {showOverlay && (
@@ -414,14 +466,19 @@ export default function MenyapaScreen() {
                 source={require("@/assets/images/logo-baru.png")}
                 style={styles.overlayPillLogo}
               />
-              <Text style={styles.overlayPillText}>{overlayTitle || "Notifikasi"}</Text>
+              <Text style={styles.overlayPillText}>
+                {overlayTitle || "Notifikasi"}
+              </Text>
               <Ionicons name="radio" size={14} color="#0C3AC5" />
             </View>
             <Text style={styles.overlayText}>{typedOverlayText}</Text>
             {overlayAction && overlayTypingDone && (
               <View style={styles.overlayActions}>
                 <TouchableOpacity
-                  style={[styles.overlayActionButton, styles.overlayActionPrimary]}
+                  style={[
+                    styles.overlayActionButton,
+                    styles.overlayActionPrimary,
+                  ]}
                   onPress={() => handleOverlayAction("accept")}
                   activeOpacity={0.85}
                 >
@@ -430,7 +487,10 @@ export default function MenyapaScreen() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.overlayActionButton, styles.overlayActionGhost]}
+                  style={[
+                    styles.overlayActionButton,
+                    styles.overlayActionGhost,
+                  ]}
                   onPress={() => handleOverlayAction("decline")}
                   activeOpacity={0.85}
                 >
@@ -438,6 +498,22 @@ export default function MenyapaScreen() {
                     {overlayAction.labelNo}
                   </Text>
                 </TouchableOpacity>
+                {speechAvailable && (
+                  <TouchableOpacity
+                    style={[
+                      styles.overlayActionMic,
+                      isListening && styles.overlayActionMicActive,
+                    ]}
+                    onPress={toggleVoiceInput}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons
+                      name={isListening ? "mic" : "mic-outline"}
+                      size={16}
+                      color="#FFFFFF"
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
             )}
             <LottieView
@@ -459,13 +535,31 @@ export default function MenyapaScreen() {
           >
             <Ionicons name="close" size={16} color="#0B1E6B" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.resumeButton}
-            onPress={handleResumePrompt}
-            activeOpacity={0.9}
-          >
-            <Text style={styles.resumeButtonText}>Lanjutkan perjalanan</Text>
-          </TouchableOpacity>
+          <View style={styles.resumeButtonContainer}>
+            <TouchableOpacity
+              style={styles.resumeButton}
+              onPress={handleResumePrompt}
+              activeOpacity={0.9}
+            >
+              <Text style={styles.resumeButtonText}>Lanjutkan perjalanan</Text>
+            </TouchableOpacity>
+            {speechAvailable && (
+              <TouchableOpacity
+                style={[
+                  styles.resumeMicButton,
+                  isListening && styles.resumeMicButtonActive,
+                ]}
+                onPress={toggleVoiceInput}
+                activeOpacity={0.9}
+              >
+                <Ionicons
+                  name={isListening ? "mic" : "mic-outline"}
+                  size={18}
+                  color={isListening ? "#FFFFFF" : "#0B1E6B"}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -580,6 +674,25 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   travelButtonActive: {
+    backgroundColor: "#0C3AC5",
+    borderColor: "#0C3AC5",
+  },
+  micButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E0E7FF",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  micButtonActive: {
     backgroundColor: "#0C3AC5",
     borderColor: "#0C3AC5",
   },
@@ -787,6 +900,30 @@ const styles = StyleSheet.create({
     color: "#6B7280",
     textAlign: "center",
   },
+  voiceFloatingText: {
+    position: "absolute",
+    left: 18,
+    right: 18,
+    bottom: 110,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "transparent",
+    zIndex: 1002,
+  },
+  voiceFloatingTextValue: {
+    color: "#E2E8F0",
+    fontWeight: "600",
+    fontSize: 20,
+    textTransform: "uppercase",
+    textAlign: "center",
+    textShadowColor: "#0C3AC5",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 2,
+  },
+  voiceFloatingTextError: {
+    color: "#FFFFFF",
+  },
   overlay: {
     position: "absolute",
     left: 0,
@@ -867,6 +1004,21 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 14,
   },
+  overlayActionMic: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.7)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+  },
+  overlayActionMicActive: {
+    backgroundColor: "#0C3AC5",
+    borderColor: "#0C3AC5",
+  },
   resumePrompt: {
     position: "absolute",
     left: 20,
@@ -893,7 +1045,13 @@ const styles = StyleSheet.create({
     elevation: 4,
     zIndex: 2,
   },
+  resumeButtonContainer: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
   resumeButton: {
+    flex: 1,
     backgroundColor: "#FFFFFF",
     borderRadius: 999,
     paddingVertical: 14,
@@ -911,6 +1069,25 @@ const styles = StyleSheet.create({
     color: "#0B1E6B",
     fontWeight: "700",
     fontSize: 15,
+  },
+  resumeMicButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
+  resumeMicButtonActive: {
+    backgroundColor: "#0C3AC5",
+    borderColor: "#0C3AC5",
   },
   overlayCta: {
     fontSize: 16,

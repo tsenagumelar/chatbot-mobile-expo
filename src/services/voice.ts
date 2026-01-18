@@ -132,7 +132,8 @@ export async function isSpeechRecognitionAvailable(): Promise<boolean> {
 
 export async function startListening(
   onResult: (transcript: string, isFinal?: boolean) => void,
-  onError?: (error: string) => void
+  onError?: (error: string) => void,
+  continuous = false
 ): Promise<void> {
   if (Platform.OS !== "android" || !SpeechRecognizerModule) {
     onError?.("Speech recognition only available on Android native");
@@ -170,7 +171,7 @@ export async function startListening(
   );
 
   try {
-    await SpeechRecognizerModule.startListening("id-ID", true, false);
+    await SpeechRecognizerModule.startListening("id-ID", true, continuous);
   } catch (error: any) {
     onError?.(error?.message || "Failed to start listening");
   }
