@@ -9,10 +9,17 @@
     "sapaan_ringkas": "Saatnya istirahat",
     "icon": "warning",
     "title": "Waspada Kelelahan",
-    "message": "Kamu sudah berkendara cukup lama. Kelelahan dan microsleep meningkatkan risiko kecelakaan. Disarankan berhenti dan istirahat sejenak.",
+    "message": "Sobat Lantas, kamu sudah berkendara lebih dari 4 jam. Terdapat tempat istirahat 1,5 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "cta": { "type": "find_rest_spot", "label": "Cari tempat istirahat" },
+    "action": {
+      "type": "offer_rest_area",
+      "target": "rest_area",
+      "distance_km": 1.5,
+      "label_yes": "Ya, arahkan",
+      "label_no": "Tidak"
+    },
     "color": "#F97316",
-    "voice_text": "Perhatian. Kamu sudah lama berkendara. Segera istirahat di tempat aman.",
+    "voice_text": "Sobat Lantas, kamu sudah berkendara lebih dari 4 jam. Terdapat tempat istirahat 1,5 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "map_offset": { "north": -60, "east": 80 }
   },
   {
@@ -25,10 +32,17 @@
     "sapaan_ringkas": "Waktu istirahat",
     "icon": "warning",
     "title": "Risiko Kelelahan",
-    "message": "Kamu sudah mengemudi terlalu lama tanpa jeda. Fokus dan refleks menurun. Disarankan berhenti di rest area terdekat.",
+    "message": "Sobat Lantas, kamu sudah mengemudi lebih dari 4 jam. Terdapat rest area 1,8 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "cta": { "type": "find_rest_area", "label": "Cari rest area" },
+    "action": {
+      "type": "offer_rest_area",
+      "target": "rest_area",
+      "distance_km": 1.8,
+      "label_yes": "Ya, arahkan",
+      "label_no": "Tidak"
+    },
     "color": "#F97316",
-    "voice_text": "Risiko kelelahan terdeteksi. Cari rest area dan beristirahat.",
+    "voice_text": "Sobat Lantas, kamu sudah mengemudi lebih dari 4 jam. Terdapat rest area 1,8 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "map_offset": { "north": -60, "east": 80 }
   },
   {
@@ -137,10 +151,17 @@
     "sapaan_ringkas": "SPKLU terdekat",
     "icon": "battery",
     "title": "Informasi Pengisian Daya",
-    "message": "Baterai kendaraan mulai menurun. Tersedia SPKLU di sekitar rute kamu.",
+    "message": "Sobat Lantas, terdapat fasilitas pengisian kendaraan listrik 3 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "cta": { "type": "navigate_spklu", "label": "Arahkan ke SPKLU" },
+    "action": {
+      "type": "offer_charger",
+      "target": "charger",
+      "distance_km": 3,
+      "label_yes": "Ya, arahkan",
+      "label_no": "Tidak"
+    },
     "color": "#22C55E",
-    "voice_text": "Baterai rendah. SPKLU tersedia di sekitar.",
+    "voice_text": "Sobat Lantas, terdapat fasilitas pengisian kendaraan listrik 3 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "map_offset": { "north": -60, "east": 80 }
   },
   {
@@ -205,6 +226,52 @@
     "cta": { "type": "navigate_alternative_route", "label": "Hindari area" },
     "color": "#3B82F6",
     "voice_text": "Aktivitas masyarakat di sekitar rute. Gunakan jalur alternatif.",
+    "map_offset": { "north": -60, "east": 80 }
+  },
+  {
+    "no": 14,
+    "id": "rest_area_info",
+    "pengguna": ["motor"],
+    "kategori": "Info rest area",
+    "trigger": "Rest area terdekat terdeteksi",
+    "data_utama": ["gps", "data_rest_area"],
+    "sapaan_ringkas": "Rest area terdekat",
+    "icon": "info",
+    "title": "Info Rest Area",
+    "message": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
+    "cta": { "type": "find_rest_spot", "label": "Arahkan ke rest area" },
+    "action": {
+      "type": "offer_rest_area",
+      "target": "rest_area",
+      "distance_km": 2,
+      "label_yes": "Ya, arahkan",
+      "label_no": "Tidak"
+    },
+    "color": "#38BDF8",
+    "voice_text": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
+    "map_offset": { "north": -60, "east": 80 }
+  },
+  {
+    "no": 15,
+    "id": "rest_area_info",
+    "pengguna": ["mobil"],
+    "kategori": "Info rest area",
+    "trigger": "Rest area terdekat terdeteksi",
+    "data_utama": ["gps", "data_rest_area"],
+    "sapaan_ringkas": "Rest area terdekat",
+    "icon": "info",
+    "title": "Info Rest Area",
+    "message": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
+    "cta": { "type": "find_rest_area", "label": "Arahkan ke rest area" },
+    "action": {
+      "type": "offer_rest_area",
+      "target": "rest_area",
+      "distance_km": 2,
+      "label_yes": "Ya, arahkan",
+      "label_no": "Tidak"
+    },
+    "color": "#38BDF8",
+    "voice_text": "Sobat Lantas, terdapat rest area 2 km dari posisi kamu sekarang. Apakah ingin saya arahkan ke lokasi tersebut?",
     "map_offset": { "north": -60, "east": 80 }
   }
 ]

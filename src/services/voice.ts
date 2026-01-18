@@ -1,5 +1,11 @@
 import * as Speech from "expo-speech";
 import { sanitizeSpeechText } from "@/src/utils/speech";
+import {
+  NativeEventEmitter,
+  NativeModules,
+  PermissionsAndroid,
+  Platform,
+} from "react-native";
 
 /**
  * Speak text using Text-to-Speech
@@ -81,88 +87,112 @@ export async function getAvailableVoices(): Promise<Speech.Voice[]> {
 // Note: Requires Development Build, not available in Expo Go
 // ============================================
 
-/**
- * Placeholder: Voice input not available in Expo Go
- * Uncomment when using Development Build
- */
+const { SpeechRecognizerModule } = NativeModules;
+let speechEmitter: NativeEventEmitter | null = null;
+let resultSubscription: { remove: () => void } | null = null;
+let errorSubscription: { remove: () => void } | null = null;
 
-/*
-// Uncomment these imports when using Development Build:
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from 'expo-speech-recognition';
+const ensureEmitter = () => {
+  if (!speechEmitter && SpeechRecognizerModule) {
+    speechEmitter = new NativeEventEmitter(SpeechRecognizerModule);
+  }
+  return speechEmitter;
+};
+
+const clearSubscriptions = () => {
+  resultSubscription?.remove();
+  errorSubscription?.remove();
+  resultSubscription = null;
+  errorSubscription = null;
+};
 
 export async function requestSpeechRecognitionPermission(): Promise<boolean> {
-  try {
-    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    return result.status === 'granted';
-  } catch (error) {
-    console.error('❌ Error requesting permission:', error);
+  if (Platform.OS !== "android") {
     return false;
   }
+
+  const result = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+  );
+  return result === PermissionsAndroid.RESULTS.GRANTED;
 }
 
 export async function isSpeechRecognitionAvailable(): Promise<boolean> {
+  if (Platform.OS !== "android" || !SpeechRecognizerModule) {
+    return false;
+  }
+
   try {
-    const state = await ExpoSpeechRecognitionModule.getStateAsync();
-    return state !== 'unavailable';
+    return await SpeechRecognizerModule.isAvailable();
   } catch (error) {
+    console.error("❌ Error checking speech availability:", error);
     return false;
   }
 }
 
 export async function startListening(
-  onResult: (transcript: string) => void,
+  onResult: (transcript: string, isFinal?: boolean) => void,
   onError?: (error: string) => void
 ): Promise<void> {
-  try {
-    const hasPermission = await requestSpeechRecognitionPermission();
-    if (!hasPermission) {
-      onError?.('Permission denied');
-      return;
+  if (Platform.OS !== "android" || !SpeechRecognizerModule) {
+    onError?.("Speech recognition only available on Android native");
+    return;
+  }
+
+  const hasPermission = await requestSpeechRecognitionPermission();
+  if (!hasPermission) {
+    onError?.("Microphone permission denied");
+    return;
+  }
+
+  clearSubscriptions();
+
+  const emitter = ensureEmitter();
+  if (!emitter) {
+    onError?.("Speech recognizer not initialized");
+    return;
+  }
+
+  resultSubscription = emitter.addListener(
+    "SpeechRecognizerResult",
+    (payload: { text?: string; isFinal?: boolean }) => {
+      if (payload?.text) {
+        onResult(payload.text, payload.isFinal);
+      }
     }
+  );
 
-    await ExpoSpeechRecognitionModule.start({
-      lang: 'id-ID',
-      interimResults: true,
-      maxAlternatives: 1,
-      continuous: false,
-    });
+  errorSubscription = emitter.addListener(
+    "SpeechRecognizerError",
+    (payload: { message?: string }) => {
+      onError?.(payload?.message || "Speech recognition error");
+    }
+  );
+
+  try {
+    await SpeechRecognizerModule.startListening("id-ID", true, false);
   } catch (error: any) {
-    onError?.(error.message || 'Failed to start listening');
+    onError?.(error?.message || "Failed to start listening");
   }
 }
 
 export async function stopListening(): Promise<void> {
-  await ExpoSpeechRecognitionModule.stop();
+  if (Platform.OS !== "android" || !SpeechRecognizerModule) {
+    return;
+  }
+
+  clearSubscriptions();
+  await SpeechRecognizerModule.stopListening();
 }
 
-export { useSpeechRecognitionEvent };
-*/
-
-// Temporary stubs for Expo Go compatibility
-export async function requestSpeechRecognitionPermission(): Promise<boolean> {
-  console.warn("⚠️ Speech recognition requires Development Build");
-  return false;
-}
-
-export async function isSpeechRecognitionAvailable(): Promise<boolean> {
-  return false;
-}
-
-export async function startListening(
-  onResult: (transcript: string) => void,
-  onError?: (error: string) => void
-): Promise<void> {
-  onError?.("Speech recognition requires Development Build");
-}
-
-export async function stopListening(): Promise<void> {
-  console.log("Speech recognition not available");
-}
-
-// Dummy export for compatibility
-export const useSpeechRecognitionEvent = (event: string, handler: any) => {
-  // No-op in Expo Go
+export const useSpeechRecognitionEvent = (
+  event: string,
+  handler: (payload: any) => void
+) => {
+  const emitter = ensureEmitter();
+  if (!emitter) {
+    return () => {};
+  }
+  const subscription = emitter.addListener(event, handler);
+  return () => subscription.remove();
 };

@@ -29,35 +29,43 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
     return null;
   }
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
 
-  if (existingStatus !== "granted") {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
 
-  if (finalStatus !== "granted") {
-    console.warn("Notification permission not granted.");
+    if (finalStatus !== "granted") {
+      console.warn("Notification permission not granted.");
+      return null;
+    }
+
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+        name: "alerts",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#007AFF",
+        sound: NOTIFICATION_SOUND_ANDROID,
+      });
+    }
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId;
+
+    const tokenResponse = projectId
+      ? await Notifications.getExpoPushTokenAsync({ projectId })
+      : await Notifications.getExpoPushTokenAsync();
+
+    return tokenResponse.data;
+  } catch (error) {
+    console.warn(
+      "Push notification setup skipped (likely missing Firebase config):",
+      error
+    );
     return null;
   }
-
-  if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
-      name: "alerts",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#007AFF",
-      sound: NOTIFICATION_SOUND_ANDROID,
-    });
-  }
-
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId;
-
-  const tokenResponse = projectId
-    ? await Notifications.getExpoPushTokenAsync({ projectId })
-    : await Notifications.getExpoPushTokenAsync();
-
-  return tokenResponse.data;
 }

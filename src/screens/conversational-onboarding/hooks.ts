@@ -1,4 +1,9 @@
 import { requestLocationPermission } from "@/src/services/location";
+import {
+  isSpeechRecognitionAvailable,
+  startListening,
+  stopListening,
+} from "@/src/services/voice";
 import onboardFlow from "@/src/services/onboard.json";
 import { useStore } from "@/src/store/useStore";
 import { sanitizeSpeechText } from "@/src/utils/speech";
@@ -62,8 +67,16 @@ export default function useConversationalOnboardingScreen() {
     { id: string; label: string }[]
   >([]);
   const [placesError, setPlacesError] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [speechAvailable, setSpeechAvailable] = useState(false);
+  const [voiceInputError, setVoiceInputError] = useState("");
+  const [autoAdvanceSeconds, setAutoAdvanceSeconds] = useState(0);
   const inputAnim = useRef(new Animated.Value(0)).current;
   const voicePulse = useRef(new Animated.Value(0)).current;
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoAdvanceValueRef = useRef<string | string[] | null>(null);
+  const autoAdvanceStepRef = useRef<string | null>(null);
 
   const currentStep = flow.steps[currentStepId];
   const placesApiKey =
@@ -130,7 +143,38 @@ export default function useConversationalOnboardingScreen() {
     }
 
     return () => clearInterval(interval);
-  }, [assistantText, currentStep, inputAnim, onboarding, silentMode]);
+  }, [assistantText, currentStep, inputAnim, silentMode]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const prepareSpeech = async () => {
+      const voiceSteps = new Set(["ASK_NAME", "ASK_VEHICLE", "SEARCH_DESTINATION"]);
+      if (!voiceSteps.has(currentStepId)) {
+        if (isListening) {
+          await stopListening();
+          if (isActive) {
+            setIsListening(false);
+          }
+        }
+        if (isActive) {
+          setSpeechAvailable(false);
+        }
+        return;
+      }
+
+      const available = await isSpeechRecognitionAvailable();
+      if (isActive) {
+        setSpeechAvailable(available);
+      }
+    };
+
+    prepareSpeech();
+
+    return () => {
+      isActive = false;
+    };
+  }, [currentStepId, isListening]);
 
   useEffect(() => {
     if (currentStepId !== "ASK_CITY") return;
@@ -239,6 +283,61 @@ export default function useConversationalOnboardingScreen() {
     return () => clearInterval(timer);
   }, [resendSeconds]);
 
+  useEffect(() => {
+    return () => {
+      if (isListening) {
+        stopListening();
+      }
+    };
+  }, [isListening]);
+
+  useEffect(() => {
+    setVoiceInputError("");
+    setAutoAdvanceSeconds(0);
+    autoAdvanceValueRef.current = null;
+    autoAdvanceStepRef.current = null;
+    if (autoAdvanceTimerRef.current) {
+      clearInterval(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+  }, [currentStepId]);
+
+  const clearAutoAdvance = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearInterval(autoAdvanceTimerRef.current);
+      autoAdvanceTimerRef.current = null;
+    }
+    if (autoAdvanceTimeoutRef.current) {
+      clearTimeout(autoAdvanceTimeoutRef.current);
+      autoAdvanceTimeoutRef.current = null;
+    }
+    setAutoAdvanceSeconds(0);
+    autoAdvanceValueRef.current = null;
+    autoAdvanceStepRef.current = null;
+  };
+
+  const startAutoAdvance = (value: string | string[]) => {
+    clearAutoAdvance();
+    autoAdvanceValueRef.current = value;
+    autoAdvanceStepRef.current = currentStepId;
+    setAutoAdvanceSeconds(5);
+    autoAdvanceTimerRef.current = setInterval(() => {
+      setAutoAdvanceSeconds((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+    autoAdvanceTimeoutRef.current = setTimeout(() => {
+      const pendingValue = autoAdvanceValueRef.current;
+      const pendingStep = autoAdvanceStepRef.current;
+      clearAutoAdvance();
+      if (pendingValue && pendingStep === currentStepId) {
+        handleAnswer(pendingValue);
+      }
+    }, 5000);
+  };
+
   const saveAnswer = (value: unknown) => {
     if (!currentStep?.save_to_profile) return;
     const { field, value: staticValue } = currentStep.save_to_profile;
@@ -254,7 +353,44 @@ export default function useConversationalOnboardingScreen() {
     return currentStep.next[value] ?? null;
   };
 
+  const resolveVehicleFromSpeech = (rawText: string) => {
+    const normalized = rawText
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!normalized) return null;
+    if (normalized.includes("motor") || normalized.includes("moto"))
+      return "motor";
+    if (
+      normalized.includes("mobil") ||
+      normalized.includes("mobi") ||
+      normalized.includes("sedan") ||
+      normalized.includes("car")
+    ) {
+      return "mobil";
+    }
+    if (normalized.includes("sepeda") || normalized.includes("bicycle")) return "sepeda";
+    if (normalized.includes("angkutan") || normalized.includes("umum") || normalized.includes("bus"))
+      return "public";
+    if (normalized.includes("jalan") || normalized.includes("kaki") || normalized.includes("walk"))
+      return "walk";
+    return null;
+  };
+
+  const handleTextInputChange = (value: string) => {
+    clearAutoAdvance();
+    setTextInputValue(value);
+  };
+
+  const handleVehicleSelect = (value: string) => {
+    clearAutoAdvance();
+    setOnboarding({ primary_vehicle: value });
+    startAutoAdvance(value);
+  };
+
   const handleSelectPlace = async (placeId: string) => {
+    clearAutoAdvance();
     if (!placesApiKey) {
       setPlacesError("API key belum tersedia.");
       return;
@@ -291,6 +427,11 @@ export default function useConversationalOnboardingScreen() {
   };
 
   const handleAnswer = (value: string | string[], label?: string) => {
+    clearAutoAdvance();
+    if (isListening) {
+      stopListening();
+      setIsListening(false);
+    }
     const payload = Array.isArray(value) ? value : value;
     saveAnswer(payload);
 
@@ -304,6 +445,79 @@ export default function useConversationalOnboardingScreen() {
     }
     setStepHistory((prev) => [...prev, currentStepId]);
     setCurrentStepId(nextStepId);
+  };
+
+  const toggleVoiceInput = async () => {
+    if (!speechAvailable) return;
+    const isVoiceStep =
+      currentStepId === "ASK_NAME" ||
+      currentStepId === "ASK_VEHICLE" ||
+      currentStepId === "SEARCH_DESTINATION";
+    if (!isVoiceStep) return;
+
+    if (isListening) {
+      await stopListening();
+      setIsListening(false);
+      return;
+    }
+
+    setVoiceInputError("");
+    Speech.stop();
+    setIsSpeaking(false);
+    clearAutoAdvance();
+    setIsListening(true);
+    await startListening(
+      (text, isFinal) => {
+        const normalized = text.trim();
+        if (currentStepId === "ASK_VEHICLE") {
+          if (isFinal) {
+            setIsListening(false);
+            if (!normalized) {
+              setVoiceInputError("Tidak ada suara yang terdeteksi.");
+              return;
+            }
+            const value = resolveVehicleFromSpeech(normalized);
+            if (!value) {
+              setVoiceInputError(
+                "Pilihan belum dikenali. Ucapkan motor, mobil, sepeda, angkutan umum, atau jalan kaki."
+              );
+              return;
+            }
+            setOnboarding({ primary_vehicle: value });
+            startAutoAdvance(value);
+          }
+          return;
+        }
+
+        setTextInputValue(text);
+        if (isFinal) {
+          setIsListening(false);
+          if (!normalized) {
+            setVoiceInputError("Tidak ada suara yang terdeteksi.");
+            return;
+          }
+          if (currentStepId === "ASK_NAME") {
+            const minLength =
+              currentStep?.user_input.type === "text"
+                ? currentStep.user_input.validation?.min_length ?? 0
+                : 0;
+            if (normalized.length >= minLength) {
+              startAutoAdvance(normalized);
+            }
+            return;
+          }
+          if (currentStepId === "SEARCH_DESTINATION") {
+            if (normalized.length >= 3) {
+              clearAutoAdvance();
+            }
+          }
+        }
+      },
+      (error) => {
+        setVoiceInputError(error);
+        setIsListening(false);
+      }
+    );
   };
 
   const handleBack = () => {
@@ -333,11 +547,12 @@ export default function useConversationalOnboardingScreen() {
   return {
     onboarding,
     currentStep,
+    currentStepId,
     assistantText,
     typedText,
     showInput,
     textInputValue,
-    setTextInputValue,
+    setTextInputValue: handleTextInputChange,
     selectedValues,
     setSelectedValues,
     otpValue,
@@ -352,8 +567,14 @@ export default function useConversationalOnboardingScreen() {
     animatedStyle,
     silentMode,
     setSilentMode,
+    isListening,
+    speechAvailable,
+    voiceInputError,
+    autoAdvanceSeconds,
     handleAnswer,
     handleSelectPlace,
+    handleVehicleSelect,
     handleBack,
+    toggleVoiceInput,
   };
 }

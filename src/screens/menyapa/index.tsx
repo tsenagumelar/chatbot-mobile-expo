@@ -2,9 +2,10 @@ import { AppHeader } from "@/src/components/AppHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import LottieView from "lottie-react-native";
-import React from "react";
+import React, { useRef } from "react";
 import {
   Image,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import useMenyapaScreen from "./hooks";
 
 export default function MenyapaScreen() {
+  const destinationInputRef = useRef<TextInput>(null);
   const {
     mapRef,
     location,
@@ -45,6 +47,9 @@ export default function MenyapaScreen() {
     isLocationReady,
     overlayTitle,
     typedOverlayText,
+    overlayTypingDone,
+    overlayAction,
+    handleOverlayAction,
     handleLogout,
     isTravelActive,
     setIsTravelActive,
@@ -52,6 +57,11 @@ export default function MenyapaScreen() {
     setSilentMode,
     isFreeRide,
     setRideMode,
+    destinationIcon,
+    destinationMarkerVariant,
+    showResumePrompt,
+    setShowResumePrompt,
+    handleResumePrompt,
   } = useMenyapaScreen();
 
   return (
@@ -62,16 +72,26 @@ export default function MenyapaScreen() {
       <View style={styles.mapWrapper}>
         {/* {isMotorMode && ( */}
           <View style={styles.destinationBox}>
-            <TouchableOpacity
-              style={styles.destinationInput}
-              onPress={() => setShowDestinationPicker((prev) => !prev)}
-              activeOpacity={0.85}
-            >
+            <View style={styles.destinationInput}>
               <Ionicons name="navigate" size={16} color="#0B1E6B" />
-              <Text style={styles.destinationText}>
-                {selectedDestination?.label ?? "Pilih tujuan..."}
-              </Text>
-              {selectedDestination ? (
+              <TextInput
+                ref={destinationInputRef}
+                style={styles.destinationSearchInput}
+                value={destinationQuery}
+                onChangeText={(text) => {
+                  setDestinationQuery(text);
+                  if (!showDestinationPicker) {
+                    setShowDestinationPicker(true);
+                  }
+                }}
+                placeholder="Cari lokasi tujuan..."
+                placeholderTextColor="#94A3B8"
+                autoCorrect={false}
+                autoCapitalize="none"
+                returnKeyType="search"
+                onFocus={() => setShowDestinationPicker(true)}
+              />
+              {destinationQuery.length > 0 || selectedDestination ? (
                 <TouchableOpacity
                   style={styles.destinationClearButton}
                   onPress={(event) => {
@@ -83,37 +103,19 @@ export default function MenyapaScreen() {
                   <Ionicons name="close-circle" size={18} color="#94A3B8" />
                 </TouchableOpacity>
               ) : null}
-            </TouchableOpacity>
+            </View>
             {showDestinationPicker && (
               <View style={styles.destinationList}>
-                <View style={styles.destinationSearchRow}>
-                  <Ionicons name="search" size={16} color="#64748B" />
-                  <TextInput
-                    style={styles.destinationSearchInput}
-                    value={destinationQuery}
-                    onChangeText={setDestinationQuery}
-                    placeholder="Cari lokasi..."
-                    placeholderTextColor="#94A3B8"
-                    autoCorrect={false}
-                    autoCapitalize="none"
-                    returnKeyType="search"
-                  />
-                  {destinationQuery.length > 0 ? (
-                    <TouchableOpacity
-                      style={styles.destinationSearchClear}
-                      onPress={() => setDestinationQuery("")}
-                      activeOpacity={0.8}
-                    >
-                      <Ionicons name="close-circle" size={18} color="#94A3B8" />
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
                 <View style={styles.destinationResults}>
                   {destinationResults.map((item) => (
                     <TouchableOpacity
                       key={item.id}
                       style={styles.destinationItem}
-                      onPress={() => handleSelectDestination(item.id)}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        destinationInputRef.current?.blur();
+                        handleSelectDestination(item.id);
+                      }}
                     >
                       <Text style={styles.destinationItemText}>{item.label}</Text>
                     </TouchableOpacity>
@@ -190,8 +192,16 @@ export default function MenyapaScreen() {
               }}
               title={selectedDestination.label}
             >
-              <View style={styles.routeMarkerFinish}>
-                <Ionicons name="location" size={14} color="#FFFFFF" />
+              <View
+                style={[
+                  styles.routeMarkerFinish,
+                  destinationMarkerVariant === "rest_area" &&
+                    styles.routeMarkerFinishRest,
+                  destinationMarkerVariant === "charger" &&
+                    styles.routeMarkerFinishCharger,
+                ]}
+              >
+                <Ionicons name={destinationIcon as any} size={14} color="#FFFFFF" />
               </View>
             </Marker>
           )}
@@ -408,6 +418,28 @@ export default function MenyapaScreen() {
               <Ionicons name="radio" size={14} color="#0C3AC5" />
             </View>
             <Text style={styles.overlayText}>{typedOverlayText}</Text>
+            {overlayAction && overlayTypingDone && (
+              <View style={styles.overlayActions}>
+                <TouchableOpacity
+                  style={[styles.overlayActionButton, styles.overlayActionPrimary]}
+                  onPress={() => handleOverlayAction("accept")}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.overlayActionPrimaryText}>
+                    {overlayAction.labelYes}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.overlayActionButton, styles.overlayActionGhost]}
+                  onPress={() => handleOverlayAction("decline")}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.overlayActionGhostText}>
+                    {overlayAction.labelNo}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
             <LottieView
               source={require("@/src/services/voice.json")}
               autoPlay
@@ -415,6 +447,25 @@ export default function MenyapaScreen() {
               style={styles.overlayLottie}
             />
           </View>
+        </View>
+      )}
+
+      {showResumePrompt && (
+        <View style={styles.resumePrompt}>
+          <TouchableOpacity
+            style={styles.resumeClose}
+            onPress={() => setShowResumePrompt(false)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="close" size={16} color="#0B1E6B" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.resumeButton}
+            onPress={handleResumePrompt}
+            activeOpacity={0.9}
+          >
+            <Text style={styles.resumeButtonText}>Lanjutkan perjalanan</Text>
+          </TouchableOpacity>
         </View>
       )}
     </SafeAreaView>
@@ -790,6 +841,77 @@ const styles = StyleSheet.create({
     textAlign: "left",
     lineHeight: 30,
   },
+  overlayActions: {
+    alignSelf: "stretch",
+    gap: 10,
+  },
+  overlayActionButton: {
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  overlayActionPrimary: {
+    backgroundColor: "#FFFFFF",
+  },
+  overlayActionPrimaryText: {
+    color: "#0C3AC5",
+    fontWeight: "800",
+    fontSize: 15,
+  },
+  overlayActionGhost: {
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.7)",
+  },
+  overlayActionGhostText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  resumePrompt: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 80,
+    zIndex: 999,
+  },
+  resumeClose: {
+    position: "absolute",
+    top: -10,
+    right: -10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
+    zIndex: 2,
+  },
+  resumeButton: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#1E3A8A",
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+    zIndex: 1,
+  },
+  resumeButtonText: {
+    color: "#0B1E6B",
+    fontWeight: "700",
+    fontSize: 15,
+  },
   overlayCta: {
     fontSize: 16,
     color: "#F8FAFC",
@@ -825,6 +947,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#FFFFFF",
+  },
+  routeMarkerFinishRest: {
+    backgroundColor: "#10B981",
+  },
+  routeMarkerFinishCharger: {
+    backgroundColor: "#22C55E",
   },
   userMarker: {
     width: 28,

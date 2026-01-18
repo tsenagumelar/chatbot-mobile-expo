@@ -28,6 +28,7 @@ export default function ConversationalOnboardingScreen() {
   const {
     onboarding,
     currentStep,
+    currentStepId,
     assistantText,
     typedText,
     showInput,
@@ -47,15 +48,21 @@ export default function ConversationalOnboardingScreen() {
     animatedStyle,
     silentMode,
     setSilentMode,
+    isListening,
+    speechAvailable,
+    voiceInputError,
+    autoAdvanceSeconds,
+    toggleVoiceInput,
     handleAnswer,
     handleSelectPlace,
+    handleVehicleSelect,
     handleBack,
   } = useConversationalOnboardingScreen();
 
   const renderOptionButton = (
     option: StepOption,
     selected?: boolean,
-    onPress?: () => void
+    onPress?: () => void,
   ) => (
     <TouchableOpacity
       key={option.value}
@@ -77,54 +84,95 @@ export default function ConversationalOnboardingScreen() {
     return { icon, text: rest.join(" ") };
   };
 
-  const renderVehicleCarousel = (options: StepOption[]) => (
-    <Animated.View style={[styles.inputArea, animatedStyle]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.vehicleCarousel}
-        snapToInterval={132}
-        decelerationRate="fast"
-      >
-        {options.map((option) => {
-          const { icon, text } = parseVehicleLabel(option.label);
-          const isSelected = onboarding.primary_vehicle === option.value;
-          return (
+  const renderVehicleCarousel = (options: StepOption[]) => {
+    const canSubmit = Boolean(onboarding.primary_vehicle);
+    return (
+      <Animated.View style={[styles.inputArea, animatedStyle]}>
+        {speechAvailable && (
+          <View style={styles.voiceRow}>
             <TouchableOpacity
-              key={option.value}
-              style={styles.vehicleCard}
-              onPress={() => handleAnswer(option.value, option.label)}
-              activeOpacity={0.85}
+              style={[styles.micButton, isListening && styles.micButtonActive]}
+              onPress={toggleVoiceInput}
+              activeOpacity={0.8}
             >
-              <View
-                style={[
-                  styles.vehicleIconWrap,
-                  isSelected && styles.vehicleIconWrapActive,
-                ]}
+              <Ionicons
+                name={isListening ? "mic" : "mic-outline"}
+                size={18}
+                color={isListening ? "#FFFFFF" : "#0C3AC5"}
+              />
+            </TouchableOpacity>
+            <Text style={styles.voiceHint}>
+              Ucapkan: motor, mobil, sepeda, angkutan umum, atau jalan kaki.
+            </Text>
+          </View>
+        )}
+        {voiceInputError ? (
+          <Text style={styles.voiceErrorText}>{voiceInputError}</Text>
+        ) : null}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.vehicleCarousel}
+          snapToInterval={132}
+          decelerationRate="fast"
+        >
+          {options.map((option) => {
+            const { icon, text } = parseVehicleLabel(option.label);
+            const isSelected = onboarding.primary_vehicle === option.value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                style={styles.vehicleCard}
+                onPress={() => handleVehicleSelect(option.value)}
+                activeOpacity={0.85}
               >
-                <Text
+                <View
                   style={[
-                    styles.vehicleIcon,
-                    isSelected && styles.vehicleIconActive,
+                    styles.vehicleIconWrap,
+                    isSelected && styles.vehicleIconWrapActive,
                   ]}
                 >
-                  {icon}
+                  <Text
+                    style={[
+                      styles.vehicleIcon,
+                      isSelected && styles.vehicleIconActive,
+                    ]}
+                  >
+                    {icon}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.vehicleLabel,
+                    isSelected && styles.vehicleLabelActive,
+                  ]}
+                >
+                  {text}
                 </Text>
-              </View>
-              <Text
-                style={[
-                  styles.vehicleLabel,
-                  isSelected && styles.vehicleLabelActive,
-                ]}
-              >
-                {text}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </Animated.View>
-  );
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+        <TouchableOpacity
+          style={[
+            styles.primaryButton,
+            !canSubmit && styles.primaryButtonDisabled,
+          ]}
+          onPress={() =>
+            onboarding.primary_vehicle &&
+            handleAnswer(onboarding.primary_vehicle)
+          }
+          disabled={!canSubmit}
+        >
+          <Text style={styles.primaryButtonText}>
+            {autoAdvanceSeconds > 0 && currentStepId === "ASK_VEHICLE"
+              ? `Lanjut (${autoAdvanceSeconds})`
+              : "Lanjut"}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   const renderInput = () => {
     if (!currentStep || !showInput) return null;
@@ -158,8 +206,8 @@ export default function ConversationalOnboardingScreen() {
         <Animated.View style={[styles.inputArea, animatedStyle]}>
           {currentStep.user_input.options.map((option) =>
             renderOptionButton(option, false, () =>
-              handleAnswer(option.value, option.label)
-            )
+              handleAnswer(option.value, option.label),
+            ),
           )}
         </Animated.View>
       );
@@ -184,8 +232,13 @@ export default function ConversationalOnboardingScreen() {
             return renderOptionButton(option, selected, toggle);
           })}
           <TouchableOpacity
-            style={[styles.primaryButton, !canSubmit && styles.primaryButtonDisabled]}
-            onPress={() => handleAnswer(selectedValues, selectedValues.join(", "))}
+            style={[
+              styles.primaryButton,
+              !canSubmit && styles.primaryButtonDisabled,
+            ]}
+            onPress={() =>
+              handleAnswer(selectedValues, selectedValues.join(", "))
+            }
             disabled={!canSubmit}
           >
             <Text style={styles.primaryButtonText}>Lanjut</Text>
@@ -197,21 +250,50 @@ export default function ConversationalOnboardingScreen() {
     if (inputType === "text") {
       const minLength = currentStep.user_input.validation?.min_length ?? 0;
       const isValid = textInputValue.trim().length >= minLength;
+      const showVoiceInput = currentStepId === "ASK_NAME" && speechAvailable;
       return (
         <Animated.View style={[styles.inputArea, animatedStyle]}>
-          <TextInput
-            value={textInputValue}
-            onChangeText={setTextInputValue}
-            placeholder={currentStep.user_input.placeholder}
-            placeholderTextColor="#D6E4FF"
-            style={styles.textInput}
-          />
+          <View style={styles.textInputRow}>
+            <TextInput
+              value={textInputValue}
+              onChangeText={setTextInputValue}
+              placeholder={currentStep.user_input.placeholder}
+              placeholderTextColor="#D6E4FF"
+              style={styles.textInput}
+            />
+            {showVoiceInput && (
+              <TouchableOpacity
+                style={[
+                  styles.micButton,
+                  isListening && styles.micButtonActive,
+                ]}
+                onPress={toggleVoiceInput}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={isListening ? "mic" : "mic-outline"}
+                  size={20}
+                  color={isListening ? "#FFFFFF" : "#0C3AC5"}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          {voiceInputError ? (
+            <Text style={styles.voiceErrorText}>{voiceInputError}</Text>
+          ) : null}
           <TouchableOpacity
-            style={[styles.primaryButton, !isValid && styles.primaryButtonDisabled]}
+            style={[
+              styles.primaryButton,
+              !isValid && styles.primaryButtonDisabled,
+            ]}
             onPress={() => handleAnswer(textInputValue.trim())}
             disabled={!isValid}
           >
-            <Text style={styles.primaryButtonText}>Lanjut</Text>
+            <Text style={styles.primaryButtonText}>
+              {autoAdvanceSeconds > 0 && currentStepId === "ASK_NAME"
+                ? `Lanjut (${autoAdvanceSeconds})`
+                : "Lanjut"}
+            </Text>
           </TouchableOpacity>
         </Animated.View>
       );
@@ -221,17 +303,45 @@ export default function ConversationalOnboardingScreen() {
       const query = textInputValue.trim();
       return (
         <Animated.View style={[styles.inputArea, animatedStyle]}>
-          <TextInput
-            value={textInputValue}
-            onChangeText={setTextInputValue}
-            placeholder={currentStep.user_input.placeholder}
-            placeholderTextColor="#D6E4FF"
-            style={styles.textInput}
-          />
+          <View style={styles.textInputRow}>
+            <TextInput
+              value={textInputValue}
+              onChangeText={setTextInputValue}
+              placeholder={currentStep.user_input.placeholder}
+              placeholderTextColor="#D6E4FF"
+              style={[styles.textInput, styles.placesSearchInput]}
+            />
+            {speechAvailable && (
+              <TouchableOpacity
+                style={[
+                  styles.micButton,
+                  isListening && styles.micButtonActive,
+                ]}
+                onPress={toggleVoiceInput}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={isListening ? "mic" : "mic-outline"}
+                  size={20}
+                  color={isListening ? "#FFFFFF" : "#0C3AC5"}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+          {voiceInputError ? (
+            <Text style={styles.voiceErrorText}>{voiceInputError}</Text>
+          ) : null}
           {query.length < 3 && (
             <Text style={styles.placesHint}>Ketik minimal 3 huruf.</Text>
           )}
-          {placesError ? <Text style={styles.placesHint}>{placesError}</Text> : null}
+          {placesError ? (
+            <Text style={styles.placesHint}>{placesError}</Text>
+          ) : null}
+          {placesResults.length > 0 && (
+            <Text style={styles.placesHint}>
+              Pilih salah satu hasil lokasi untuk melanjutkan.
+            </Text>
+          )}
           {placesResults.length > 0 && (
             <View style={styles.placesResults}>
               {placesResults.map((item) => (
@@ -263,7 +373,10 @@ export default function ConversationalOnboardingScreen() {
             style={styles.textInput}
           />
           <TouchableOpacity
-            style={[styles.primaryButton, !isValid && styles.primaryButtonDisabled]}
+            style={[
+              styles.primaryButton,
+              !isValid && styles.primaryButtonDisabled,
+            ]}
             onPress={() => handleAnswer(otpValue)}
             disabled={!isValid}
           >
@@ -283,8 +396,8 @@ export default function ConversationalOnboardingScreen() {
         <Animated.View style={[styles.inputArea, animatedStyle]}>
           {currentStep.user_input.options.map((option) =>
             renderOptionButton(option, false, () =>
-              handleAnswer(option.value, option.label)
-            )
+              handleAnswer(option.value, option.label),
+            ),
           )}
         </Animated.View>
       );
@@ -352,7 +465,12 @@ export default function ConversationalOnboardingScreen() {
           },
         ]}
       >
-        <LottieView source={voiceAnimation} autoPlay loop style={styles.voiceAnimation} />
+        <LottieView
+          source={voiceAnimation}
+          autoPlay
+          loop
+          style={styles.voiceAnimation}
+        />
       </Animated.View>
 
       <View style={styles.avatarFloat}>
@@ -481,6 +599,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "transparent",
     shadowColor: "#0B1E6B",
     shadowOpacity: 0.16,
     shadowRadius: 8,
@@ -488,13 +608,15 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   vehicleIconWrapActive: {
+    backgroundColor: "#0C3AC5",
+    borderColor: "#FFFFFF",
     transform: [{ scale: 1.15 }],
   },
   vehicleIcon: {
-    fontSize: 45,
+    fontSize: 30,
   },
   vehicleIconActive: {
-    fontSize: 50,
+    fontSize: 35,
   },
   vehicleLabel: {
     color: "#FFFFFF",
@@ -507,6 +629,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   textInput: {
+    flex: 1,
     borderBottomWidth: 1,
     borderBottomColor: "#FFFFFF",
     paddingHorizontal: 0,
@@ -515,7 +638,28 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 30,
     color: "#FFFFFF",
+  },
+  textInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     marginBottom: 15,
+  },
+  micButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0B1E6B",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  micButtonActive: {
+    backgroundColor: "#0C3AC5",
   },
   primaryButton: {
     backgroundColor: "#FFFFFF",
@@ -549,6 +693,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
   },
+  voiceErrorText: {
+    color: "#FCA5A5",
+    fontSize: 12,
+    textAlign: "left",
+  },
+  voiceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  voiceHint: {
+    flex: 1,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  voiceCountdown: {
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 12,
+  },
   placesResults: {
     marginTop: 8,
     gap: 10,
@@ -567,6 +731,10 @@ const styles = StyleSheet.create({
   placesHint: {
     color: "rgba(255, 255, 255, 0.7)",
     fontSize: 12,
+  },
+  placesSearchInput: {
+    flex: 1,
+    marginRight: 8,
   },
   avatarFloat: {
     position: "absolute",
