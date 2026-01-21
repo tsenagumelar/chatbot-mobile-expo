@@ -54,7 +54,9 @@ export default function MenyapaScreen() {
     typedOverlayText,
     overlayTypingDone,
     overlayAction,
+    overlayOptions,
     handleOverlayAction,
+    handleOverlayOptionSelect,
     handleLogout,
     isTravelActive,
     setIsTravelActive,
@@ -472,48 +474,69 @@ export default function MenyapaScreen() {
               <Ionicons name="radio" size={14} color="#0C3AC5" />
             </View>
             <Text style={styles.overlayText}>{typedOverlayText}</Text>
-            {overlayAction && overlayTypingDone && (
+            {overlayTypingDone && (
               <View style={styles.overlayActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.overlayActionButton,
-                    styles.overlayActionPrimary,
-                  ]}
-                  onPress={() => handleOverlayAction("accept")}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.overlayActionPrimaryText}>
-                    {overlayAction.labelYes}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.overlayActionButton,
-                    styles.overlayActionGhost,
-                  ]}
-                  onPress={() => handleOverlayAction("decline")}
-                  activeOpacity={0.85}
-                >
-                  <Text style={styles.overlayActionGhostText}>
-                    {overlayAction.labelNo}
-                  </Text>
-                </TouchableOpacity>
-                {speechAvailable && (
-                  <TouchableOpacity
-                    style={[
-                      styles.overlayActionMic,
-                      isListening && styles.overlayActionMicActive,
-                    ]}
-                    onPress={toggleVoiceInput}
-                    activeOpacity={0.85}
-                  >
-                    <Ionicons
-                      name={isListening ? "mic" : "mic-outline"}
-                      size={16}
-                      color="#FFFFFF"
-                    />
-                  </TouchableOpacity>
+                {overlayAction && (
+                  <>
+                    <TouchableOpacity
+                      style={[
+                        styles.overlayActionButton,
+                        styles.overlayActionPrimary,
+                      ]}
+                      onPress={() => handleOverlayAction("accept")}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.overlayActionPrimaryText}>
+                        {overlayAction.labelYes}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.overlayActionButton,
+                        styles.overlayActionGhost,
+                      ]}
+                      onPress={() => handleOverlayAction("decline")}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.overlayActionGhostText}>
+                        {overlayAction.labelNo}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
                 )}
+                {overlayOptions.length > 0 &&
+                  overlayOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.overlayActionButton,
+                        styles.overlayActionPrimary,
+                      ]}
+                      onPress={() => handleOverlayOptionSelect(option)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.overlayActionPrimaryText}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                {(overlayAction || overlayOptions.length > 0) &&
+                  speechAvailable && (
+                    <TouchableOpacity
+                      style={[
+                        styles.overlayActionMic,
+                        isListening && styles.overlayActionMicActive,
+                      ]}
+                      onPress={toggleVoiceInput}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons
+                        name={isListening ? "mic" : "mic-outline"}
+                        size={16}
+                        color="#FFFFFF"
+                      />
+                    </TouchableOpacity>
+                  )}
               </View>
             )}
             <LottieView

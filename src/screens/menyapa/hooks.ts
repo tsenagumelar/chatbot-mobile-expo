@@ -4,7 +4,7 @@ import {
   stopLocationTracking,
 } from "@/src/services/location";
 import notifData from "@/src/services/notif.json";
-import notifFreeData from "@/src/services/notif_free.json";
+import notifFreeData from "@/src/services/notif_free_2.json";
 import {
   isSpeechRecognitionAvailable,
   startListening,
@@ -21,16 +21,30 @@ import MapView from "react-native-maps";
 
 type LatLng = { latitude: number; longitude: number };
 type Destination = { label: string; latitude: number; longitude: number };
-type OverlayAction = {
-  type: "offer_rest_area" | "offer_charger";
-  target: "rest_area" | "charger";
-  distanceKm: number;
-  labelYes: string;
-  labelNo: string;
-  origin: LatLng;
-  destination: LatLng;
-  targetLabel: string;
+type OverlayAction =
+  | {
+      type: "offer_rest_area" | "offer_charger";
+      target: "rest_area" | "charger";
+      distanceKm: number;
+      labelYes: string;
+      labelNo: string;
+      origin: LatLng;
+      destination: LatLng;
+      targetLabel: string;
+    }
+  | {
+      type: "multi_step";
+      labelYes: string;
+      labelNo: string;
+    };
+type MultiStepFlow = {
+  title?: string;
+  category?: string;
+  responseYes?: any;
+  responseNo?: any;
+  responseTimeout?: any;
 };
+type OverlayOption = { id: string; label: string };
 
 const decodePolyline = (encoded: string): LatLng[] => {
   let index = 0;
@@ -84,6 +98,20 @@ const distanceMeters = (a: LatLng, b: LatLng) => {
   return 2 * 6371000 * Math.asin(Math.sqrt(hav));
 };
 
+const offsetLatLng = (
+  origin: LatLng,
+  northMeters: number,
+  eastMeters: number,
+) => {
+  const dLat = northMeters / 111_320;
+  const dLng =
+    eastMeters / (111_320 * Math.cos((origin.latitude * Math.PI) / 180));
+  return {
+    latitude: origin.latitude + dLat,
+    longitude: origin.longitude + dLng,
+  };
+};
+
 const interpolateRoute = (origin: LatLng, destination: LatLng, steps = 12) => {
   const points: LatLng[] = [];
   const count = Math.max(2, steps);
@@ -110,9 +138,39 @@ const offsetLocationByKm = (origin: LatLng, distanceKm: number): LatLng => {
   };
 };
 
-const getOverlaySpeechText = (notifItem?: any) => notifItem?.message ?? "";
+const getNotifPrompt = (notifItem?: any) =>
+  notifItem?.step_1_prompt ?? notifItem ?? {};
+const getNotifTitle = (notifItem?: any) => {
+  const prompt = getNotifPrompt(notifItem);
+  return (
+    prompt?.sapaan ??
+    notifItem?.sapaan_ringkas ??
+    prompt?.title ??
+    notifItem?.title ??
+    "Notifikasi"
+  );
+};
+const getNotifMessage = (notifItem?: any) =>
+  getNotifPrompt(notifItem)?.message ?? "";
+const getNotifVoiceText = (notifItem?: any) =>
+  getNotifPrompt(notifItem)?.voice_text ?? getNotifMessage(notifItem);
+const getNotifCtaLabel = (notifItem?: any) =>
+  getNotifPrompt(notifItem)?.cta?.label ?? notifItem?.cta?.label ?? "";
+const getNotifIcon = (notifItem?: any) =>
+  getNotifPrompt(notifItem)?.icon ?? notifItem?.icon ?? "";
+const getNotifColor = (notifItem?: any) =>
+  notifItem?.ui?.color ?? notifItem?.color ?? "";
+const getNotifDataUtama = (notifItem?: any) =>
+  notifItem?.data_utama ?? notifItem?.trigger?.data_utama;
+const getNotifTrigger = (notifItem?: any) =>
+  notifItem?.trigger?.condition ?? notifItem?.trigger;
+const getNotifMapOffset = (notifItem?: any) =>
+  notifItem?.ui?.map_offset ?? notifItem?.map_offset;
 const ARRIVAL_MESSAGE =
   "Kamu sudah sampai dengan selamat. Terima kasih untuk perjalanan kali ini. Jika kamu butuh bantuan jangan ragu untuk menghubungi saya ya.";
+const DEFAULT_OVERLAY_AUTO_CLOSE_MS = 30_000;
+const MULTI_STEP_IDLE_TIMEOUT_MS = 20_000;
+const TIMEOUT_OVERLAY_AUTO_CLOSE_MS = 10_000;
 
 const MIN_ZONE_DISTANCE_FROM_START_METERS = 300;
 const MIN_ZONE_DISTANCE_FROM_END_METERS = 300;
@@ -176,6 +234,7 @@ export default function useMenyapaScreen() {
   const isTravelActiveRef = useRef(false);
   const freeRideNotifIndexRef = useRef(0);
   const isResumingRef = useRef(false);
+  const lastTypingOverlayIdRef = useRef(0);
   const originalDestinationRef = useRef<{
     destination: Destination;
     city?: string;
@@ -185,11 +244,20 @@ export default function useMenyapaScreen() {
   const [showOverlay, setShowOverlay] = useState(false);
   const [overlayText, setOverlayText] = useState("");
   const [typedOverlayText, setTypedOverlayText] = useState("");
+  const [overlaySpeechText, setOverlaySpeechText] = useState("");
   const [overlayTypingDone, setOverlayTypingDone] = useState(false);
   const [overlayTitle, setOverlayTitle] = useState("");
   const [overlayCategory, setOverlayCategory] = useState("");
   const [overlayCtaLabel, setOverlayCtaLabel] = useState("");
   const [overlayAction, setOverlayAction] = useState<OverlayAction | null>(
+    null,
+  );
+  const [overlayFlow, setOverlayFlow] = useState<MultiStepFlow | null>(null);
+  const [overlayOptions, setOverlayOptions] = useState<OverlayOption[]>([]);
+  const [overlayOptionAction, setOverlayOptionAction] = useState<any | null>(
+    null,
+  );
+  const [overlayAutoCloseMs, setOverlayAutoCloseMs] = useState<number | null>(
     null,
   );
   const [overlayId, setOverlayId] = useState(0);
@@ -234,6 +302,33 @@ export default function useMenyapaScreen() {
     setOverlayId(overlayIdRef.current);
   };
 
+  const resetOverlayState = () => {
+    setShowOverlay(false);
+    setTypedOverlayText("");
+    setOverlayText("");
+    setOverlaySpeechText("");
+    setOverlayTitle("");
+    setOverlayCategory("");
+    setOverlayCtaLabel("");
+    setOverlayAction(null);
+    setOverlayFlow(null);
+    setOverlayOptions([]);
+    setOverlayOptionAction(null);
+    setOverlayAutoCloseMs(null);
+    clearOverlayTimers();
+  };
+
+  const clearOverlayTimers = () => {
+    if (overlayTypingRef.current) {
+      clearInterval(overlayTypingRef.current);
+      overlayTypingRef.current = null;
+    }
+    if (overlayTimerRef.current) {
+      clearTimeout(overlayTimerRef.current);
+      overlayTimerRef.current = null;
+    }
+  };
+
   const buildOverlayAction = (notifItem: any, baseLocation?: LatLng | null) => {
     if (!notifItem?.action || !baseLocation) return null;
     const rawDistance = Number(notifItem.action?.distance_km);
@@ -257,15 +352,75 @@ export default function useMenyapaScreen() {
     } as OverlayAction;
   };
 
+  const buildMultiStepFlow = (notifItem: any) => {
+    const prompt = notifItem?.step_1_prompt;
+    if (!prompt) return null;
+    const labelYesRaw = (prompt?.cta?.label_yes ?? "Ya").trim();
+    const labelNoRaw = (prompt?.cta?.label_no ?? "Tidak").trim();
+    const labelNo = labelNoRaw.toLowerCase() === "tida" ? "Tidak" : labelNoRaw;
+    return {
+      action: {
+        type: "multi_step",
+        labelYes: labelYesRaw || "Ya",
+        labelNo: labelNo || "Tidak",
+      } as OverlayAction,
+      flow: {
+        title: prompt?.title ?? notifItem?.title ?? "Notifikasi",
+        category: notifItem?.kategori ?? "",
+        responseYes: notifItem?.step_2_response_label_yes,
+        responseNo: notifItem?.step_2_response_label_no,
+        responseTimeout: notifItem?.step_2_response_timeout,
+      } as MultiStepFlow,
+    };
+  };
+
+  const buildOverlayPayload = (
+    notifItem: any,
+    baseLocation?: LatLng | null,
+  ) => {
+    const prompt = getNotifPrompt(notifItem);
+    const multiStep = buildMultiStepFlow(notifItem);
+    return {
+      text: prompt?.message ?? "",
+      speechText: getNotifVoiceText(notifItem),
+      title: getNotifTitle(notifItem),
+      category: notifItem?.kategori ?? "",
+      ctaLabel: getNotifCtaLabel(notifItem),
+      action: multiStep?.action ?? buildOverlayAction(notifItem, baseLocation),
+      flow: multiStep?.flow ?? null,
+    };
+  };
+
+  const getHotspotCenter = (
+    baseLocation: LatLng | null | undefined,
+    notifItem: any,
+  ) => {
+    if (!baseLocation) return null;
+    const offset = getNotifMapOffset(notifItem);
+    if (!offset) return baseLocation;
+    const north = Number(offset?.north ?? 0);
+    const east = Number(offset?.east ?? 0);
+    if (!Number.isFinite(north) || !Number.isFinite(east)) return baseLocation;
+    if (north === 0 && east === 0) return baseLocation;
+    return offsetLatLng(baseLocation, north, east);
+  };
+
   const triggerOverlay = (payload: {
     text: string;
+    speechText?: string;
     title?: string;
     category?: string;
     ctaLabel?: string;
     action?: OverlayAction | null;
+    flow?: MultiStepFlow | null;
+    options?: OverlayOption[];
+    optionAction?: any | null;
+    autoCloseMs?: number | null;
   }) => {
     const now = Date.now();
-    const normalizedText = sanitizeSpeechText(payload.text);
+    const normalizedText = sanitizeSpeechText(
+      payload.speechText ?? payload.text,
+    );
     const lastTrigger = lastOverlayTriggerRef.current;
     if (
       lastTrigger &&
@@ -276,11 +431,18 @@ export default function useMenyapaScreen() {
     }
     lastOverlayTriggerRef.current = { text: normalizedText, at: now };
     setOverlayText(payload.text);
+    setOverlaySpeechText(payload.speechText ?? payload.text);
     setOverlayTypingDone(false);
     setOverlayTitle(payload.title ?? "");
     setOverlayCategory(payload.category ?? "");
     setOverlayCtaLabel(payload.ctaLabel ?? "");
     setOverlayAction(payload.action ?? null);
+    setOverlayFlow(payload.flow ?? null);
+    setOverlayOptions(payload.options ?? []);
+    setOverlayOptionAction(payload.optionAction ?? null);
+    setOverlayAutoCloseMs(payload.autoCloseMs ?? null);
+    overlaySpokenRef.current = false;
+    speechLockRef.current = false;
     setShowOverlay(true);
     bumpOverlayId();
   };
@@ -296,6 +458,12 @@ export default function useMenyapaScreen() {
     Constants.expoConfig?.ios?.config?.googleMapsApiKey ??
     Constants.expoConfig?.android?.config?.googleMaps?.apiKey ??
     "";
+  const demoNotifId =
+    Constants.expoConfig?.extra?.demoNotifId ??
+    (Constants as any).manifest?.extra?.demoNotifId ??
+    process.env.EXPO_PUBLIC_DEMO_NOTIF_ID ??
+    "";
+  const demoTriggeredRef = useRef(false);
 
   useEffect(() => {
     let isActive = true;
@@ -698,7 +866,7 @@ export default function useMenyapaScreen() {
         center,
         radius: 120 + index * 20,
         icon: getZoneIcon(notifItem),
-        title: notifItem.kategori ?? notifItem.title ?? `Area ${index + 1}`,
+        title: notifItem.kategori ?? getNotifTitle(notifItem),
         notifItem,
       };
     });
@@ -812,23 +980,25 @@ export default function useMenyapaScreen() {
       overlaySpokenRef.current = true;
       speechLockRef.current = true;
     }
-    const durationMs = 15_000;
-
-    let index = 0;
-    if (overlayTypingRef.current) {
-      clearInterval(overlayTypingRef.current);
-    }
-    overlayTypingRef.current = setInterval(() => {
-      index += 1;
-      setTypedOverlayText(overlayText.slice(0, index));
-      if (index >= overlayText.length) {
-        if (overlayTypingRef.current) {
-          clearInterval(overlayTypingRef.current);
-          overlayTypingRef.current = null;
-        }
-        setOverlayTypingDone(true);
+    if (overlayId > 0 && lastTypingOverlayIdRef.current !== overlayId) {
+      lastTypingOverlayIdRef.current = overlayId;
+      let index = 0;
+      if (overlayTypingRef.current) {
+        clearInterval(overlayTypingRef.current);
+        overlayTypingRef.current = null;
       }
-    }, 50);
+      overlayTypingRef.current = setInterval(() => {
+        index += 1;
+        setTypedOverlayText(overlayText.slice(0, index));
+        if (index >= overlayText.length) {
+          if (overlayTypingRef.current) {
+            clearInterval(overlayTypingRef.current);
+            overlayTypingRef.current = null;
+          }
+          setOverlayTypingDone(true);
+        }
+      }, 50);
+    }
 
     if (
       !silentMode &&
@@ -839,7 +1009,7 @@ export default function useMenyapaScreen() {
       if (lastSpokenOverlayIdRef.current === overlayId) {
         return;
       }
-      const speechText = sanitizeSpeechText(overlayText);
+      const speechText = sanitizeSpeechText(overlaySpeechText || overlayText);
       if (speechText) {
         const now = Date.now();
         if (
@@ -866,31 +1036,51 @@ export default function useMenyapaScreen() {
       overlayTimerRef.current = null;
     }
     if (!overlayAction) {
+      const closeAfterMs = overlayAutoCloseMs ?? DEFAULT_OVERLAY_AUTO_CLOSE_MS;
       overlayTimerRef.current = setTimeout(() => {
-        setShowOverlay(false);
-        setTypedOverlayText("");
-        setOverlayText("");
-        setOverlayTitle("");
-        setOverlayCategory("");
-        setOverlayCtaLabel("");
-        setOverlayAction(null);
-        if (overlayTypingRef.current) {
-          clearInterval(overlayTypingRef.current);
-          overlayTypingRef.current = null;
+        resetOverlayState();
+      }, closeAfterMs);
+      return;
+    }
+    if (overlayAction.type === "multi_step") {
+      if (!overlayTypingDone) {
+        return;
+      }
+      const activeFlow = overlayFlow;
+      overlayTimerRef.current = setTimeout(() => {
+        const response = activeFlow?.responseTimeout;
+        if (response?.message) {
+          triggerOverlay({
+            text: response.message,
+            speechText: response.voice_text ?? response.message,
+            title: activeFlow?.title ?? overlayTitle ?? "Notifikasi",
+            category: activeFlow?.category ?? overlayCategory ?? "",
+            action: null,
+            flow: null,
+            options: response.action?.options ?? [],
+            optionAction: response.action ?? null,
+            autoCloseMs: response.auto_close
+              ? TIMEOUT_OVERLAY_AUTO_CLOSE_MS
+              : null,
+          });
+        } else {
+          resetOverlayState();
         }
-        if (overlayTimerRef.current) {
-          clearTimeout(overlayTimerRef.current);
-          overlayTimerRef.current = null;
-        }
-      }, durationMs);
+      }, MULTI_STEP_IDLE_TIMEOUT_MS);
     }
   }, [
     notificationIntervalSeconds,
     overlayAction,
+    overlayAutoCloseMs,
     overlayId,
+    overlaySpeechText,
     overlayText,
+    overlayTypingDone,
     showOverlay,
     silentMode,
+    overlayFlow,
+    overlayTitle,
+    overlayCategory,
   ]);
 
   useEffect(() => {
@@ -935,19 +1125,18 @@ export default function useMenyapaScreen() {
         notifIndexRef.current[vehicle] = nextIndex + 1;
 
         if (latestLocationRef.current) {
-          setHotspotCenter({
-            latitude: latestLocationRef.current.latitude,
-            longitude: latestLocationRef.current.longitude,
-          });
-          setHotspotRadius(120 + Math.floor(Math.random() * 60));
+          const hotspot = getHotspotCenter(
+            latestLocationRef.current,
+            notifItem,
+          );
+          if (hotspot) {
+            setHotspotCenter(hotspot);
+            setHotspotRadius(120 + Math.floor(Math.random() * 60));
+          }
         }
-        triggerOverlay({
-          text: getOverlaySpeechText(notifItem),
-          title: notifItem.title ?? "Notifikasi",
-          category: notifItem.kategori ?? "",
-          ctaLabel: notifItem.cta?.label ?? "",
-          action: buildOverlayAction(notifItem, latestLocationRef.current),
-        });
+        triggerOverlay(
+          buildOverlayPayload(notifItem, latestLocationRef.current),
+        );
 
         const baseLocation = latestLocationRef.current ?? {
           latitude: -6.914744,
@@ -972,19 +1161,19 @@ export default function useMenyapaScreen() {
 
         Notifications.scheduleNotificationAsync({
           content: {
-            title: notifItem.title,
+            title: getNotifTitle(notifItem),
             subtitle: notifItem.kategori,
-            body: notifItem.message,
+            body: getNotifMessage(notifItem),
             data: {
               id: notifItem.id,
               kategori: notifItem.kategori,
-              trigger: notifItem.trigger,
-              data_utama: notifItem.data_utama,
+              trigger: getNotifTrigger(notifItem),
+              data_utama: getNotifDataUtama(notifItem),
               pengguna: notifItem.pengguna,
-              icon: notifItem.icon,
-              color: notifItem.color,
-              cta: notifItem.cta,
-              voiceText: notifItem.message,
+              icon: getNotifIcon(notifItem),
+              color: getNotifColor(notifItem),
+              cta: notifItem.cta ?? getNotifPrompt(notifItem)?.cta,
+              voiceText: getNotifVoiceText(notifItem),
               address: targetAddress,
               latitude: targetCoords.latitude,
               longitude: targetCoords.longitude,
@@ -1036,36 +1225,35 @@ export default function useMenyapaScreen() {
             (notifIndexRef.current.motor ?? 0) % candidates.length;
           const notifItem = candidates[notifIdx];
           notifIndexRef.current.motor = notifIdx + 1;
-          setHotspotCenter({
-            latitude: nextPoint.latitude,
-            longitude: nextPoint.longitude,
-          });
+          const hotspot = getHotspotCenter(
+            { latitude: nextPoint.latitude, longitude: nextPoint.longitude },
+            notifItem,
+          );
+          if (hotspot) {
+            setHotspotCenter(hotspot);
+          }
           setHotspotRadius(120);
-          triggerOverlay({
-            text: getOverlaySpeechText(notifItem),
-            title: notifItem.title ?? "Notifikasi",
-            category: notifItem.kategori ?? "",
-            ctaLabel: notifItem.cta?.label ?? "",
-            action: buildOverlayAction(notifItem, {
+          triggerOverlay(
+            buildOverlayPayload(notifItem, {
               latitude: nextPoint.latitude,
               longitude: nextPoint.longitude,
             }),
-          });
+          );
           Notifications.scheduleNotificationAsync({
             content: {
-              title: notifItem.title,
+              title: getNotifTitle(notifItem),
               subtitle: notifItem.kategori,
-              body: notifItem.message,
+              body: getNotifMessage(notifItem),
               data: {
                 id: notifItem.id,
                 kategori: notifItem.kategori,
-                trigger: notifItem.trigger,
-                data_utama: notifItem.data_utama,
+                trigger: getNotifTrigger(notifItem),
+                data_utama: getNotifDataUtama(notifItem),
                 pengguna: notifItem.pengguna,
-                icon: notifItem.icon,
-                color: notifItem.color,
-                cta: notifItem.cta,
-                voiceText: notifItem.message,
+                icon: getNotifIcon(notifItem),
+                color: getNotifColor(notifItem),
+                cta: notifItem.cta ?? getNotifPrompt(notifItem)?.cta,
+                voiceText: getNotifVoiceText(notifItem),
                 address: "Titik notifikasi (simulasi)",
                 latitude: nextPoint.latitude,
                 longitude: nextPoint.longitude,
@@ -1133,29 +1321,24 @@ export default function useMenyapaScreen() {
 
     setHotspotCenter(nextZone.center);
     setHotspotRadius(nextZone.radius);
-    triggerOverlay({
-      text: getOverlaySpeechText(nextZone.notifItem) || "Notifikasi area",
-      title: nextZone.notifItem?.title ?? "Notifikasi",
-      category: nextZone.notifItem?.kategori ?? "",
-      ctaLabel: nextZone.notifItem?.cta?.label ?? "",
-      action: buildOverlayAction(nextZone.notifItem, location),
-    });
+    triggerOverlay(buildOverlayPayload(nextZone.notifItem, location));
 
     Notifications.scheduleNotificationAsync({
       content: {
-        title: nextZone.notifItem?.title ?? "Notifikasi",
+        title: getNotifTitle(nextZone.notifItem),
         subtitle: nextZone.notifItem?.kategori ?? "",
-        body: nextZone.notifItem?.message ?? "Notifikasi area.",
+        body: getNotifMessage(nextZone.notifItem) || "Notifikasi area.",
         data: {
           id: nextZone.notifItem?.id,
           kategori: nextZone.notifItem?.kategori,
-          trigger: nextZone.notifItem?.trigger,
-          data_utama: nextZone.notifItem?.data_utama,
+          trigger: getNotifTrigger(nextZone.notifItem),
+          data_utama: getNotifDataUtama(nextZone.notifItem),
           pengguna: nextZone.notifItem?.pengguna,
-          icon: nextZone.notifItem?.icon,
-          color: nextZone.notifItem?.color,
-          cta: nextZone.notifItem?.cta,
-          voiceText: nextZone.notifItem?.message,
+          icon: getNotifIcon(nextZone.notifItem),
+          color: getNotifColor(nextZone.notifItem),
+          cta:
+            nextZone.notifItem?.cta ?? getNotifPrompt(nextZone.notifItem)?.cta,
+          voiceText: getNotifVoiceText(nextZone.notifItem),
           latitude: nextZone.center.latitude,
           longitude: nextZone.center.longitude,
           user_latitude: location.latitude,
@@ -1290,6 +1473,20 @@ export default function useMenyapaScreen() {
   }, [isFreeRide, setLocation]);
 
   useEffect(() => {
+    if (!demoNotifId || demoTriggeredRef.current) return;
+    const candidates = [...(notifFreeData as any[]), ...(notifData as any[])];
+    const demoNotif = candidates.find((item) => item?.id === demoNotifId);
+    if (!demoNotif) return;
+    const baseLocation = latestLocationRef.current ??
+      location ?? {
+        latitude: -6.914744,
+        longitude: 107.60981,
+      };
+    triggerOverlay(buildOverlayPayload(demoNotif, baseLocation));
+    demoTriggeredRef.current = true;
+  }, [demoNotifId, location]);
+
+  useEffect(() => {
     if (!isFreeRide) return;
     const interval = setInterval(() => {
       if (!isTravelActiveRef.current) return;
@@ -1313,13 +1510,15 @@ export default function useMenyapaScreen() {
       const notifItem = candidates[nextIndex];
       freeRideNotifIndexRef.current = nextIndex + 1;
 
-      triggerOverlay({
-        text: getOverlaySpeechText(notifItem),
-        title: notifItem.title ?? "Notifikasi",
-        category: notifItem.kategori ?? "",
-        ctaLabel: notifItem.cta?.label ?? "",
-        action: buildOverlayAction(notifItem, latestLocationRef.current),
-      });
+      if (latestLocationRef.current) {
+        const hotspot = getHotspotCenter(latestLocationRef.current, notifItem);
+        if (hotspot) {
+          setHotspotCenter(hotspot);
+          setHotspotRadius(120 + Math.floor(Math.random() * 60));
+        }
+      }
+
+      triggerOverlay(buildOverlayPayload(notifItem, latestLocationRef.current));
 
       const baseLocation = latestLocationRef.current ?? {
         latitude: -6.914744,
@@ -1327,19 +1526,19 @@ export default function useMenyapaScreen() {
       };
       Notifications.scheduleNotificationAsync({
         content: {
-          title: notifItem.title,
+          title: getNotifTitle(notifItem),
           subtitle: notifItem.kategori,
-          body: notifItem.message,
+          body: getNotifMessage(notifItem),
           data: {
             id: notifItem.id,
             kategori: notifItem.kategori,
-            trigger: notifItem.trigger,
-            data_utama: notifItem.data_utama,
+            trigger: getNotifTrigger(notifItem),
+            data_utama: getNotifDataUtama(notifItem),
             pengguna: notifItem.pengguna,
-            icon: notifItem.icon,
-            color: notifItem.color,
-            cta: notifItem.cta,
-            voiceText: notifItem.message,
+            icon: getNotifIcon(notifItem),
+            color: getNotifColor(notifItem),
+            cta: notifItem.cta ?? getNotifPrompt(notifItem)?.cta,
+            voiceText: getNotifVoiceText(notifItem),
             latitude: baseLocation.latitude,
             longitude: baseLocation.longitude,
             user_latitude: baseLocation.latitude,
@@ -1389,13 +1588,41 @@ export default function useMenyapaScreen() {
 
   const handleOverlayAction = (decision: "accept" | "decline") => {
     if (!overlayAction) {
-      setShowOverlay(false);
+      resetOverlayState();
+      return;
+    }
+
+    if (overlayAction.type === "multi_step") {
+      if (overlayTimerRef.current) {
+        clearTimeout(overlayTimerRef.current);
+        overlayTimerRef.current = null;
+      }
+      const response =
+        decision === "accept"
+          ? overlayFlow?.responseYes
+          : overlayFlow?.responseNo;
+      if (response?.message) {
+        triggerOverlay({
+          text: response.message,
+          speechText: response.voice_text ?? response.message,
+          title: overlayFlow?.title ?? overlayTitle ?? "Notifikasi",
+          category: overlayFlow?.category ?? overlayCategory ?? "",
+          action: null,
+          flow: null,
+          options: response.action?.options ?? [],
+          optionAction: response.action ?? null,
+          autoCloseMs: response.auto_close
+            ? TIMEOUT_OVERLAY_AUTO_CLOSE_MS
+            : null,
+        });
+      } else {
+        resetOverlayState();
+      }
       return;
     }
 
     if (decision === "decline") {
-      setShowOverlay(false);
-      setOverlayAction(null);
+      resetOverlayState();
       return;
     }
 
@@ -1434,9 +1661,8 @@ export default function useMenyapaScreen() {
     setActionRouteActive(true);
     setActionRouteTarget(overlayAction.target);
     setIsTravelActive(true);
-    setShowOverlay(false);
+    resetOverlayState();
     setShowResumePrompt(false);
-    setOverlayAction(null);
     requestRoute(
       {
         label: overlayAction.targetLabel,
@@ -1445,6 +1671,22 @@ export default function useMenyapaScreen() {
       },
       originPoint,
     );
+  };
+
+  const handleOverlayOptionSelect = (option: OverlayOption) => {
+    if (overlayOptionAction?.confirmation_message) {
+      triggerOverlay({
+        text: overlayOptionAction.confirmation_message,
+        speechText: overlayOptionAction.confirmation_voice_text,
+        title: overlayTitle || "Notifikasi",
+        category: overlayCategory ?? "",
+        action: null,
+        flow: null,
+      });
+      return;
+    }
+    console.log("✅ Option selected:", option.id, option.label);
+    resetOverlayState();
   };
 
   const handleResumePrompt = async () => {
@@ -1556,20 +1798,14 @@ export default function useMenyapaScreen() {
         );
 
         if (routeNotif) {
-          console.log("✅ Match found (route):", routeNotif.title);
+          console.log("✅ Match found (route):", getNotifTitle(routeNotif));
           const baseLocation = latestLocationRef.current ??
             location ?? {
               latitude: -6.914744,
               longitude: 107.60981,
             };
 
-          triggerOverlay({
-            text: getOverlaySpeechText(routeNotif) || routeNotif.message,
-            title: routeNotif.title ?? "Notifikasi",
-            category: routeNotif.kategori ?? "",
-            ctaLabel: routeNotif.cta?.label ?? "",
-            action: buildOverlayAction(routeNotif, baseLocation),
-          });
+          triggerOverlay(buildOverlayPayload(routeNotif, baseLocation));
 
           // Track as shown
           if (routeNotif.id) {
@@ -1592,20 +1828,14 @@ export default function useMenyapaScreen() {
         );
 
         if (freeNotif) {
-          console.log("✅ Match found (free):", freeNotif.title);
+          console.log("✅ Match found (free):", getNotifTitle(freeNotif));
           const baseLocation = latestLocationRef.current ??
             location ?? {
               latitude: -6.914744,
               longitude: 107.60981,
             };
 
-          triggerOverlay({
-            text: getOverlaySpeechText(freeNotif) || freeNotif.message,
-            title: freeNotif.title ?? "Notifikasi",
-            category: freeNotif.kategori ?? "",
-            ctaLabel: freeNotif.cta?.label ?? "",
-            action: buildOverlayAction(freeNotif, baseLocation),
-          });
+          triggerOverlay(buildOverlayPayload(freeNotif, baseLocation));
 
           // Track as shown
           if (freeNotif.id) {
@@ -1621,6 +1851,14 @@ export default function useMenyapaScreen() {
         // Tidak ada match dengan keywords
         console.log("❌ No keyword match found");
 
+        if (overlayOptions.length && overlayTypingDone) {
+          const matchedOption = overlayOptions.find((option) =>
+            normalized.includes(option.label.toLowerCase()),
+          );
+          if (matchedOption) {
+            handleOverlayOptionSelect(matchedOption);
+          }
+        }
         if (overlayAction && overlayTypingDone) {
           const isYes =
             normalized.includes("ya") ||
@@ -1746,7 +1984,9 @@ export default function useMenyapaScreen() {
     overlayCategory,
     overlayCtaLabel,
     overlayAction,
+    overlayOptions,
     handleOverlayAction,
+    handleOverlayOptionSelect,
     handleLogout,
     silentMode,
     setSilentMode,

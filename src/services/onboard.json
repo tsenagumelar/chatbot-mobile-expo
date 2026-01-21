@@ -6,7 +6,7 @@
     "WELCOME": {
       "type": "message",
       "assistant": {
-        "text": "Halo Sobat Lantas 👋.\n\nAku Polman, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
+        "text": "Halo Sobat Lantas 👋.\n\nAku asisten virtual Polantas Menyapa, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
       },
       "user_input": {
         "type": "action",

@@ -1,0 +1,550 @@
+[
+  {
+    "no": 1,
+    "id": "sim_expiry_flow",
+    "kategori": "Administrasi kendaraan",
+    "pengguna": ["motor", "mobil"],
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "SIM hampir habis",
+      "title": "Pengingat Masa Berlaku SIM",
+      "message": "Sobat Lantas, masa berlaku SIM kamu akan berakhir dalam 7 hari. Mau saya bantu arahkan ke layanan perpanjangan SIM?",
+      "voice_text": "Sobat Lantas, masa berlaku SIM kamu akan berakhir dalam 7 hari. Mau saya bantu arahkan ke layanan perpanjangan SIM?",
+      "cta": {
+        "label_yes": "Ya, bantuin",
+        "label_no": "Nanti saja"
+      }
+    },
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Siap. Saya bisa bantu perpanjangan SIM online resmi atau arahkan ke Satpas terdekat. Mau pilih yang mana?",
+      "voice_text": "Siap. Saya bisa bantu perpanjangan SIM online resmi atau arahkan ke Satpas terdekat. Mau pilih yang mana?",
+      "action": {
+        "type": "offer_sim_service",
+        "target": "sim_online_or_satpas",
+        "options": [
+          { "id": "sim_online", "label": "Perpanjang Online" },
+          { "id": "satpas_terdekat", "label": "Cari Satpas" }
+        ]
+      }
+    },
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "trigger": {
+      "condition": "H-30 / H-7 / H-1 masa berlaku SIM",
+      "data_utama": ["data_sim", "waktu"]
+    },
+    "keywords": ["sim habis", "perpanjang sim", "masa sim", "sim expired"],
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+  {
+    "no": 2,
+    "id": "stnk_expiry_flow",
+    "kategori": "Administrasi kendaraan",
+    "pengguna": ["motor", "mobil"],
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "STNK hampir habis",
+      "title": "Pengingat Masa Berlaku STNK",
+      "message": "Sobat Lantas, masa berlaku STNK kendaraan kamu akan segera berakhir. Mau saya bantu arahkan ke layanan pengesahan atau perpanjangan STNK?",
+      "voice_text": "Sobat Lantas, masa berlaku STNK kendaraan kamu akan segera berakhir. Mau saya bantu arahkan ke layanan pengesahan atau perpanjangan STNK?",
+      "cta": {
+        "label_yes": "Ya, bantuin",
+        "label_no": "Nanti saja"
+      }
+    },
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Siap. Saya bisa bantu layanan STNK online atau arahkan ke Samsat terdekat. Mau pilih yang mana?",
+      "voice_text": "Siap. Saya bisa bantu layanan STNK online atau arahkan ke Samsat terdekat. Mau pilih yang mana?",
+      "action": {
+        "type": "offer_stnk_service",
+        "target": "stnk_online_or_samsat",
+        "options": [
+          { "id": "stnk_online", "label": "Layanan STNK Online" },
+          { "id": "samsat_terdekat", "label": "Cari Samsat" }
+        ]
+      }
+    },
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "trigger": {
+      "condition": "H-30 / H-7 / H-1 masa berlaku STNK",
+      "data_utama": ["data_stnk", "waktu"]
+    },
+    "keywords": ["stnk habis", "perpanjang stnk", "masa stnk", "stnk expired"],
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+  {
+    "no": 3,
+    "id": "tax_payment_flow",
+    "kategori": "Pajak kendaraan",
+    "pengguna": ["motor", "mobil"],
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "Pajak kendaraan",
+      "title": "Pengingat Pajak Kendaraan",
+      "message": "Sobat Lantas, pajak kendaraan kamu sudah mendekati jatuh tempo. Mau saya bantu arahkan ke layanan pembayaran pajak kendaraan?",
+      "voice_text": "Sobat Lantas, pajak kendaraan kamu sudah mendekati jatuh tempo. Mau saya bantu arahkan ke layanan pembayaran pajak kendaraan?",
+      "cta": {
+        "label_yes": "Ya, bantuin",
+        "label_no": "Nanti saja"
+      }
+    },
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Siap. Saya bisa bantu pembayaran pajak kendaraan online atau arahkan ke Samsat terdekat. Mau pilih yang mana?",
+      "voice_text": "Siap. Saya bisa bantu pembayaran pajak kendaraan online atau arahkan ke Samsat terdekat. Mau pilih yang mana?",
+      "action": {
+        "type": "offer_tax_service",
+        "target": "tax_online_or_samsat",
+        "options": [
+          { "id": "tax_online", "label": "Bayar Pajak Online" },
+          { "id": "samsat_terdekat", "label": "Cari Samsat" }
+        ]
+      }
+    },
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+    "trigger": {
+      "condition": "Jatuh tempo pajak kendaraan",
+      "data_utama": ["data_pajak", "waktu"]
+    },
+    "keywords": [
+      "bayar pajak",
+      "pajak kendaraan",
+      "pajak motor",
+      "pajak mobil"
+    ],
+    "ui": {
+      "color": "#22C55E",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+  {
+    "no": 4,
+    "id": "official_letter_confirmation",
+    "kategori": "Layanan kepolisian",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "Surat konfirmasi",
+      "title": "Surat Konfirmasi Dikirim",
+      "message": "Sobat Lantas, surat atau dokumen konfirmasi dari kepolisian telah dikirim. Mau saya bantu tampilkan detail dan status pengirimannya?",
+      "voice_text": "Sobat Lantas, surat atau dokumen konfirmasi dari kepolisian telah dikirim. Mau saya bantu tampilkan detail dan status pengirimannya?",
+      "cta": { "label_yes": "Ya, lihat", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut detail surat konfirmasi beserta status pengirimannya. Silakan cek informasi resmi yang tersedia.",
+      "voice_text": "Berikut detail surat konfirmasi beserta status pengirimannya. Silakan cek informasi resmi yang tersedia."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Pengiriman surat atau dokumen konfirmasi",
+    "data_utama": ["data_surat"],
+    "keywords": [
+      "surat polisi",
+      "dokumen polisi",
+      "konfirmasi surat",
+      "surat resmi"
+    ],
+
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 5,
+    "id": "demonstration_info",
+    "kategori": "Informasi lalu lintas",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "warning",
+      "sapaan": "Info kegiatan masyarakat",
+      "title": "Informasi Kegiatan Masyarakat",
+      "message": "Sobat Lantas, akan terdapat kegiatan masyarakat di beberapa titik yang berpotensi memengaruhi arus lalu lintas. Mau saya bantu tampilkan area terdampak?",
+      "voice_text": "Sobat Lantas, akan terdapat kegiatan masyarakat di beberapa titik yang berpotensi memengaruhi arus lalu lintas. Mau saya bantu tampilkan area terdampak?",
+      "cta": { "label_yes": "Ya, cek", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut area yang berpotensi terdampak kegiatan masyarakat. Perhatikan rambu dan arahan petugas.",
+      "voice_text": "Berikut area yang berpotensi terdampak kegiatan masyarakat. Perhatikan rambu dan arahan petugas."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Informasi unjuk rasa dari petugas atau command center",
+    "data_utama": ["data_command_center", "wilayah"],
+    "keywords": ["info demo", "kegiatan masyarakat", "unjuk rasa hari ini"],
+
+    "ui": {
+      "color": "#F59E0B",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 6,
+    "id": "puncak_route_open_close",
+    "kategori": "Rekayasa lalu lintas",
+    "pengguna": ["mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "traffic",
+      "sapaan": "Info jalur Puncak",
+      "title": "Buka Tutup Jalur Puncak",
+      "message": "Sobat Lantas, terdapat pengaturan buka tutup jalur di kawasan Puncak. Mau saya bantu tampilkan status dan jadwalnya?",
+      "voice_text": "Sobat Lantas, terdapat pengaturan buka tutup jalur di kawasan Puncak. Mau saya bantu tampilkan status dan jadwalnya?",
+      "cta": { "label_yes": "Ya, lihat", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut status terbaru buka tutup jalur Puncak beserta perkiraan waktu normalisasi.",
+      "voice_text": "Berikut status terbaru buka tutup jalur Puncak beserta perkiraan waktu normalisasi."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Status buka tutup jalur Puncak",
+    "data_utama": ["status_jalur", "waktu"],
+    "keywords": [
+      "jalur puncak",
+      "buka tutup puncak",
+      "rute puncak",
+      "akses puncak"
+    ],
+
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 7,
+    "id": "toll_contraflow_morning",
+    "kategori": "Rekayasa lalu lintas",
+    "pengguna": ["mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "traffic",
+      "sapaan": "Contraflow tol",
+      "title": "Contraflow Tol Pagi",
+      "message": "Sobat Lantas, diterapkan contraflow di ruas tol tertentu pada pagi hari. Mau saya bantu tampilkan ruas terdampak?",
+      "voice_text": "Sobat Lantas, diterapkan contraflow di ruas tol tertentu pada pagi hari. Mau saya bantu tampilkan ruas terdampak?",
+      "cta": { "label_yes": "Ya, cek", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut ruas tol yang menerapkan contraflow pagi hari. Ikuti rambu dan arahan petugas.",
+      "voice_text": "Berikut ruas tol yang menerapkan contraflow pagi hari. Ikuti rambu dan arahan petugas."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Penerapan contraflow tol pagi hari",
+    "data_utama": ["data_tol", "waktu"],
+    "keywords": ["contraflow tol", "jalur tol berlawanan", "tol pagi"],
+
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 8,
+    "id": "weather_general_info",
+    "kategori": "Informasi cuaca",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "Info cuaca",
+      "title": "Informasi Cuaca",
+      "message": "Sobat Lantas, prakiraan cuaca menunjukkan potensi hujan atau kondisi ekstrem. Mau saya bantu tampilkan detail cuacanya?",
+      "voice_text": "Sobat Lantas, prakiraan cuaca menunjukkan potensi hujan atau kondisi ekstrem. Mau saya bantu tampilkan detail cuacanya?",
+      "cta": { "label_yes": "Ya, lihat", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut detail prakiraan cuaca di wilayah kamu. Berkendara dengan hati-hati.",
+      "voice_text": "Berikut detail prakiraan cuaca di wilayah kamu. Berkendara dengan hati-hati."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Peringatan cuaca wilayah",
+    "data_utama": ["cuaca", "wilayah"],
+    "keywords": [
+      "info cuaca",
+      "prakiraan cuaca",
+      "cuaca hari ini",
+      "ramalan cuaca"
+    ],
+
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 9,
+    "id": "disaster_alert",
+    "kategori": "Bencana alam",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "warning",
+      "sapaan": "Peringatan bencana",
+      "title": "Informasi Bencana Alam",
+      "message": "Sobat Lantas, terdapat peringatan bencana alam di wilayah tertentu. Mau saya bantu tampilkan informasi dan arahan resminya?",
+      "voice_text": "Sobat Lantas, terdapat peringatan bencana alam di wilayah tertentu. Mau saya bantu tampilkan informasi dan arahan resminya?",
+      "cta": { "label_yes": "Ya, lihat", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut informasi dan arahan resmi terkait bencana alam. Utamakan keselamatan.",
+      "voice_text": "Berikut informasi dan arahan resmi terkait bencana alam. Utamakan keselamatan."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Peringatan bencana dari instansi terkait",
+    "data_utama": ["data_bencana", "wilayah"],
+    "keywords": ["peringatan bencana", "bencana alam", "info darurat"],
+
+    "ui": {
+      "color": "#EF4444",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 10,
+    "id": "general_safety_info",
+    "kategori": "Edukasi keselamatan",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "Tips keselamatan",
+      "title": "Pengingat Keselamatan",
+      "message": "Sobat Lantas, patuhi aturan lalu lintas dan gunakan perlengkapan keselamatan. Mau saya bantu tampilkan tips lengkap?",
+      "voice_text": "Sobat Lantas, patuhi aturan lalu lintas dan gunakan perlengkapan keselamatan. Mau saya bantu tampilkan tips lengkap?",
+      "cta": { "label_yes": "Ya", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut tips keselamatan berkendara untuk membantu kamu tetap aman di jalan.",
+      "voice_text": "Berikut tips keselamatan berkendara untuk membantu kamu tetap aman di jalan."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Kampanye keselamatan berkala",
+    "data_utama": ["waktu"],
+    "keywords": [
+      "tips keselamatan",
+      "edukasi berkendara",
+      "safety tips",
+      "cara aman"
+    ],
+
+    "ui": {
+      "color": "#22C55E",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  },
+
+  {
+    "no": 11,
+    "id": "police_operation_info",
+    "kategori": "Operasi kepolisian",
+    "pengguna": ["motor", "mobil"],
+
+    "step_1_prompt": {
+      "type": "system_prompt",
+      "icon": "info",
+      "sapaan": "Info operasi kepolisian",
+      "title": "Pelaksanaan Operasi Kepolisian",
+      "message": "Sobat Lantas, sedang berlangsung operasi kepolisian di wilayah tertentu. Mau saya bantu tampilkan detail operasinya?",
+      "voice_text": "Sobat Lantas, sedang berlangsung operasi kepolisian di wilayah tertentu. Mau saya bantu tampilkan detail operasinya?",
+      "cta": { "label_yes": "Ya", "label_no": "Nanti saja" }
+    },
+
+    "step_2_response_label_yes": {
+      "type": "system_response",
+      "message": "Berikut detail operasi kepolisian yang sedang berlangsung. Pastikan kelengkapan dan patuhi aturan.",
+      "voice_text": "Berikut detail operasi kepolisian yang sedang berlangsung. Pastikan kelengkapan dan patuhi aturan."
+    },
+
+    "step_2_response_label_no": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "step_2_response_timeout": {
+      "type": "system_close",
+      "message": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "voice_text": "Baik Sobat Lantas, jika ada yang perlu saya bantu bisa chat aja ya.",
+      "auto_close": true
+    },
+
+    "trigger": "Pelaksanaan operasi kepolisian",
+    "data_utama": ["data_operasi", "wilayah", "periode"],
+    "keywords": ["operasi kepolisian", "razia", "operasi lalu lintas"],
+
+    "ui": {
+      "color": "#3B82F6",
+      "map_offset": { "north": 0, "east": 0 }
+    }
+  }
+]
