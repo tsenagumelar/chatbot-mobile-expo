@@ -51,7 +51,7 @@ export default function GameScreen() {
   const renderStartScreen = () => (
     <View style={styles.centerContainer}>
       <Ionicons name="trophy" size={80} color={COLORS.PRIMARY} />
-      <Text style={styles.title}>Kuis Harian Polantas Menyapa</Text>
+      <Text style={styles.title}>Kuis Harian Polantas Karib</Text>
       <Text style={styles.subtitle}>
         Membangun Budaya Tertib Berlalu Lintas dimulai dari Uji Pengetahuan Kamu
         Disini

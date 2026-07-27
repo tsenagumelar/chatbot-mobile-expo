@@ -1,12 +1,12 @@
 {
-  "flow_name": "POLANTAS_MENYAPA_ONBOARDING",
+  "flow_name": "POLANTAS_KARIB_ONBOARDING",
   "version": "1.0.0",
   "initial_step": "WELCOME",
   "steps": {
     "WELCOME": {
       "type": "message",
       "assistant": {
-        "text": "Halo Sobat Lantas 👋.\n\nAku asisten virtual Polantas Menyapa, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
+        "text": "Halo Sobat Lantas 👋.\n\nAku asisten virtual Polantas Karib, sahabat perjalananmu.\nAku di sini buat bantu kamu tetap aman dan nyaman di jalan.\n\nBoleh kenalan sebentar supaya aku bisa bantu lebih pas?"
       },
       "user_input": {
         "type": "action",

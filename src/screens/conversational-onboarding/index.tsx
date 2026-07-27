@@ -416,7 +416,7 @@ export default function ConversationalOnboardingScreen() {
           <View style={styles.logoFrame}>
             <Image source={polantasLogo} style={styles.logoImage} />
           </View>
-          <Text style={styles.brandText}>POLANTAS MENYAPA</Text>
+          <Text style={styles.brandText}>POLANTAS KARIB</Text>
           <TouchableOpacity
             style={styles.silentToggle}
             onPress={() => setSilentMode(!silentMode)}

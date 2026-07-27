@@ -534,7 +534,7 @@ export default function useBerandaScreen() {
       const voiceText = buildVoiceText(payload);
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Polantas Menyapa Digital",
+          title: "Polantas Karib Digital",
           subtitle: payload.title,
           body: `${payload.message}\n\nLokasi: ${address}\n${coords}`,
           sound: Platform.OS === "ios" ? NOTIFICATION_SOUND_IOS : undefined,

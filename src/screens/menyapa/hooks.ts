@@ -11,6 +11,7 @@ import {
   stopListening,
 } from "@/src/services/voice";
 import { useStore } from "@/src/store/useStore";
+import type { LocationData } from "@/src/types";
 import { sanitizeSpeechText } from "@/src/utils/speech";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
@@ -171,10 +172,20 @@ const ARRIVAL_MESSAGE =
 const DEFAULT_OVERLAY_AUTO_CLOSE_MS = 30_000;
 const MULTI_STEP_IDLE_TIMEOUT_MS = 20_000;
 const TIMEOUT_OVERLAY_AUTO_CLOSE_MS = 10_000;
+const LOCATION_READY_FALLBACK_MS = 4_500;
+export const DEFAULT_LOCATION = {
+  latitude: -6.923347039758885,
+  longitude: 106.95303205341575,
+  accuracy: 50,
+  heading: 0,
+  speed: 0,
+  timestamp: Date.now(),
+};
 
 const MIN_ZONE_DISTANCE_FROM_START_METERS = 300;
 const MIN_ZONE_DISTANCE_FROM_END_METERS = 300;
 const MIN_ZONE_DISTANCE_BETWEEN_METERS = 350;
+const MIN_ROUTE_DISTANCE_FOR_ZONES_METERS = 700;
 
 export default function useMenyapaScreen() {
   const {
@@ -230,6 +241,7 @@ export default function useMenyapaScreen() {
   const shownNotificationIdsRef = useRef<Set<string>>(new Set());
   const isTravelPausedRef = useRef(false);
   const arrivedNotifiedRef = useRef(false);
+  const isCompletingTripRef = useRef(false);
   const locationUpdateCountRef = useRef(0);
   const isTravelActiveRef = useRef(false);
   const freeRideNotifIndexRef = useRef(0);
@@ -467,13 +479,31 @@ export default function useMenyapaScreen() {
 
   useEffect(() => {
     let isActive = true;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const applyLocation = (nextLocation: LocationData) => {
+      if (!isActive) return;
+      setLocation(nextLocation);
+      setSpeed(Math.max(0, Math.round((nextLocation.speed ?? 0) * 3.6)));
+      setIsLocationReady(true);
+    };
 
     const startTracking = async () => {
+      fallbackTimer = setTimeout(() => {
+        if (!isActive || latestLocationRef.current) return;
+        applyLocation({
+          ...DEFAULT_LOCATION,
+          timestamp: Date.now(),
+        });
+        setLocationPermission(true);
+      }, LOCATION_READY_FALLBACK_MS);
+
       const started = await startLocationTracking((nextLocation) => {
-        if (!isActive) return;
-        setLocation(nextLocation);
-        setSpeed(Math.max(0, Math.round((nextLocation.speed ?? 0) * 3.6)));
-        setIsLocationReady(true);
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+        applyLocation(nextLocation);
         locationUpdateCountRef.current += 1;
         if (locationUpdateCountRef.current >= 3) {
           stopLocationTracking();
@@ -487,6 +517,9 @@ export default function useMenyapaScreen() {
     startTracking();
     return () => {
       isActive = false;
+      if (fallbackTimer) {
+        clearTimeout(fallbackTimer);
+      }
       stopLocationTracking();
     };
   }, [setLocation, setLocationPermission, setSpeed]);
@@ -500,6 +533,7 @@ export default function useMenyapaScreen() {
   }, [onboarding.primary_vehicle]);
 
   useEffect(() => {
+    if (isCompletingTripRef.current) return;
     if (actionRouteActive) return;
     if (isResumingRef.current) return;
     notifIndexRef.current = {};
@@ -683,6 +717,7 @@ export default function useMenyapaScreen() {
   };
 
   useEffect(() => {
+    if (isCompletingTripRef.current) return;
     if (!selectedDestination) return;
     if (routePoints.length > 1) return;
     const originPoint = routeOrigin ?? location;
@@ -698,6 +733,7 @@ export default function useMenyapaScreen() {
   ]);
 
   useEffect(() => {
+    if (isCompletingTripRef.current) return;
     if (!selectedDestination || !isLocationReady || !location) return;
     if (hasSyncedOriginRef.current) return;
     setRouteOrigin(location);
@@ -795,6 +831,15 @@ export default function useMenyapaScreen() {
           longitude: selectedDestination.longitude,
         }
       : (validRoutePoints[validRoutePoints.length - 1] ?? null);
+    if (
+      originPoint &&
+      destinationPoint &&
+      distanceMeters(originPoint, destinationPoint) <
+        MIN_ROUTE_DISTANCE_FOR_ZONES_METERS
+    ) {
+      setRouteZones([]);
+      return;
+    }
     const eligiblePoints = validRoutePoints.filter((point) => {
       if (
         originPoint &&
@@ -811,6 +856,10 @@ export default function useMenyapaScreen() {
       }
       return true;
     });
+    if (!eligiblePoints.length) {
+      setRouteZones([]);
+      return;
+    }
     const pointsSource =
       eligiblePoints.length >= candidates.length
         ? eligiblePoints
@@ -906,10 +955,7 @@ export default function useMenyapaScreen() {
         longitude: coords.lng,
       };
       const originPoint = location ??
-        latestLocationRef.current ?? {
-          latitude: -6.914744,
-          longitude: 107.60981,
-        };
+        latestLocationRef.current ?? DEFAULT_LOCATION;
       hasSyncedOriginRef.current = Boolean(location);
       setRouteOrigin(originPoint);
       setSelectedDestination(nextDestination);
@@ -954,7 +1000,49 @@ export default function useMenyapaScreen() {
     setRideMode("free");
   };
 
+  const completeDestinationTrip = (endPoint: LatLng) => {
+    isCompletingTripRef.current = true;
+    isTravelActiveRef.current = false;
+    setIsTravelActive(false);
+    setLocation({
+      latitude: endPoint.latitude,
+      longitude: endPoint.longitude,
+      accuracy: 6,
+      heading: 0,
+      speed: 0,
+      timestamp: Date.now(),
+    });
+    setSpeed(0);
+    setRoutePoints([]);
+    setRouteZones([]);
+    setRouteOrigin(null);
+    setSelectedDestination(null);
+    setDestinationQuery("");
+    setDestinationResults([]);
+    setDestinationError("");
+    setShowDestinationPicker(false);
+    setRideMode("free");
+    setActionRouteActive(false);
+    setActionRouteTarget(null);
+    hasSyncedOriginRef.current = false;
+    triggeredZoneIdsRef.current = new Set();
+    routeIndexRef.current = 0;
+    travelIndexRef.current = 0;
+    freeRideNotifIndexRef.current = 0;
+    originalDestinationRef.current = null;
+    setShowResumePrompt(false);
+    setOnboarding({
+      city: undefined,
+      destination_latitude: undefined,
+      destination_longitude: undefined,
+    });
+    setTimeout(() => {
+      isCompletingTripRef.current = false;
+    }, 500);
+  };
+
   useEffect(() => {
+    if (isCompletingTripRef.current) return;
     if (!selectedDestination) return;
     requestRoute(selectedDestination);
   }, [
@@ -1090,11 +1178,8 @@ export default function useMenyapaScreen() {
     const interval = setInterval(() => {
       const base = simulatedLocationRef.current ??
         latestLocationRef.current ?? {
-          latitude: -6.914744,
-          longitude: 107.60981,
+          ...DEFAULT_LOCATION,
           accuracy: 10,
-          heading: 0,
-          speed: 0,
           timestamp: Date.now(),
         };
       const deltaLat = (Math.random() - 0.5) * 0.0006;
@@ -1138,10 +1223,7 @@ export default function useMenyapaScreen() {
           buildOverlayPayload(notifItem, latestLocationRef.current),
         );
 
-        const baseLocation = latestLocationRef.current ?? {
-          latitude: -6.914744,
-          longitude: 107.60981,
-        };
+        const baseLocation = latestLocationRef.current ?? DEFAULT_LOCATION;
         const isRestCta =
           notifItem.cta?.type === "find_rest_spot" ||
           notifItem.cta?.type === "find_rest_area";
@@ -1371,8 +1453,8 @@ export default function useMenyapaScreen() {
       });
       setIsLocationReady(true);
       if (travelIndexRef.current >= routePoints.length - 1) {
+        const endPoint = routePoints[routePoints.length - 1];
         if (!arrivedNotifiedRef.current) {
-          const endPoint = routePoints[routePoints.length - 1];
           const isRestAreaArrival =
             actionRouteActive && actionRouteTarget === "rest_area";
           const isChargerArrival =
@@ -1432,9 +1514,7 @@ export default function useMenyapaScreen() {
           }).catch(() => null);
         }
         if (!actionRouteActive) {
-          setRoutePoints([]);
-          setRouteZones([]);
-          setRouteOrigin(null);
+          completeDestinationTrip(endPoint);
         }
         clearInterval(interval);
       }
@@ -1449,11 +1529,8 @@ export default function useMenyapaScreen() {
       if (!isTravelActiveRef.current) return;
       const base = simulatedLocationRef.current ??
         latestLocationRef.current ?? {
-          latitude: -6.914744,
-          longitude: 107.60981,
+          ...DEFAULT_LOCATION,
           accuracy: 10,
-          heading: 0,
-          speed: 0,
           timestamp: Date.now(),
         };
       const deltaLat = (Math.random() - 0.5) * 0.0006;
@@ -1478,10 +1555,7 @@ export default function useMenyapaScreen() {
     const demoNotif = candidates.find((item) => item?.id === demoNotifId);
     if (!demoNotif) return;
     const baseLocation = latestLocationRef.current ??
-      location ?? {
-        latitude: -6.914744,
-        longitude: 107.60981,
-      };
+      location ?? DEFAULT_LOCATION;
     triggerOverlay(buildOverlayPayload(demoNotif, baseLocation));
     demoTriggeredRef.current = true;
   }, [demoNotifId, location]);
@@ -1520,10 +1594,7 @@ export default function useMenyapaScreen() {
 
       triggerOverlay(buildOverlayPayload(notifItem, latestLocationRef.current));
 
-      const baseLocation = latestLocationRef.current ?? {
-        latitude: -6.914744,
-        longitude: 107.60981,
-      };
+      const baseLocation = latestLocationRef.current ?? DEFAULT_LOCATION;
       Notifications.scheduleNotificationAsync({
         content: {
           title: getNotifTitle(notifItem),
@@ -1560,8 +1631,8 @@ export default function useMenyapaScreen() {
     setZoomDelta(nextDelta);
     mapRef.current?.animateToRegion(
       {
-        latitude: location?.latitude ?? -6.914744,
-        longitude: location?.longitude ?? 107.60981,
+        latitude: location?.latitude ?? DEFAULT_LOCATION.latitude,
+        longitude: location?.longitude ?? DEFAULT_LOCATION.longitude,
         latitudeDelta: nextDelta,
         longitudeDelta: nextDelta,
       },
@@ -1572,8 +1643,8 @@ export default function useMenyapaScreen() {
   const handleFocusLocation = () => {
     mapRef.current?.animateToRegion(
       {
-        latitude: location?.latitude ?? -6.914744,
-        longitude: location?.longitude ?? 107.60981,
+        latitude: location?.latitude ?? DEFAULT_LOCATION.latitude,
+        longitude: location?.longitude ?? DEFAULT_LOCATION.longitude,
         latitudeDelta: zoomDelta,
         longitudeDelta: zoomDelta,
       },
@@ -1800,10 +1871,7 @@ export default function useMenyapaScreen() {
         if (routeNotif) {
           console.log("✅ Match found (route):", getNotifTitle(routeNotif));
           const baseLocation = latestLocationRef.current ??
-            location ?? {
-              latitude: -6.914744,
-              longitude: 107.60981,
-            };
+            location ?? DEFAULT_LOCATION;
 
           triggerOverlay(buildOverlayPayload(routeNotif, baseLocation));
 
@@ -1830,10 +1898,7 @@ export default function useMenyapaScreen() {
         if (freeNotif) {
           console.log("✅ Match found (free):", getNotifTitle(freeNotif));
           const baseLocation = latestLocationRef.current ??
-            location ?? {
-              latitude: -6.914744,
-              longitude: 107.60981,
-            };
+            location ?? DEFAULT_LOCATION;
 
           triggerOverlay(buildOverlayPayload(freeNotif, baseLocation));
 

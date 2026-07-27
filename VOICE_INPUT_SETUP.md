@@ -120,7 +120,7 @@ npm run build:production
 **Solusi:**
 - Buka Chrome settings (jika WebView menggunakan Chrome engine)
 - Clear site permissions
-- Atau: Settings → Apps → POLANTAS MENYAPA → Permissions → Reset
+- Atau: Settings → Apps → POLANTAS KARIB → Permissions → Reset
 - Restart app
 
 ## Architecture

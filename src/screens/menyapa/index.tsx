@@ -19,7 +19,7 @@ import MapView, {
   PROVIDER_GOOGLE,
 } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import useMenyapaScreen from "./hooks";
+import useMenyapaScreen, { DEFAULT_LOCATION } from "./hooks";
 
 export default function MenyapaScreen() {
   const destinationInputRef = useRef<TextInput>(null);
@@ -149,8 +149,8 @@ export default function MenyapaScreen() {
           style={styles.map}
           provider={PROVIDER_GOOGLE}
           region={{
-            latitude: location?.latitude ?? -6.914744,
-            longitude: location?.longitude ?? 107.60981,
+            latitude: location?.latitude ?? DEFAULT_LOCATION.latitude,
+            longitude: location?.longitude ?? DEFAULT_LOCATION.longitude,
             latitudeDelta: zoomDelta,
             longitudeDelta: zoomDelta,
           }}

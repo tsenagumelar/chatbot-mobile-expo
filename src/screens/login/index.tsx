@@ -57,7 +57,7 @@ export default function LoginScreen() {
               <Image source={polantasLogo} style={styles.logoImage} />
             </View>
             <Text style={styles.appTitle}>POLANTAS</Text>
-            <Text style={styles.appTitle}>MENYAPA</Text>
+            <Text style={styles.appTitle}>KARIB</Text>
             <Text style={styles.welcome}>Selamat Datang</Text>
           </View>
 

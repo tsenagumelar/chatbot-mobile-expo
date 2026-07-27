@@ -14,7 +14,7 @@ export default function SplashScreen() {
           <Image source={polantasLogo} style={styles.logoImage} />
         </View>
         <Text style={styles.title}>POLANTAS</Text>
-        <Text style={styles.title}>MENYAPA</Text>
+        <Text style={styles.title}>KARIB</Text>
       </View>
       <View style={styles.footer}>
         <ActivityIndicator color="#fff" />

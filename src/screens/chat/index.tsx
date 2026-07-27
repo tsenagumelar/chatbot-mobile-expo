@@ -84,7 +84,7 @@ export default function ChatScreen() {
         <View style={styles.headerCenter}>
           <Image source={polantasLogo} style={styles.headerLogo} />
           <View>
-            <Text style={styles.headerTitle}>Polantas Menyapa</Text>
+            <Text style={styles.headerTitle}>Polantas Karib</Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
               <Text style={styles.statusText}>

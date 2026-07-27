@@ -386,7 +386,7 @@
     "sapaan_ringkas": "Terima kasih berkendara aman",
     "icon": "happy",
     "title": "Terima Kasih, Sobat!",
-    "message": "Terima kasih sudah tertib berlalu lintas, Sobat! Polantas Menyapa akan mendampingi perjalananmu dan hanya menyapa saat dibutuhkan.\n\ud83d\udc49 Mau lihat ringkasan perjalanan kamu hari ini?",
+    "message": "Terima kasih sudah tertib berlalu lintas, Sobat! Polantas Karib akan mendampingi perjalananmu dan hanya menyapa saat dibutuhkan.\n\ud83d\udc49 Mau lihat ringkasan perjalanan kamu hari ini?",
     "cta": {
       "type": "show_trip_summary",
       "label": "Lihat ringkasan"
