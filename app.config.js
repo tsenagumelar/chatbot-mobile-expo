@@ -27,6 +27,9 @@ export default {
           "Aplikasi membutuhkan akses mikrofon untuk fitur voice input.",
         NSSpeechRecognitionUsageDescription:
           "Aplikasi membutuhkan akses speech recognition untuk voice input.",
+        NSAppTransportSecurity: {
+          NSAllowsArbitraryLoads: true,
+        },
       },
       config: {
         googleMapsApiKey: "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI",

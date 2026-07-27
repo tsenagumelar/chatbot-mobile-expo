@@ -368,7 +368,8 @@ export default function useBerandaScreen() {
         const response = await getTrafficInfo(location.latitude, location.longitude);
         setTraffic(response.traffic);
       } catch (error) {
-        console.error("Traffic fetch error:", error);
+        console.warn("Traffic fetch warning:", error);
+        setTraffic(null);
       } finally {
         setTrafficLoading(false);
       }

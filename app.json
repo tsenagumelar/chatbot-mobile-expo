@@ -21,7 +21,10 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Aplikasi membutuhkan akses lokasi untuk tracking kecepatan dan kondisi lalu lintas.",
         "NSUserNotificationUsageDescription": "Aplikasi membutuhkan izin notifikasi untuk memberikan peringatan keselamatan dan informasi perjalanan.",
         "NSMicrophoneUsageDescription": "Aplikasi membutuhkan akses mikrofon untuk fitur voice input.",
-        "NSSpeechRecognitionUsageDescription": "Aplikasi membutuhkan akses speech recognition untuk voice input."
+        "NSSpeechRecognitionUsageDescription": "Aplikasi membutuhkan akses speech recognition untuk voice input.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {

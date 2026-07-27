@@ -1,5 +1,6 @@
 // Backend API
-export const API_BASE_URL = "http://127.0.0.1:48080";
+export const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ?? "https://chatbotapi.activa.id/api/v1";
 
 // Google Maps configuration
 export const GOOGLE_MAPS_API_KEY = "AIzaSyDZx9uIw7vYdZomB3fvNujWqa3lSsa5mkI";
